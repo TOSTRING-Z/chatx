@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+  <title>翻译</title>
+  <link rel="stylesheet" href="atom-one-light.min.css">
+  <link rel="stylesheet" href="build.css">
+</head>
+
+<body>
+  <textarea id="content" hidden></textarea>
+
+  <div class="container mx-auto min-h-screen flex justify-end">
+    <div class="w-full max-w-md">
+      <div class="bg-gray-100 p-4 rounded-lg flex-grow">
+        <!-- Chat messages -->
+        <div class="flex flex-col space-y-4 overflow-y-auto" id="messages">
+        </div>
+        <div id="bottom-div"></div>
+        <!-- Input area -->
+        <div class="p-2 fixed bottom-0 left-0 right-0 bg-gray-100" id="bottom">
+          <textarea class="w-full p-2 rounded-md mb-2" rows="2" placeholder="脚色扮演提示"
+            id="player">你是一名英语母语的生物信息学专家，请帮我翻译成地道的中文表达：</textarea>
+          <div class="flex">
+            <textarea class="flex-grow p-2 rounded-l-lg" rows="3" placeholder="需要提交的文字" id="input"></textarea>
+            <button class="p-2 bg-blue-500 text-white rounded-r-lg" id="submit">提交</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+<script src="./renderer.js"></script>
+
+</html>

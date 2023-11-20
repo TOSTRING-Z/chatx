@@ -1,0 +1,5 @@
+{
+    "OPENAI_API_URL": "https://gptgod.online/api/v1/chat/completions",
+    "OPENAI_API_KEY": "",
+    "MEMORY_LENGTH": 10
+}
