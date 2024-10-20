@@ -7,5 +7,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   handleMethod: (callback) => ipcRenderer.on('method', callback),
   handleClear: (callback) => ipcRenderer.on('clear', callback),
   handleLoad: (callback) => ipcRenderer.on('load', callback),
+  handlePrompt: (callback) => ipcRenderer.on('prompt', callback),
   clickSubmit: (text) => ipcRenderer.send('submit', text),
 })

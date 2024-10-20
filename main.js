@@ -1,16 +1,50 @@
 const { app, BrowserWindow, Menu, ipcMain, clipboard, dialog } = require('electron');
 if (require('electron-squirrel-startup')) return app.quit();
-const { chatgpt, clearMessages, saveMessages, loadMessages } = require('./chatgptService');
+const { chatBase, clearMessages, saveMessages, loadMessages } = require('./chatService');
 const { translation } = require('./translationService');
+const { translation_new } = require('./baidu_new');
 const { clearInterval } = require('node:timers');
 const { exec } = require('child_process');
+const fs = require('fs');
 const os = require('os');
+const Store = require('electron-store');
 const path = require('path');
 
+const store = new Store(); // 创建 Store 实例
+
+// 复制配置文件到用户目录
+const copyConfigFile = () => {
+    const sourcePath = path.join(__dirname, 'config.json'); // 配置文件源路径
+    const targetPath = path.join(os.homedir(), '.translation', 'config.json'); // 目标路径为用户目录下的 .translation 目录
+
+    // 如果目标目录不存在，则创建目标目录
+    if (!fs.existsSync(path.dirname(targetPath))) {
+        fs.mkdirSync(path.dirname(targetPath), { recursive: true });
+    }
+
+    // 复制源文件到目标目录
+    fs.copyFileSync(sourcePath, targetPath);
+};
+
+// 判断是否为应用程序的第一次安装
+const isFirstInstall = () => {
+    const targetPath = path.join(os.homedir(), '.translation', 'config.json');
+    return !fs.existsSync(targetPath);
+};
+
+// 如果是首次安装，则复制配置文件
+if (isFirstInstall()) {
+    copyConfigFile();
+}
+
+const configFilePath = path.join(os.homedir(), '.translation', 'config.json');
+const data = fs.readFileSync(configFilePath, 'utf-8');
+const config = JSON.parse(data);
+
+// console.log(config)
 
 let loop
-let method = 'chatgpt'
-let gpt_version = 'gpt-3.5-turbo'
+let method = 'translation_new'
 let mainWindow
 let lastClipboardContent
 
@@ -19,7 +53,13 @@ function send_query(text) {
         case 'chatgpt':
             mainWindow.webContents.send('query', text)
             break
+        case 'chatglm':
+            mainWindow.webContents.send('query', text)
+            break
         case 'translation':
+            mainWindow.webContents.send('trans-query', text)
+            break
+        case 'translation_new':
             mainWindow.webContents.send('trans-query', text)
             break
     }
@@ -57,50 +97,63 @@ function createWindow() {
         setTimeout(() => mainWindow.setAlwaysOnTop(false), 0);
     })
 
+    const translation = [
+        {
+            method: 'translation_new',
+            label: '百度翻译[new]',
+            checked: true
+        },
+        {
+            method: 'translation',
+            label: '百度翻译',
+            checked: false
+        },
+    ]
+
+    const translation_template = translation.map((params) => {
+        return {
+            type: 'radio',
+            checked: params.checked,
+            click: () => {
+                mainWindow.webContents.send('method', 'translation')
+                method = params.method
+            },
+            label: params.label
+        }
+    })
+
+    const chatgpt_template = config.CHATGPT_METHODS.map((label) => {
+        return {
+            type: 'radio',
+            checked: false,
+            click: () => {
+                mainWindow.webContents.send('method', 'chat')
+                method = 'chatgpt'
+                version = label
+            },
+            label: label
+        }
+    })
+
+    const chatglm_template = config.CHATGLM_METHODS.map((label) => {
+        return {
+            type: 'radio',
+            checked: false,
+            click: () => {
+                mainWindow.webContents.send('method', 'chat')
+                method = 'chatglm'
+                version = label
+            },
+            label: label
+        }
+    })
+
+    const template = [...translation_template, ...chatgpt_template, ...chatglm_template];
+
     const menu = Menu.buildFromTemplate([
         {
             label: "功能选择",
-            submenu: [
-                {
-                    type: 'radio',
-                    checked: true,
-                    click: () => {
-                        mainWindow.webContents.send('method', 'chatgpt')
-                        method = 'chatgpt'
-                        gpt_version = 'gpt-3.5-turbo'
-                    },
-                    label: 'gpt-3.5-turbo',
-                },
-                {
-                    type: 'radio',
-                    checked: false,
-                    click: () => {
-                        mainWindow.webContents.send('method', 'chatgpt')
-                        method = 'chatgpt'
-                        gpt_version = 'gpt-3.5-turbo-16k'
-                    },
-                    label: 'gpt-3.5-turbo-16k',
-                },
-                {
-                    type: 'radio',
-                    checked: false,
-                    click: () => {
-                        mainWindow.webContents.send('method', 'chatgpt')
-                        method = 'chatgpt'
-                        gpt_version = 'gpt-4'
-                    },
-                    label: 'gpt-4',
-                },
-                {
-                    type: 'radio',
-                    checked: false,
-                    click: () => {
-                        mainWindow.webContents.send('method', 'translation')
-                        method = 'translation'
-                    },
-                    label: '百度翻译'
-                },
-            ]
+            submenu: template
         },
         {
             label: "复制翻译",
@@ -111,7 +164,37 @@ function createWindow() {
                     },
                     label: '循环',
                     type: 'checkbox',
-                    checked: true,
+                    checked: false,
+                }
+            ]
+        },
+        {
+            label: "智能体",
+            submenu: [
+                {
+                    label: '加载',
+                    click: async () => {
+                        // 获取上次打开的目录
+                        const lastDirectory = store.get('lastDirectory') || path.join(os.homedir(), '.translation');
+                        // 打开文件选择对话框
+                        dialog
+                            .showOpenDialog(mainWindow, {
+                                properties: ['openFile'],
+                                defaultPath: lastDirectory
+                            })
+                            .then(result => {
+                                if (!result.canceled) {
+                                    const filePath = result.filePaths[0]; // 获取用户选取的文件路径
+                                    store.set('lastDirectory', path.dirname(filePath)); // 记录当前选择的目录
+                                    console.log(filePath); // 在控制台输出文件路径
+                                    const prompt = fs.readFileSync(filePath, 'utf-8');
+                                    mainWindow.webContents.send('prompt', prompt)
+                                }
+                            })
+                            .catch(err => {
+                                console.log(err);
+                            });
+                    }
                 }
             ]
         },
@@ -185,9 +268,12 @@ function createWindow() {
     Menu.setApplicationMenu(menu)
     mainWindow.loadFile('index.html')
 
-    lastClipboardContent = clipboard.readText();
+    // 在窗口加载完成后发送消息到渲染进程
+    mainWindow.webContents.on('did-finish-load', () => {
+        mainWindow.webContents.send('prompt', config.PROMPT)
+    });
 
-    changeLoop()
+    lastClipboardContent = clipboard.readText();
 }
 
 app.whenReady().then(() => {
@@ -196,10 +282,16 @@ app.whenReady().then(() => {
         let result
         switch (method) {
             case 'chatgpt':
-                result = await chatgpt(text, gpt_version);
+                result = await chatBase(text.query, text.prompt, version, method);
+                break
+            case 'chatglm':
+                result = await chatBase(text.query, text.prompt, version, method);
                 break
             case 'translation':
-                result = await translation(text);
+                result = await translation(text.query);
+                break
+            case 'translation_new':
+                result = await translation_new(text.query);
                 break
         }
         mainWindow.webContents.send('response', result);

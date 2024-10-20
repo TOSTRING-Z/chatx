@@ -1,6 +1,7 @@
 const axios = require('axios');
 const axiosCookieJarSupport = require('axios-cookiejar-support').wrapper;
 const { CookieJar } = require('tough-cookie');
+const he = require('he');
 
 const TRANSLATION_API_URL = 'https://fanyi.baidu.com/v2transapi'
 
@@ -64,9 +65,11 @@ function format(result) {
             text = `英[${en}]\n美[${am}]\n${word}`
         }
         else {
-            text = result['trans_result']['data'][0]['dst']
+            text = result['trans_result']['data'].map((d) => {
+                return d['dst']
+            }).join('\n')
         }
-        return text
+        return he.encode(text)
     } catch (error) {
         return error
     }
@@ -74,13 +77,15 @@ function format(result) {
 
 async function translation(queryText) {
     try {
+        queryText = queryText.replaceAll('-\n','').replaceAll('\n',' ');
+        query = encodeURI(queryText).replaceAll('%20','+');
         axiosCookieJarSupport(axios);
         let cookieJar = new CookieJar();
         cookieJar.setCookie('BAIDUID=A8A82BD2F42CC6BD4E0FD54ABB746B32:FG=1', 'https://fanyi.baidu.com')
-        let response = await axios.post(TRANSLATION_API_URL, {
+        let get = `${TRANSLATION_API_URL}?query=${query}`;
+        let response = await axios.post(get, {
             'from': mode(queryText)[0],
             'to': mode(queryText)[1],
-            'query': queryText,
             'sign': hash(queryText).toString(),
             'simple_means_flag': '3',
             'token': 'f1ea842a77d73327b3124c62454b13df',
