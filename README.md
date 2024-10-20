@@ -1,6 +1,6 @@
 # translation
 
-chatGPT + 百度翻译
+chatGPT/chatGLM/other + 百度翻译
 
 ```shell
 # 安装环境
