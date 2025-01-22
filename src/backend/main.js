@@ -314,15 +314,17 @@ let windowManager = {
         
         if (this.iconWindow) {
             this.iconWindow.setPosition(x, y);
-            clearTimeout(this.autoCloseTimer);
-            this.autoCloseTimer = setTimeout(() => {
-                this.destroyIconWindow()
-            }, getConfig("icon_time") * 1000) // 自动关闭
+            if (this.autoCloseTimer) {
+                clearTimeout(this.autoCloseTimer);
+                this.autoCloseTimer = setTimeout(() => {
+                    this.destroyIconWindow()
+                }, getConfig("icon_time") * 1000) // 自动关闭
+            }
             return this.iconWindow
         }
 
         this.iconWindow = new BrowserWindow({
-            width: 100,
+            width: 120,
             height: 40,
             x,
             y,
@@ -352,6 +354,8 @@ let windowManager = {
         if (this.iconWindow) {
             this.iconWindow.close();
             this.iconWindow = null;
+        }
+        if (this.autoCloseTimer) {
             clearTimeout(this.autoCloseTimer);
             this.autoCloseTimer = null;
         }
@@ -367,6 +371,13 @@ ipcMain.on('submit-clicked', () => {
     concat = false;
     send_query(last_clipboard_content);
     windowManager.destroyIconWindow();
+})
+
+ipcMain.on('clear-clicked', () => {
+    concat = false;
+    windowManager.destroyIconWindow();
+    last_clipboard_content = "";
+    clipboard.writeText(last_clipboard_content);
 })
 
 function changeLoop() {
