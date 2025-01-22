@@ -1,6 +1,6 @@
 # chatx
 
-chatGPT/chatGLM/other + 百度翻译
+chatGPT/chatGLM/deepseek + 百度翻译
 
 ```shell
 nvm use 23

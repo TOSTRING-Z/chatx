@@ -350,8 +350,10 @@ let windowManager = {
 
     destroyIconWindow() {
         if (this.iconWindow) {
-            this.iconWindow.close()
-            this.iconWindow = null
+            this.iconWindow.close();
+            this.iconWindow = null;
+            clearTimeout(this.autoCloseTimer);
+            this.autoCloseTimer = null;
         }
     }
 }
