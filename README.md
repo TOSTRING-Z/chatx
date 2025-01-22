@@ -1,8 +1,9 @@
-# translation
+# chatx
 
-chatGPT + 百度翻译
+chatGPT/chatGLM/other + 百度翻译
 
 ```shell
+nvm use 23
 # 安装环境
 npm install
 # 启动electron

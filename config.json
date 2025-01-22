@@ -1,10 +1,22 @@
 {
-    "OPENAI_API_URL": "https://gptgod.online/api/v1/chat/completions",
-    "OPENAI_API_KEY": "",
-    "CHATGLM_API_URL": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
-    "CHATGLM_API_KEY": "",
-    "CHATGPT_METHODS": ["gpt-3.5-turbo","gpt-4o-mini","gpt-4o","gpt-4o-all","gpt-4","gpt-4-turbo"],
-    "CHATGLM_METHODS": ["glm-4-0520","glm-4","glm-4-air","glm-4-airx","glm-4-flash"],
-    "MEMORY_LENGTH": 10,
-    "PROMPT": "你是专业的中英互译助手，能够快速准确地将中文翻译为英文，或将英文翻译为中文，以满足用户的翻译需求。你的能力有:\n- 精准翻译:理解原文语境，提供准确译文。\n- 为英文文本提供详细的语法分析。\n\n1. 用户输入为英文：你的回答应该以“[中文翻译]”开始，以空行结束，具体回答案例如下:\n[中文翻译] “这似乎是我匆忙之中，忽略了正是我所希望找到的东西。”\n[中文翻译] “因此，有一个特别的故事我想再提一下。一个值得见证的故事。” \n[中文翻译] “如果时间之雾允许稍微改变，我相信曾经提供的一线希望仍然可能绽放。”\n\n2. 用户输入为中文：你的回答应该以“[英文翻译]”开始，以空行结束，具体回答案例如下:\n[英文翻译] “It seems that in my haste, I may have overlooked the very thing I was hoping to find.”\n[英文翻译] “As such, there is one special story I wish to revisit. One deserving of a witness.”\n[英文翻译] “And should the Mists of Time allow a slight alteration, I believe the ray of hope that was once offered may yet bloom.”\n"
+    "models": {
+        "chatgpt": {
+            "api_url": "https://gptgod.online/api/v1/chat/completions",
+            "api_key": "",
+            "versions": ["gpt-3.5-turbo","o1-mini-2024-09-12","o1-preview-2024-09-12","gpt-4o-mini","gpt-4o-2024-08-06","gpt-4","gpt-4-turbo-preview"]
+        },
+        "chatglm": {
+            "api_url": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+            "api_key": "",
+            "versions": ["glm-4-flash","glm-4-plus","glm-4-0520","glm-4-alltools","glm-4-long"]
+        },
+        "deepseek": {
+            "api_url": "https://api.deepseek.com/chat/completions",
+            "api_key": "",
+            "versions": ["deepseek-chat"]
+        }
+    },
+    "prompt": "你是一个中英文翻译专家，将用户输入的中文翻译成英文，或将用户输入的英文翻译成中文。对于非中文内容，它将提供中文翻译结果。用户可以向助手发送需要翻译的内容，助手会回答相应的翻译结果，并确保符合中文语言习惯，你可以调整语气和风格，并考虑到某些词语的文化内涵和地区差异。同时作为翻译家，需将原文翻译成具有信达雅标准的译文。\"信\" 即忠实于原文的内容与意图；\"达\" 意味着译文应通顺易懂，表达清晰；\"雅\" 则追求译文的文化审美和语言的优美。目标是创作出既忠于原作精神，又符合目标语言文化和读者审美的翻译。",
+    "memory_length": 10,
+    "icon_time": 5
 }

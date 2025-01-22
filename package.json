@@ -1,38 +1,42 @@
 {
-  "name": "translation",
-  "version": "1.2.1",
-  "description": "translation",
-  "main": "main.js",
+  "name": "chatx",
+  "version": "1.2.6",
+  "description": "chatx",
+  "main": "src/backend/main.js",
   "homepage": ".",
+  "author": "TOSTRING_Z",
   "private": true,
   "config": {
     "forge": {
       "packagerConfig": {
-        "name": "translation",
-        "icon": "icon",
+        "name": "chatx",
+        "icon": "src/backend/icon/icon",
         "platform": "all",
         "asar": true,
         "ignore": [
           ".vscode",
           ".git",
-          "package-lock.json",
-          "run.sh"
+          "package-lock.json"
         ]
       },
       "makers": [
         {
           "name": "@electron-forge/maker-squirrel",
-          "config": {}
+          "config": {
+            "icon": "src/backend/icon/icon.ico"
+          }
         },
         {
           "name": "@electron-forge/maker-deb",
-          "config": {}
+          "config": {
+            "icon": "src/backend/icon/icon.png"
+          }
         }
       ]
     }
   },
   "dependencies": {
-    "axios": "^1.6.2",
+    "axios": "^1.7.7",
     "axios-cookiejar-support": "^4.0.7",
     "electron-squirrel-startup": "^1.0.0",
     "electron-store": "^4.0.0",
@@ -40,22 +44,24 @@
     "highlight.js": "^11.9.0",
     "marked": "^10.0.0",
     "marked-highlight": "^2.0.7",
+    "mathjax": "^3.2.2",
     "prismjs": "^1.29.0",
     "tough-cookie": "^4.1.3"
   },
   "scripts": {
-    "start": "electron-forge start --no-sandbox",
-    "electron-start": "electron . --no-sandbox",
+    "start": "electron-forge start",
+    "electron-start": "electron .",
     "package": "electron-forge package",
-    "make-win": "electron-forge make ./ translation --platform=win32 --arch=x64",
+    "make-win": "electron-forge make ./ chatx --platform=win32 --arch=x64",
     "make": "electron-forge make"
   },
   "devDependencies": {
-    "@electron-forge/cli": "^7.1.0",
-    "@electron-forge/maker-deb": "^7.1.0",
-    "@electron-forge/maker-squirrel": "^7.1.0",
-    "@electron-forge/plugin-auto-unpack-natives": "^7.1.0",
-    "electron": "^27.1.0",
+    "@electron-forge/cli": "^6.0.5",
+    "@electron-forge/maker-deb": "^6.0.5",
+    "@electron-forge/maker-rpm": "^6.0.5",
+    "@electron-forge/maker-squirrel": "^6.0.5",
+    "@electron-forge/maker-zip": "^6.0.5",
+    "electron": "^32.0.0",
     "tailwindcss": "^3.3.5"
   }
 }
