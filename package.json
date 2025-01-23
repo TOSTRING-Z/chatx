@@ -12,7 +12,7 @@
         "name": "chatx",
         "icon": "src/backend/icon/icon",
         "platform": "all",
-        "asar": true,
+        "asar": false,
         "ignore": [
           ".vscode",
           ".git",
