@@ -332,7 +332,7 @@ let windowManager = {
         }
 
         this.iconWindow = new BrowserWindow({
-            width: 120,
+            width: 140,
             height: 40,
             x,
             y,
