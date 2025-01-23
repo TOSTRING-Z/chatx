@@ -78,7 +78,6 @@ function format(result) {
 
 async function translation(queryText) {
     try {
-        queryText = queryText.replaceAll('-\n','');
         let query = encodeURIComponent(queryText);
         let mode = getMode(queryText)
         axiosCookieJarSupport(axios);

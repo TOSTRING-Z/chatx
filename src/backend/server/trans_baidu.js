@@ -49,7 +49,6 @@ function format(result) {
 
 async function translation(queryText) {
   try {
-    queryText = queryText.replaceAll('-\n','').replaceAll('\n',' ');
     axiosCookieJarSupport(axios);
     let cookieJar = new CookieJar();
     cookieJar.setCookie(

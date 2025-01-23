@@ -303,6 +303,7 @@ function mathFormat() {
 }
 
 function textFormat(text) {
+    text = text.replaceAll('-\n','');
     if (function_select.text.statu) {
         return text.replace(/[\s\n]+/g, ' ').trim();
     } else {
