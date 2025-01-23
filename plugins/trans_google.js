@@ -1,7 +1,6 @@
 const axios = require('axios');
 const axiosCookieJarSupport = require('axios-cookiejar-support').wrapper;
 const { CookieJar } = require('tough-cookie');
-const he = require('he');
 const { JSDOM } = require('jsdom');  // 引入 jsdom
 
 const TRANSLATION_API_URL = 'https://www.google.com/async/translate?vet=12ahUKEwjA7b3giYuLAxU3hlYBHZvEAhYQqDh6BAgcEDA..i&ei=886RZ4CoELeM2roPm4mLsAE&opi=89978449&client=firefox-b-d&yv=3&_fmt=pc&cs=0'
@@ -10,6 +9,7 @@ const TRANSLATION_API_URL = 'https://www.google.com/async/translate?vet=12ahUKEw
 function getMode(text) {
     return text.match('[\u4e00-\u9fa5]') ? ['zh-CN', 'en'] : ['en', 'zh-CN']
 }
+
 // 结果解析
 function format(result) {
     const startIndex = result.indexOf('<style>');
@@ -55,6 +55,7 @@ function format(result) {
     }
     return text
 }
+
 async function translation(queryText) {
     try {
         let query = encodeURIComponent(queryText);

@@ -333,7 +333,7 @@ let windowManager = {
         }
 
         this.iconWindow = new BrowserWindow({
-            width: 140,
+            width: 180,
             height: 40,
             x,
             y,
@@ -373,6 +373,12 @@ let windowManager = {
 
 ipcMain.on('concat-clicked', () => {
     concat = true;
+    windowManager.destroyIconWindow();
+})
+
+ipcMain.on('translation-clicked', () => {
+    concat = false;
+    send_query(last_clipboard_content);
     windowManager.destroyIconWindow();
 })
 
