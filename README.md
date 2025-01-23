@@ -19,6 +19,9 @@ ChatX 是一款功能强大的跨平台应用程序，支持 Windows 和 Ubuntu 
 ### 4. 跨平台支持
 - 支持 Windows 和 Ubuntu 系统，确保用户在不同操作系统上都能流畅使用。
 
+### 4. 插件支持
+- 支持通过配置文件（~/.chatx/config.json）配置自定义翻译插件。
+
 ## 使用场景
 - **翻译工作**：快速翻译长篇文章或文档，支持分段翻译和组合。
 - **文本编辑**：通过分段组合功能，轻松编辑和整理文本内容。
@@ -38,6 +41,7 @@ ChatX 是一款功能强大的跨平台应用程序，支持 Windows 和 Ubuntu 
 
 ChatX 致力于为用户提供高效、智能的文本处理工具，无论是翻译、编辑还是智能对话，都能满足您的需求。
 
+## 启动 / 编译
 ```shell
 nvm use 23
 # 安装环境
@@ -50,4 +54,19 @@ npm run package
 npm run make
 # win
 npm run make-win
+```
+
+## 插件配置
+
+### 修改配置文件：~/.chatx/config.json
+
+```json
+"translations": {
+    "百度翻译[旧]": {
+        "path": "/path/to/plugins/trans_baidu_old.js"
+    },
+    "谷歌翻译": {
+        "path": "/path/to/plugins/trans_google.js"
+    }
+},
 ```
