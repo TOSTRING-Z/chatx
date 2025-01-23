@@ -1,9 +1,8 @@
-const { app, BrowserWindow, Menu, shell, ipcMain, clipboard, dialog, globalShortcut, screen } = require('electron');
+const { app, BrowserWindow, Menu, shell, ipcMain, clipboard, dialog, globalShortcut, remote } = require('electron');
 if (require('electron-squirrel-startup')) return app.quit();
 const { chatBase, clearMessages, saveMessages, loadMessages } = require('./server/llm_service');
 const { captureMouse } = require('./mouse/capture_mouse');
 const { translation } = require('./server/trans_baidu');
-const { translation_new } = require('./server/trans_baidu_new');
 const { clearInterval } = require('node:timers');
 const { exec } = require('child_process');
 const fs = require('fs');
@@ -13,45 +12,54 @@ const path = require('path');
 
 const store = new Store(); // 创建 Store 实例
 
-// 复制配置文件到用户目录
+/* 复制配置文件到用户目录 */
 const copyConfigFile = () => {
     const sourcePath = path.join(__dirname, 'config.json'); // 配置文件源路径
     const targetPath = path.join(os.homedir(), '.chatx', 'config.json'); // 目标路径为用户目录下的 .chatx 目录
 
-    // 如果目标目录不存在，则创建目标目录
     if (!fs.existsSync(path.dirname(targetPath))) {
         fs.mkdirSync(path.dirname(targetPath), { recursive: true });
     }
 
-    // 复制源文件到目标目录
     fs.copyFileSync(sourcePath, targetPath);
 };
 
-// 判断是否为应用程序的第一次安装
 const isFirstInstall = () => {
     const targetPath = path.join(os.homedir(), '.chatx', 'config.json');
     return !fs.existsSync(targetPath);
 };
 
-// 如果是首次安装，则复制配置文件
 if (isFirstInstall()) {
     copyConfigFile();
 }
 
+/* 配置预留翻译接口 */
+function loadTranslation(name) {
+    console.log(`loading plugin: ${name}`);
+    const plugin = require(getConfig("translations")[name].path);
+    return plugin.translation;
+}
+
+/* 配置参数 */
 const inner_model_name = {
     translation: "translation"
 };
 
-const inner_model = {
-    "translation": { "versions": ["translation_new", "translation"] }
+let inner_model = {
+    "translation": { "versions": ["百度翻译"] }
 };
 
-const inner_model_obj = {
+let inner_model_obj = {
     "translation": {
-        "translation_new": { func: translation_new },
-        "translation": { func: translation }
+        "百度翻译": { func: translation },
     }
 };
+
+// 加载插件
+Object.keys(getConfig("translations")).forEach((name) => {
+    inner_model["translation"]["versions"].push(name);
+    inner_model_obj["translation"][name] = { func: loadTranslation(name) }
+})
 
 function getConfig(key) {
     const configFilePath = path.join(os.homedir(), '.chatx', 'config.json');
@@ -310,8 +318,8 @@ let windowManager = {
     createIconWindow(position) {
 
         let x = position.x
-        let y = position.y > 50?position.y - 50:position.y
-        
+        let y = position.y > 50 ? position.y - 50 : position.y
+
         if (this.iconWindow) {
             this.iconWindow.setPosition(x, y);
             if (this.autoCloseTimer) {
