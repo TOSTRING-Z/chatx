@@ -51,7 +51,7 @@ function hash(r) {
 }
 
 // 判断翻译方式
-function mode(text) {
+function getMode(text) {
     return text.match('[\u4e00-\u9fa5]') ? ['zh', 'en'] : ['en', 'zh']
 }
 
@@ -78,14 +78,15 @@ function format(result) {
 async function translation(queryText) {
     try {
         queryText = queryText.replaceAll('-\n','').replaceAll('\n',' ');
-        query = encodeURI(queryText).replaceAll('%20','+');
+        let query = encodeURI(queryText).replaceAll('%20','+');
+        let mode = getMode(queryText)
         axiosCookieJarSupport(axios);
         let cookieJar = new CookieJar();
         cookieJar.setCookie('BAIDUID=A8A82BD2F42CC6BD4E0FD54ABB746B32:FG=1', 'https://fanyi.baidu.com')
         let get = `${TRANSLATION_API_URL}?query=${query}`;
         let response = await axios.post(get, {
-            'from': mode(queryText)[0],
-            'to': mode(queryText)[1],
+            'from': mode[0],
+            'to': mode[1],
             'sign': hash(queryText).toString(),
             'simple_means_flag': '3',
             'token': 'f1ea842a77d73327b3124c62454b13df',
