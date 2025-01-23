@@ -87,6 +87,14 @@ async function translation(queryText) {
           "User-Agent":
             "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
         },
+        // 禁止自动编码，手动序列化数据
+        transformRequest: [(data, headers) => {
+          // 将 data 对象转换为 application/x-www-form-urlencoded 格式的查询字符串
+          let queryString = Object.keys(data).map(key => {
+              return encodeURIComponent(key) + '=' + encodeURIComponent(data[key]);
+          }).join('&');
+          return queryString;
+      }]
       }
     );
 

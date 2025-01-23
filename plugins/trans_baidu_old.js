@@ -78,8 +78,8 @@ function format(result) {
 
 async function translation(queryText) {
     try {
-        queryText = queryText.replaceAll('-\n','').replaceAll('\n',' ');
-        let query = encodeURI(queryText).replaceAll('%20','+');
+        queryText = queryText.replaceAll('-\n','');
+        let query = encodeURIComponent(queryText);
         let mode = getMode(queryText)
         axiosCookieJarSupport(axios);
         let cookieJar = new CookieJar();
@@ -115,6 +115,12 @@ async function translation(queryText) {
                 "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0",
                 "X-Requested-With": "XMLHttpRequest",
             },
+            transformRequest: [(data, headers) => {
+                let queryString = Object.keys(data).map(key => {
+                    return encodeURIComponent(key) + '=' + encodeURIComponent(data[key]);
+                }).join('&');
+                return queryString;
+            }]
         });
         
         return format(response.data)
