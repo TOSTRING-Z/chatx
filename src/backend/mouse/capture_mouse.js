@@ -23,15 +23,6 @@ function getExecutablePath() {
     throw new Error(`Executable not found: ${fullPath}`)
   }
 
-  // 在 Linux 上设置执行权限
-  if (platform === 'linux') {
-    try {
-      fs.chmodSync(fullPath, 0o755)
-    } catch (err) {
-      console.error('Failed to set executable permissions:', err)
-    }
-  }
-
   return fullPath
 }
 
