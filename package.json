@@ -42,6 +42,7 @@
     "electron-store": "^4.0.0",
     "he": "^1.2.0",
     "highlight.js": "^11.9.0",
+    "jsdom": "^26.0.0",
     "marked": "^10.0.0",
     "marked-highlight": "^2.0.7",
     "mathjax": "^3.2.2",
