@@ -123,24 +123,25 @@ function response_success() {
   }
 }
 
-window.electronAPI.handleQuery((text) => {
-  content.value = text;
-  const escapedText = insertTextWithBreaks(text);
+window.electronAPI.handleQuery((data) => {
+  content.value = data.text;
+  const escapedText = insertTextWithBreaks(data.text);
   messages.innerHTML = `${messages.innerHTML}\n${user_message.replace("@message", () => escapedText)}`;
   messages.innerHTML = `${messages.innerHTML}\n${system_message.replace("@system", "system").replace("@message", "思考中...")}`;
   // 设置滚动位置到div的最低端
-  top_div.scrollTop = top_div.scrollHeight;
-  window.electronAPI.queryText({ prompt: player.value, query: content.value });
+  top_div.scrollTop = top_div.scrollHeight + 10;
+  window.electronAPI.queryText({ prompt: player.value, query: content.value, model: data.model, version: data.version });
   typesetMath();
 })
 
-window.electronAPI.handleTransQuery((text) => {
-  content.value = text;
-  const escapedText = insertTextWithBreaks(text);
+window.electronAPI.handleTransQuery((data) => {
+  content.value = data.text;
+  const escapedText = insertTextWithBreaks(data.text);
   messages.innerHTML = `${messages.innerHTML}\n${user_message.replace("@message", () => escapedText)}`;
   messages.innerHTML = `${messages.innerHTML}\n${system_message.replace("@system", "system").replace("@message", "思考中...")}`;
-  top_div.scrollTop = top_div.scrollHeight;
-  window.electronAPI.queryText({ prompt: null, query: content.value });
+  // 设置滚动位置到div的最低端
+  top_div.scrollTop = top_div.scrollHeight + 10;
+  window.electronAPI.queryText({ prompt: null, query: content.value, model: data.model, version: data.version });
   typesetMath();
 })
 

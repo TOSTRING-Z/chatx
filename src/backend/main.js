@@ -288,12 +288,15 @@ function getTemplate() {
 
 }
 
-function send_query(text) {
+function send_query(text, model, version) {
+    const data = {
+        text: text, model: model, version: version
+    }
     if (Object.values(inner_model_name).includes(model)) {
-        main_window.webContents.send('trans-query', text);
+        main_window.webContents.send('trans-query', data);
     }
     else {
-        main_window.webContents.send('query', text);
+        main_window.webContents.send('query', data);
     }
 }
 
@@ -378,13 +381,13 @@ ipcMain.on('concat-clicked', () => {
 
 ipcMain.on('translation-clicked', () => {
     concat = false;
-    send_query(last_clipboard_content);
+    send_query(last_clipboard_content, inner_model_name.translation, inner_model[inner_model_name.translation].versions[0]);
     windowManager.destroyIconWindow();
 })
 
 ipcMain.on('submit-clicked', () => {
     concat = false;
-    send_query(last_clipboard_content);
+    send_query(last_clipboard_content, model, version);
     windowManager.destroyIconWindow();
 })
 
@@ -443,19 +446,19 @@ function createWindow() {
 }
 
 app.whenReady().then(() => {
-    ipcMain.on('query-text', async (_event, text) => {
-        text.query = textFormat(text.query);
-        console.log(text);
+    ipcMain.on('query-text', async (_event, data) => {
+        data.query = textFormat(data.query);
+        console.log(data);
         let result;
-        if (Object.values(inner_model_name).includes(model)) {
-            const func = inner_model_obj[model][version].func
-            result = await func(text.query);
+        if (Object.values(inner_model_name).includes(data.model)) {
+            const func = inner_model_obj[data.model][data.version].func
+            result = await func(data.query);
         }
         else {
-            let api_url = getConfig("models")[model].api_url;
-            let api_key = getConfig("models")[model].api_key;
+            let api_url = getConfig("models")[data.model].api_url;
+            let api_key = getConfig("models")[data.model].api_key;
             let memory_length = getConfig("memory_length");
-            result = await chatBase(text.query, text.prompt, version, api_url, api_key, memory_length);
+            result = await chatBase(data.query, data.prompt, data.version, api_url, api_key, memory_length);
         }
 
         main_window.webContents.send('response', result);
@@ -463,7 +466,7 @@ app.whenReady().then(() => {
         main_window.focus();
     })
     ipcMain.on('submit', (_event, text) => {
-        send_query(text)
+        send_query(text, model, version)
     })
     ipcMain.on('open-external', (_event, href) => {
         console.log(href)
