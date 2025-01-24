@@ -1,72 +1,108 @@
 deepseek = async () => {
     // 准备要发送的cookies
     const cookies = {
-        "__cf_bm": "ZXv96ZESRXwzZ7yJI21zPyOg2exw.MBcLMAWOxOwbAA-1737717726-1.0.1.1-EnYxaPVSJlDV5_rwqe4FkmeYP6i.pEV75PctKXHrc.dy9x38SbyCnAqM0LGFexsBcg3FRw44gqNICZFGivB.zw",
-        "ds_session_id": "5b45ca921aec4bc581cd03d917134665",
-        "Hm_lpvt_1fff341d7a963a4043e858ef0e19a17c": "1737689060",
-        "Hm_lvt_1fff341d7a963a4043e858ef0e19a17c": "1736740375",
-        "HWWAFSESID": "64f2d4b7abcd5666907",
-        "HWWAFSESTIME": "1737717721493"
+            "__cf_bm": "v1zLiIDYYFjbEfyF8nwRhdeijyVGrUkwouzpecNgnt0-1737733931-1.0.1.1-bj6__FT6PmBMgNn17RTn_qa.q58C_ig7i6.ZVMrEUtp7zcqidG_fw9qgprGDPPvFWBLf7TbJh5aOH6p2Bj8mYQ",
+            ".thumbcache_6b2e5483f9d858d7c661c5e276b6a6ae": "JeJmdvVKjadf6GzodAgOLrEQiTAZbeL5/TOxm5erk4c81bodYKMoO2wb6xlqxD1vu03PXr+OFhV6fWMOQD8/zQ==",
+            "ds_session_id": "743a84ab555e43219a4e69e6b3f3ee02",
+            "Hm_lpvt_1fff341d7a963a4043e858ef0e19a17c": "1737733930",
+            "Hm_lpvt_fb5acee01d9182aabb2b61eb816d24ff": "1737610490",
+            "Hm_lvt_1fff341d7a963a4043e858ef0e19a17c": "1737610436",
+            "Hm_lvt_fb5acee01d9182aabb2b61eb816d24ff": "1737610490",
+            "HMACCOUNT": "3948F24EF13E279A",
+            "HWWAFSESID": "eea5636da68d55dacdc",
+            "HWWAFSESTIME": "1737610431802",
+            "intercom-device-id-guh50jw4": "8a2c4776-8302-4930-a99d-b5e2c8fdbbf4",
+            "intercom-session-guh50jw4": "bHNJajVkRUExblljRUFLTVphcWFMSkJtaVllN1VUOUNQbTJueGhHRDBIM2Y4NkluV1oxZStrNVh1YVVJUXF4dnhXZ0xIQkwvMFJVUzRITFl1Ymo3TjF0TUNjbC9RUDRUdk1GUlJ4aFo2cEE9LS1DYlQ3WTdYd1ZyYUw5YUx4TzdUck5RPT0=--f064ffb2893b94591bb99edbc91217d27ab38b77",
+            "smidV2": "20250123133355150f15eac0a53665a4037ff506797aba00f05e7ec0b3b71d0"
     };
 
     // 将cookies对象转换为字符串
     const cookieString = Object.entries(cookies)
         .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(value)}`)
         .join('; ');
+    const get_pow = (e, target_path) => {
+        return btoa(
+            JSON.stringify({
+                algorithm: e.algorithm,
+                challenge: e.challenge,
+                salt: e.salt,
+                answer: e.answer,
+                signature: e.signature,
+                target_path: target_path
+            })
+        );
+    };
 
-    await fetch("https://chat.deepseek.com/api/v0/chat/create_pow_challenge", {
-        "credentials": "include",
-        "headers": {
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0",
-            "Accept": "*/*",
-            "Accept-Language": "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2",
-            "x-client-platform": "web",
-            "x-client-version": "1.0.0-always",
-            "x-client-locale": "zh_CN",
-            "x-app-version": "20241129.1",
-            "authorization": "Bearer RNdjb4FxYSjCayYNI38osA/stxUE8teIy6piYfOAagEcZ8L31QuGREO7xXiQRyaP",
-            "content-type": "application/json",
-            "Sec-Fetch-Dest": "empty",
-            "Sec-Fetch-Mode": "cors",
-            "Sec-Fetch-Site": "same-origin",
-            "Cookie": cookieString
-        },
-        "referrer": "https://chat.deepseek.com/a/chat/s/f05e338e-fed6-46a3-aec6-f38bdb0f3fb2",
-        "body": "{\"target_path\":\"/api/v0/chat/completion\"}",
-        "method": "POST"
-    });
+    const uid = "5dc1621e-4ebd-4cb5-a440-a6c9e1eebc40";
+    const bearer = "2XhN/OLs8YvfhP1LDHjZc3oV8DAw1hHK7qiah2bU7rQ0/3N7n4ibxfwS3VPOT6ri";
+
+    const create_pow_challenge = async () => {
+        try {
+            const response = await fetch("https://chat.deepseek.com/api/v0/chat/create_pow_challenge", {
+                "credentials": "include",
+                "headers": {
+                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0",
+                    "Accept": "*/*",
+                    "Accept-Language": "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2",
+                    "x-client-platform": "web",
+                    "x-client-version": "1.0.0-always",
+                    "x-client-locale": "zh_CN",
+                    "x-app-version": "20241129.1",
+                    "authorization": `Bearer ${bearer}`,
+                    "content-type": "application/json",
+                    "Sec-Fetch-Dest": "empty",
+                    "Sec-Fetch-Mode": "cors",
+                    "Sec-Fetch-Site": "same-origin",
+                    "Priority": "u=0",
+                    "Cookie": cookieString
+                },
+                "referrer": `https://chat.deepseek.com/a/chat/s/${uid}`,
+                "body": "{\"target_path\":\"/api/v0/chat/completion\"}",
+                "method": "POST"
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log(data);
+            return get_pow(data.data.biz_data.challenge, "/api/v0/chat/completion");
+        } catch (error) {
+            console.error('Error:', error);
+        }
+    };
+
+    // 调用函数
+    pow = await create_pow_challenge();
+
     // 发起一个 POST 请求到指定 API
     const response = await fetch('https://chat.deepseek.com/api/v0/chat/completion', {
         method: "POST",
         cache: "no-cache",
         keepalive: true,
         credentials: "include",
-        referrer: "https://chat.deepseek.com/a/chat/s/f05e338e-fed6-46a3-aec6-f38bdb0f3fb2",
+        referrer: `https://chat.deepseek.com/a/chat/s/${uid}`,
         headers: {
-            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:135.0) Gecko/20100101 Firefox/135.0",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0",
             "Accept": "*/*",
             "Accept-Language": "zh-CN,zh;q=0.8,zh-TW;q=0.7,zh-HK;q=0.5,en-US;q=0.3,en;q=0.2",
-            "x-ds-pow-response": "eyJhbGdvcml0aG0iOiJEZWVwU2Vla0hhc2hWMSIsImNoYWxsZW5nZSI6IjRhZDk3ZjY2ZmMzYjZiODNkMzc1NDYwM2RlMjc2YjIxYTc0OGI4YjczN2M3Y2NlMDBmZWQwZGJkZjU2YTQwZTEiLCJzYWx0IjoiZGIzZGM1NjRmYzUwZTdiM2M5NjkiLCJhbnN3ZXIiOjEwNDc4MSwic2lnbmF0dXJlIjoiYjg1MDYxYjBkMzlhZTkzNmQ2MWM0MDc2NGU1YTkwODFlY2RlYWZlMDM0NzYyMWUzNzQ1NzdjZDYzZmQ4NGQ2ZCIsInRhcmdldF9wYXRoIjoiL2FwaS92MC9jaGF0L2NvbXBsZXRpb24ifQ==",
+            "x-ds-pow-response": pow,
             "x-client-platform": "web",
             "x-client-version": "1.0.0-always",
             "x-client-locale": "zh_CN",
             "x-app-version": "20241129.1",
-            "authorization": "Bearer RNdjb4FxYSjCayYNI38osA/stxUE8teIy6piYfOAagEcZ8L31QuGREO7xXiQRyaP",
+            "authorization": `Bearer ${bearer}`,
             "content-type": "application/json",
             "Sec-Fetch-Dest": "empty",
             "Sec-Fetch-Mode": "cors",
             "Sec-Fetch-Site": "same-origin",
             "Priority": "u=0",
-            "x-app-version": "20241129.1",
-            "x-client-locale": "zh_CN",
-            "x-client-platform": "web",
-            "x-client-version": "1.0.0-always",
-            "x-ds-pow-response": "eyJhbGdvcml0aG0iOiJEZWVwU2Vla0hhc2hWMSIsImNoYWxsZW5nZSI6IjRiNjIzYThkMWYzZDFjY2Q0ZDk2YTYzZjMxNDZhNWY2NTAzYTRhZGVkNmM5NzllYzg2YzAzMzY5YTdjMDM5ZTUiLCJzYWx0IjoiZTE3YzU1MThmMTk1NWFjZjRmMjMiLCJhbnN3ZXIiOjEwNzc2NSwic2lnbmF0dXJlIjoiNzI4MWYyODAxYTU1ZmY4NGE3OTkyN2UwOThhMGRjMmI1ZDU4ZDQ3MGYyODM1MGEzMzJhY2ZlNjFiMTdjYjQxNSIsInRhcmdldF9wYXRoIjoiL2FwaS92MC9jaGF0L2NvbXBsZXRpb24ifQ==",
             "Cookie": cookieString
         },
         body: JSON.stringify({
-            "chat_session_id": "f05e338e-fed6-46a3-aec6-f38bdb0f3fb2",
-            "parent_message_id": 26,
+            "chat_session_id": uid,
+            "parent_message_id": 14,
             "prompt": "翻译“flash”",
             "ref_file_ids": [],
             "thinking_enabled": false,
