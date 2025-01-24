@@ -129,7 +129,7 @@ window.electronAPI.handleQuery((data) => {
   messages.innerHTML = `${messages.innerHTML}\n${user_message.replace("@message", () => escapedText)}`;
   messages.innerHTML = `${messages.innerHTML}\n${system_message.replace("@system", "system").replace("@message", "思考中...")}`;
   // 设置滚动位置到div的最低端
-  top_div.scrollTop = top_div.scrollHeight + 10;
+  top_div.scrollTop = top_div.scrollHeight;
   window.electronAPI.queryText({ prompt: player.value, query: content.value, model: data.model, version: data.version });
   typesetMath();
 })
@@ -140,7 +140,7 @@ window.electronAPI.handleTransQuery((data) => {
   messages.innerHTML = `${messages.innerHTML}\n${user_message.replace("@message", () => escapedText)}`;
   messages.innerHTML = `${messages.innerHTML}\n${system_message.replace("@system", "system").replace("@message", "思考中...")}`;
   // 设置滚动位置到div的最低端
-  top_div.scrollTop = top_div.scrollHeight + 10;
+  top_div.scrollTop = top_div.scrollHeight;
   window.electronAPI.queryText({ prompt: null, query: content.value, model: data.model, version: data.version });
   typesetMath();
 })
