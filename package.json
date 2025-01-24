@@ -1,6 +1,6 @@
 {
   "name": "chatx",
-  "version": "1.3.0",
+  "version": "1.3.1",
   "description": "chatx",
   "main": "src/backend/main.js",
   "homepage": ".",

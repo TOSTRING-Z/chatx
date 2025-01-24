@@ -2,7 +2,7 @@ const { app, BrowserWindow, Menu, shell, ipcMain, clipboard, dialog, globalShort
 if (require('electron-squirrel-startup')) return app.quit();
 const { chatBase, clearMessages, saveMessages, loadMessages } = require('./server/llm_service');
 const { captureMouse } = require('./mouse/capture_mouse');
-const { translation } = require('./server/trans_baidu');
+const { translation } = require('../../plugins/trans_baidu_new');
 const { clearInterval } = require('node:timers');
 const { exec } = require('child_process');
 const fs = require('fs');
@@ -36,39 +36,38 @@ if (isFirstInstall()) {
 /* 配置预留翻译接口 */
 function loadTranslation(name) {
     console.log(`loading plugin: ${name}`);
-    const plugin = require(getConfig("translations")[name].path);
+    const plugin = require(getConfig("plugins")[name].path);
     return plugin.translation;
 }
 
-/* 配置参数 */
+/* 插件配置参数 */
 const inner_model_name = {
-    translation: "translation"
+    plugin: "plugin"
 };
 
 let inner_model = {
-    "translation": { "versions": ["百度翻译"] }
+    "plugin": { "versions": [] }
 };
 
 let inner_model_obj = {
-    "translation": {
-        "百度翻译": { func: translation },
-    }
+    "plugin": {}
 };
 
 // 加载插件
-Object.keys(getConfig("translations")).forEach((name) => {
-    inner_model["translation"]["versions"].push(name);
-    inner_model_obj["translation"][name] = { func: loadTranslation(name) }
+Object.keys(getConfig("plugins")).forEach((name) => {
+    inner_model[inner_model_name.plugin]["versions"].push(name);
+    inner_model_obj[inner_model_name.plugin][name] = { func: loadTranslation(name) }
 })
 
 function getConfig(key) {
     const configFilePath = path.join(os.homedir(), '.chatx', 'config.json');
     const data = fs.readFileSync(configFilePath, 'utf-8');
     let config = JSON.parse(data);
-    config["models"][inner_model_name.translation] = inner_model[inner_model_name.translation]
+    config["models"][inner_model_name.plugin] = inner_model[inner_model_name.plugin]
     return config[key]
 }
 
+/* 全局变量 */
 let function_select = {
     clip: {
         statu: true,
@@ -82,23 +81,26 @@ let function_select = {
     },
 }
 
-let model = inner_model_name.translation;
-let version = inner_model[inner_model_name.translation]["versions"][0];
-let main_window;
-let last_clipboard_content;
-let concat = false;
+let global = {
+    model: getConfig("default")["model"],
+    version: getConfig("default")["version"],
+    is_plugin: Object.values(inner_model_name).includes(this.model),
+    last_clipboard_content: null,
+    concat: false
+}
 
+let main_window;
 
 function getClipEvent() {
     return setInterval(async () => {
         let clipboardContent = clipboard.readText();
 
-        if (clipboardContent !== last_clipboard_content) {
-            if (concat) {
-                last_clipboard_content = `${last_clipboard_content} ${clipboardContent}`;
-                clipboard.writeText(last_clipboard_content);
+        if (clipboardContent !== global.last_clipboard_content) {
+            if (global.concat) {
+                global.last_clipboard_content = `${global.last_clipboard_content} ${clipboardContent}`;
+                clipboard.writeText(global.last_clipboard_content);
             } else {
-                last_clipboard_content = clipboardContent;
+                global.last_clipboard_content = clipboardContent;
             }
             captureMouse()
                 .then((mousePosition) => {
@@ -116,12 +118,13 @@ function getModelsSubmenu() {
     return Object.keys(getConfig("models")).map((_model) => {
         return {
             type: 'radio',
-            checked: model == _model,
+            checked: global.model == _model,
             click: () => {
-                model = _model;
-                version = getConfig("models")[_model]["versions"][0];
+                global.model = _model;
+                global.is_plugin = Object.values(inner_model_name).includes(_model)
+                global.version = getConfig("models")[_model]["versions"][0];
                 updateVersionsSubmenu();
-                main_window.webContents.send("model", _model)
+                main_window.webContents.send("model", global)
             },
             label: _model
         }
@@ -130,19 +133,19 @@ function getModelsSubmenu() {
 
 function getVersionsSubmenu() {
     let versions;
-    if (Object.values(inner_model_name).includes(model)) {
-        versions = inner_model[inner_model_name.translation]["versions"];
+    if (global.is_plugin) {
+        versions = inner_model[inner_model_name.plugin]["versions"];
     }
     else {
-        versions = getConfig("models")[model]["versions"];
+        versions = getConfig("models")[global.model]["versions"];
     }
     console.log(versions);
     return versions.map((_version) => {
         return {
             type: 'radio',
-            checked: false,
+            checked: global.version == _version,
             click: () => {
-                version = _version
+                global.version = _version
             },
             label: _version
         }
@@ -292,8 +295,8 @@ function send_query(text, model, version) {
     const data = {
         text: text, model: model, version: version
     }
-    if (Object.values(inner_model_name).includes(model)) {
-        main_window.webContents.send('trans-query', data);
+    if (global.is_plugin) {
+        main_window.webContents.send('plugin-query', data);
     }
     else {
         main_window.webContents.send('query', data);
@@ -306,7 +309,7 @@ function mathFormat() {
 }
 
 function textFormat(text) {
-    text = text.replaceAll('-\n','');
+    text = text.replaceAll('-\n', '');
     if (function_select.text.statu) {
         return text.replace(/[\s\n]+/g, ' ').trim();
     } else {
@@ -374,30 +377,6 @@ let windowManager = {
     }
 }
 
-ipcMain.on('concat-clicked', () => {
-    concat = true;
-    windowManager.destroyIconWindow();
-})
-
-ipcMain.on('translation-clicked', () => {
-    concat = false;
-    send_query(last_clipboard_content, inner_model_name.translation, inner_model[inner_model_name.translation].versions[0]);
-    windowManager.destroyIconWindow();
-})
-
-ipcMain.on('submit-clicked', () => {
-    concat = false;
-    send_query(last_clipboard_content, model, version);
-    windowManager.destroyIconWindow();
-})
-
-ipcMain.on('clear-clicked', () => {
-    concat = false;
-    windowManager.destroyIconWindow();
-    last_clipboard_content = "";
-    clipboard.writeText(last_clipboard_content);
-})
-
 function changeLoop() {
     if (function_select.clip.statu) {
         clearInterval(function_select.clip.event)
@@ -442,7 +421,7 @@ function createWindow() {
         main_window.webContents.send('prompt', getConfig("prompt"))
     });
 
-    last_clipboard_content = clipboard.readText();
+    global.last_clipboard_content = clipboard.readText();
 }
 
 app.whenReady().then(() => {
@@ -450,7 +429,7 @@ app.whenReady().then(() => {
         data.query = textFormat(data.query);
         console.log(data);
         let result;
-        if (Object.values(inner_model_name).includes(data.model)) {
+        if (global.is_plugin) {
             const func = inner_model_obj[data.model][data.version].func
             result = await func(data.query);
         }
@@ -465,12 +444,38 @@ app.whenReady().then(() => {
         console.log(result);
         main_window.focus();
     })
+    
     ipcMain.on('submit', (_event, text) => {
-        send_query(text, model, version)
+        send_query(text, global.model, global.version)
     })
+
     ipcMain.on('open-external', (_event, href) => {
         console.log(href)
         shell.openExternal(href);
+    })
+
+    ipcMain.on('concat-clicked', () => {
+        global.concat = true;
+        windowManager.destroyIconWindow();
+    })
+
+    ipcMain.on('translation-clicked', () => {
+        global.concat = false;
+        send_query(global.last_clipboard_content, inner_model_name.plugin, getConfig("default")["plugin"]);
+        windowManager.destroyIconWindow();
+    })
+
+    ipcMain.on('submit-clicked', () => {
+        global.concat = false;
+        send_query(global.last_clipboard_content, global.model, global.version);
+        windowManager.destroyIconWindow();
+    })
+
+    ipcMain.on('clear-clicked', () => {
+        global.concat = false;
+        windowManager.destroyIconWindow();
+        global.last_clipboard_content = "";
+        clipboard.writeText(global.last_clipboard_content);
     })
 
     createWindow()

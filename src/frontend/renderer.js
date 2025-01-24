@@ -30,8 +30,6 @@ function init_size() {
   top_div.style.height = window.innerHeight - bottom_div.clientHeight + "px";
 }
 
-// 默认百度翻译
-player.style.display = "none";
 document.addEventListener("DOMContentLoaded", function () {
 
   autoResizeTextarea(input);
@@ -134,7 +132,7 @@ window.electronAPI.handleQuery((data) => {
   typesetMath();
 })
 
-window.electronAPI.handleTransQuery((data) => {
+window.electronAPI.handlePluginQuery((data) => {
   content.value = data.text;
   const escapedText = insertTextWithBreaks(data.text);
   messages.innerHTML = `${messages.innerHTML}\n${user_message.replace("@message", () => escapedText)}`;
@@ -151,9 +149,9 @@ window.electronAPI.handleResponse((text) => {
   typesetMath();
 })
 
-window.electronAPI.handleModel((model) => {
+window.electronAPI.handleModel((data) => {
   content.value = null;
-  if (model == "translation") {
+  if (data.is_plugin) {
     player.style.display = "none";
     init_size();
   }
