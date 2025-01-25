@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+// const fetch = require('node-fetch');
 
 deepseek = async () => {
     // 初始化 cookies 和配置
@@ -9,8 +9,8 @@ deepseek = async () => {
         "Hm_lpvt_1fff341d7a963a4043e858ef0e19a17c": "1737760344",
         "Hm_lvt_1fff341d7a963a4043e858ef0e19a17c": "1737610436",
         "HMACCOUNT": "EDF0DC1730E803B0",
-        "HWWAFSESID": "4662b26ee2052d81733",
-        "HWWAFSESTIME": "1737760820100",
+        "HWWAFSESID": "4e1762bcfa484efe993",
+        "HWWAFSESTIME": "1737765434131",
         "intercom-device-id-guh50jw4": "ae9ee996-fb40-402e-9885-e0d643df33a3",
         "intercom-session-guh50jw4": "ellDQUZnYXNjaW1MTC9MdFR1TEwydjFMQTBhMjdHeDhXZEd0ckVQMHAyQmZkbHJEeG1EZy9ZTmk3ckthSG41bjczK3VtVWJkU1NJblIvcDJ5L3phNVNDc3UyTkdtNDVxS1A4TDlFd2pQbWc9LS0rMHFMV0F6RTQ1VURCdmVCVnBQbmhBPT0=--4159152d15dc0e79f29e2139780009e525241585"
     };
@@ -60,19 +60,18 @@ deepseek = async () => {
 
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-            // 正确获取 Set-Cookie 头（使用 headers.raw()）
-            const setCookieHeaders = response.headers.raw()['set-cookie'];
-            if (setCookieHeaders) {
-                setCookieHeaders.forEach(cookie => {
-                    const [nameValue] = cookie.split(';');
-                    const [name, value] = nameValue.split('=');
-                    cookies[name] = value;
-                });
-                // 更新 cookieString（避免重新声明 const）
-                cookieString = Object.entries(cookies)
-                    .map(([k, v]) => `${k}=${v}`)
-                    .join('; ');
-            }
+            // // 正确获取 Set-Cookie 头（使用 headers.raw()）
+            // const setCookieHeaders = response.headers.raw()['set-cookie'];
+            // if (setCookieHeaders) {
+            //     setCookieHeaders.forEach(cookie => {
+            //         const [nameValue] = cookie.split(';');
+            //         const [name, value] = nameValue.split('=');
+            //         cookies[name] = value;
+            //     });
+            // 更新 cookieString（避免重新声明 const）
+            cookieString = Object.entries(cookies)
+                .map(([k, v]) => `${k}=${v}`)
+                .join('; ');
 
             response = await fetch("https://chat.deepseek.com/api/v0/chat/create_pow_challenge", {
                 "credentials": "include",
@@ -146,32 +145,24 @@ deepseek = async () => {
             })
         });
 
-        const { PassThrough } = require('stream');
-        const { StringDecoder } = require('string_decoder');
-        
-        // 假设 response 是从 fetch() 获取的响应对象
-        const reader = response.body;
-        
-        // 创建一个字符串解码器，用于将 Buffer 转换为字符串
-        const decoder = new StringDecoder('utf8');
-        let buffer = '';
-        
-        // 初始化 new_ob 对象
+        // 获取响应体的可读流
+        const reader = response.body.getReader();
         let new_ob = {};
-        
-        // 创建一个 PassThrough 流，用于处理可读流
-        const passThrough = new PassThrough();
-        
-        // 将响应体可读流的数据传递到 PassThrough 流
-        reader.pipe(passThrough);
-        
-        // 监听数据事件，以读取流中的数据
-        passThrough.on('data', chunk => {
-            // 使用字符串解码器将 Buffer 转换为字符串
-            buffer += decoder.write(chunk);
+        let buffer = '';
+
+        // 循环读取流中的数据
+        while (true) {
+            // 读取数据块
+            const { value, done } = await reader.read();
+            // 如果读取完成，则退出循环
+            if (done) break;
+
+            // 将读取的数据块解码为字符串，并追加到缓冲区
+            buffer += new TextDecoder().decode(value);
+
             // 处理缓冲区中的所有行
             const lines = buffer.split('\n');
-        
+
             // 遍历每一行并解析 SSE 数据
             lines.forEach(line => {
                 const fields = line.split(':');
@@ -183,7 +174,7 @@ deepseek = async () => {
                     new_ob[key] = value;
                 }
             });
-        
+
             // 如果有新数据，则尝试解析为 JSON 对象
             if (new_ob['data']) {
                 try {
@@ -192,34 +183,10 @@ deepseek = async () => {
                     console.error('Error parsing JSON:', error);
                 }
             }
-        
+
             // 处理业务逻辑，例如打印或进一步处理 new_ob
             console.log('Received SSE data:', new_ob);
-        });
-        
-        // 监听结束事件，以处理流结束
-        passThrough.on('end', () => {
-            // 处理最后一个可能不完整的行
-            if (buffer) {
-                const fields = buffer.split(':');
-                if (fields.length > 1) {
-                    const key = fields[0].trim();
-                    const value = fields.slice(1).join(':').trim();
-                    new_ob[key] = value;
-                }
-            }
-        
-            // 最后一次处理 new_ob
-            if (new_ob['data']) {
-                try {
-                    new_ob['data'] = JSON.parse(new_ob['data']);
-                } catch (error) {
-                    console.error('Error parsing JSON:', error);
-                }
-            }
-        
-            console.log('Received final SSE data:', new_ob);
-        });
+        }
     } catch (error) {
         console.error('Error in main request:', error);
     }
