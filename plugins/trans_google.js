@@ -56,7 +56,7 @@ function format(result) {
     return text
 }
 
-async function translation(queryText) {
+async function main(queryText) {
     try {
         let query = encodeURIComponent(queryText);
         let mode = getMode(queryText)
@@ -97,5 +97,5 @@ async function translation(queryText) {
 }
 
 module.exports = {
-    translation,
+    main,
 };

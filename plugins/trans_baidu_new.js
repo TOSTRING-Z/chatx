@@ -47,7 +47,7 @@ function format(result) {
   }
 }
 
-async function translation(queryText) {
+async function main(queryText) {
   try {
     axiosCookieJarSupport(axios);
     let cookieJar = new CookieJar();
@@ -104,5 +104,5 @@ async function translation(queryText) {
 }
 
 module.exports = {
-  translation,
+  main,
 };

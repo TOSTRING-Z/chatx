@@ -25,6 +25,9 @@
         },
         "谷歌翻译": {
             "path": "/mnt/ubuntu_zgr/install/chatx/plugins/trans_google.js"
+        },
+        "影响因子查询": {
+            "path": "/mnt/ubuntu_zgr/install/chatx/plugins/if_pmid.js"
         }
     },
     "default": {

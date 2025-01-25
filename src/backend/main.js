@@ -37,7 +37,7 @@ if (isFirstInstall()) {
 function loadTranslation(name) {
     console.log(`loading plugin: ${name}`);
     const plugin = require(getConfig("plugins")[name].path);
-    return plugin.translation;
+    return plugin.main;
 }
 
 /* 插件配置参数 */
@@ -84,7 +84,7 @@ let function_select = {
 let global = {
     model: getConfig("default")["model"],
     version: getConfig("default")["version"],
-    is_plugin: Object.values(inner_model_name).includes(this.model),
+    is_plugin: getIsPlugin(this.model),
     last_clipboard_content: null,
     concat: false
 }
@@ -114,6 +114,10 @@ function getClipEvent() {
     }, 200);
 }
 
+function getIsPlugin(model) {
+    return Object.values(inner_model_name).includes(model);
+}
+
 function getModelsSubmenu() {
     return Object.keys(getConfig("models")).map((_model) => {
         return {
@@ -121,7 +125,7 @@ function getModelsSubmenu() {
             checked: global.model == _model,
             click: () => {
                 global.model = _model;
-                global.is_plugin = Object.values(inner_model_name).includes(_model)
+                global.is_plugin = getIsPlugin(_model)
                 global.version = getConfig("models")[_model]["versions"][0];
                 updateVersionsSubmenu();
                 main_window.webContents.send("model", global)
@@ -293,14 +297,9 @@ function getTemplate() {
 
 function send_query(text, model, version) {
     const data = {
-        text: text, model: model, version: version
+        text: text, model: model, version: version, is_plugin: getIsPlugin(model)
     }
-    if (global.is_plugin) {
-        main_window.webContents.send('plugin-query', data);
-    }
-    else {
-        main_window.webContents.send('query', data);
-    }
+    main_window.webContents.send('query', data);
 }
 
 function mathFormat() {
@@ -429,7 +428,7 @@ app.whenReady().then(() => {
         data.query = textFormat(data.query);
         console.log(data);
         let result;
-        if (global.is_plugin) {
+        if (data.is_plugin) {
             const func = inner_model_obj[data.model][data.version].func
             result = await func(data.query);
         }
@@ -498,6 +497,7 @@ app.whenReady().then(() => {
 
 app.on('will-quit', () => {
     globalShortcut.unregisterAll();
+    windowManager.destroyIconWindow();
 });
 
 app.on('window-all-closed', function () {
