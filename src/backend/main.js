@@ -483,11 +483,12 @@ app.whenReady().then(() => {
         if (BrowserWindow.getAllWindows().length === 0) createWindow()
     })
 
-    globalShortcut.register('CommandOrControl+Shift+M', () => {
+    globalShortcut.register(getConfig("short_cut"), () => {
         // 获取当前鼠标的位置
         captureMouse()
             .then((mousePosition) => {
                 console.log(mousePosition);
+                windowManager.createIconWindow(mousePosition);
             })
             .catch((error) => {
                 console.error(error);
