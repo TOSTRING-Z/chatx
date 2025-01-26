@@ -1,10 +1,21 @@
-// 添加链接点击事件监听，用于打开默认浏览器
 document.addEventListener("click", (event) => {
-  console.log(event)
+  console.log(event);
+  // 添加链接点击事件监听，用于打开默认浏览器
   if (event.target.tagName === "A") {
     event.preventDefault();
     window.electronAPI.openExternal(event.target.href)
   }
+
+  // 使用Clipboard API进行复制
+  if (event.target.classList.contains("copy-btn")) {
+    const codeToCopy = decodeURIComponent(event.target.getAttribute('data-code'));
+    navigator.clipboard.writeText(codeToCopy).then(() => {
+      console.log('复制成功');
+    }).catch(err => {
+      console.error('复制失败', err);
+    });
+  }
+
 });
 
 const player = document.getElementById("player");

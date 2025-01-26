@@ -7,11 +7,28 @@ const fs = require("fs");
 const marked = new Marked(
     markedHighlight({
         langPrefix: "hljs language-",
-        highlight(code, lang) {
-            const language = hljs.getLanguage(lang) ? lang : "plaintext";
-            return hljs.highlight(code, { language }).value;
+        highlight(text, lang) {
+            return text;
         }
-    })
+    }),
+    {
+        renderer: {
+            code(text, lang) {
+                const language = hljs.getLanguage(lang) ? lang : "plaintext";
+                const encodeCode = encodeURIComponent(text);
+                const highlightResult = hljs.highlight(text, { language }).value;
+                return `<div class="code-header">
+                            <span class="language-tag">${language}</span>
+                            <button
+                                class="copy-btn"
+                                data-code="${encodeCode}"
+                                title="复制代码"
+                            >复制</button>
+                        </div>
+                        <pre class="hljs"><code>${highlightResult}</code></pre>`;
+            }
+        }
+    }
 );
 
 let messages = [];
@@ -22,7 +39,7 @@ function clearMessages() {
 
 function saveMessages(filePath) {
     fs.writeFile(filePath, JSON.stringify(messages), err => {
-        if(err){
+        if (err) {
             console.log("写入失败");
             return;
         }
@@ -42,15 +59,15 @@ function loadMessages(filePath) {
     }
 }
 
-async function chatBase(queryText, prompt=null, version, api_url, api_key, memory_length) {
+async function chatBase(queryText, prompt = null, version, api_url, api_key, memory_length) {
     try {
         messages.push({ "role": "user", "content": queryText });
         if (prompt) {
-            messages_list = [{"role": "system", "content": prompt}]
-            messages_list = messages_list.concat(messages.slice(messages.length-memory_length,messages.length))
+            messages_list = [{ "role": "system", "content": prompt }]
+            messages_list = messages_list.concat(messages.slice(messages.length - memory_length, messages.length))
         }
         else {
-            messages_list = messages.slice(messages.length-memory_length,messages.length)
+            messages_list = messages.slice(messages.length - memory_length, messages.length)
         }
         const response = await axios.post(api_url, {
             "model": version,
@@ -71,5 +88,5 @@ async function chatBase(queryText, prompt=null, version, api_url, api_key, memor
 }
 
 module.exports = {
-    chatBase,clearMessages,saveMessages,loadMessages,
+    chatBase, clearMessages, saveMessages, loadMessages,
 };

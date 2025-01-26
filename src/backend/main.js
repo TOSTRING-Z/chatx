@@ -9,6 +9,8 @@ const fs = require('fs');
 const os = require('os');
 const Store = require('electron-store');
 const path = require('path');
+const jsdom = require("jsdom");
+const { JSDOM } = jsdom;
 
 const store = new Store(); // 创建 Store 实例
 
@@ -101,6 +103,21 @@ function getClipEvent() {
                 clipboard.writeText(global.last_clipboard_content);
             } else {
                 global.last_clipboard_content = clipboardContent;
+            }
+            if (function_select.text.statu) {
+                try {
+                    // 使用jsdom解析剪贴板内容，假设它是HTML
+                    const dom = new JSDOM(global.last_clipboard_content);
+                    const plainText = dom.window.document.body.textContent;
+                    global.last_clipboard_content = plainText
+                
+                    // 将纯文本写回剪贴板
+                    clipboard.writeText(plainText);
+                
+                    console.log('Clipboard content has been converted to plain text.');
+                  } catch (error) {
+                    console.error('Failed to clear clipboard formatting:', error);
+                  }
             }
             captureMouse()
                 .then((mousePosition) => {
@@ -316,6 +333,18 @@ function textFormat(text) {
     }
 }
 
+function changeLoop() {
+    if (function_select.clip.statu) {
+        clearInterval(function_select.clip.event)
+        function_select.clip.event = null;
+        function_select.clip.statu = !function_select.clip.statu;
+    }
+    else {
+        function_select.clip.statu = !function_select.clip.statu;
+        function_select.clip.event = getClipEvent();
+    }
+}
+
 // 单例窗口管理器
 let windowManager = {
     iconWindow: null,
@@ -373,18 +402,6 @@ let windowManager = {
             clearTimeout(this.autoCloseTimer);
             this.autoCloseTimer = null;
         }
-    }
-}
-
-function changeLoop() {
-    if (function_select.clip.statu) {
-        clearInterval(function_select.clip.event)
-        function_select.clip.event = null;
-        function_select.clip.statu = !function_select.clip.statu;
-    }
-    else {
-        function_select.clip.statu = !function_select.clip.statu;
-        function_select.clip.event = getClipEvent();
     }
 }
 
