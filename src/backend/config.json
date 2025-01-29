@@ -8,7 +8,7 @@
         "chatglm": {
             "api_url": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
             "api_key": "",
-            "versions": ["glm-4-flash","glm-4v-flash","glm-4-plus","glm-4-0520","glm-4-alltools","glm-4-long"]
+            "versions": ["glm-4-flash","glm-4-plus","glm-4-0520","glm-4-alltools","glm-4-long","glm-4v-flash","glm-4v-plus"]
         },
         "deepseek": {
             "api_url": "https://api.deepseek.com/chat/completions",
@@ -31,8 +31,8 @@
         }
     },
     "default": {
-        "model": "chatgpt",
-        "version": "gpt-4o-mini",
+        "model": "chatglm",
+        "version": "glm-4-flash",
         "plugin": "百度翻译[新]",
         "v_model": "chatglm",
         "v_version": "glm-4v-flash",
