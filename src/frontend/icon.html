@@ -31,11 +31,15 @@
 <body>
   <div style="background-image: url(img/icon/concat.svg);" id="concat" class="icon" onclick="concatClick()"></div>
   <div style="background-image: url(img/icon/submit.svg);" id="submit" class="icon" onclick="submitClick()"></div>
-  <div style="background-image: url(img/icon/translation.svg);" id="translation" class="icon" onclick="translationClick()"></div>
+  <div style="background-image: url(img/icon/translation.svg);" id="translation" class="icon"
+    onclick="translationClick()"></div>
   <div style="background-image: url(img/icon/clear.svg);" id="clear" class="icon" onclick="clearClick()"></div>
+  <div style="background-image: url(img/icon/screen.svg);" id="screen" class="icon" onclick="startCapture()"></div>
   <script>
-    const { ipcRenderer } = require("electron");
-
+    const { ipcRenderer } = require('electron')
+    function startCapture() {
+      ipcRenderer.send('start-capture')
+    }
     function concatClick() {
       ipcRenderer.send("concat-clicked");
     }

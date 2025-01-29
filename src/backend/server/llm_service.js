@@ -59,9 +59,24 @@ function loadMessages(filePath) {
     }
 }
 
-async function chatBase(queryText, prompt = null, version, api_url, api_key, memory_length) {
+async function chatBase(queryText, prompt = null, version, api_url, api_key, memory_length, img_url = null) {
     try {
-        messages.push({ "role": "user", "content": queryText });
+        let content = queryText;
+        if (img_url) {
+            content = [
+                {
+                  "type": "text",
+                  "text": queryText
+                },
+                {
+                  "type": "image_url",
+                  "image_url": {
+                      "url" : img_url
+                  }
+                }
+              ];
+        } 
+        messages.push({ "role": "user", "content": content });
         if (prompt) {
             messages_list = [{ "role": "system", "content": prompt }]
             messages_list = messages_list.concat(messages.slice(messages.length - memory_length, messages.length))

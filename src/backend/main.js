@@ -1,8 +1,7 @@
-const { app, BrowserWindow, Menu, shell, ipcMain, clipboard, dialog, globalShortcut, remote } = require('electron');
+const { app, BrowserWindow, Menu, shell, ipcMain, clipboard, dialog, globalShortcut, screen, nativeImage } = require('electron');
 if (require('electron-squirrel-startup')) return app.quit();
 const { chatBase, clearMessages, saveMessages, loadMessages } = require('./server/llm_service');
 const { captureMouse } = require('./mouse/capture_mouse');
-const { translation } = require('../../plugins/trans_baidu_new');
 const { clearInterval } = require('node:timers');
 const { exec } = require('child_process');
 const fs = require('fs');
@@ -35,7 +34,7 @@ if (isFirstInstall()) {
     copyConfigFile();
 }
 
-/* 配置预留翻译接口 */
+/* 配置插件接口 */
 function loadTranslation(name) {
     console.log(`loading plugin: ${name}`);
     const plugin = require(getConfig("plugins")[name].path);
@@ -91,7 +90,8 @@ let global = {
     concat: false
 }
 
-let main_window;
+let mainWindow = null;
+let overlayWindow = null;
 
 function getClipEvent() {
     return setInterval(async () => {
@@ -110,14 +110,14 @@ function getClipEvent() {
                     const dom = new JSDOM(global.last_clipboard_content);
                     const plainText = dom.window.document.body.textContent;
                     global.last_clipboard_content = plainText
-                
+
                     // 将纯文本写回剪贴板
                     clipboard.writeText(plainText);
-                
+
                     console.log('Clipboard content has been converted to plain text.');
-                  } catch (error) {
+                } catch (error) {
                     console.error('Failed to clear clipboard formatting:', error);
-                  }
+                }
             }
             captureMouse()
                 .then((mousePosition) => {
@@ -145,7 +145,7 @@ function getModelsSubmenu() {
                 global.is_plugin = getIsPlugin(_model)
                 global.version = getConfig("models")[_model]["versions"][0];
                 updateVersionsSubmenu();
-                main_window.webContents.send("model", global)
+                mainWindow.webContents.send("model", global)
             },
             label: _model
         }
@@ -223,7 +223,7 @@ function getTemplate() {
                         const lastDirectory = store.get('lastDirectory') || path.join(os.homedir(), '.chatx');
                         // 打开文件选择对话框
                         dialog
-                            .showOpenDialog(main_window, {
+                            .showOpenDialog(mainWindow, {
                                 properties: ['openFile'],
                                 defaultPath: lastDirectory
                             })
@@ -233,7 +233,7 @@ function getTemplate() {
                                     store.set('lastDirectory', path.dirname(filePath)); // 记录当前选择的目录
                                     console.log(filePath); // 在控制台输出文件路径
                                     const prompt = fs.readFileSync(filePath, 'utf-8');
-                                    main_window.webContents.send('prompt', prompt)
+                                    mainWindow.webContents.send('prompt', prompt)
                                 }
                             })
                             .catch(err => {
@@ -256,21 +256,21 @@ function getTemplate() {
                 {
                     label: '控制台',
                     click: () => {
-                        main_window.webContents.openDevTools();
+                        mainWindow.webContents.openDevTools();
                     }
                 },
                 {
                     label: '重置对话',
                     click: () => {
                         clearMessages();
-                        main_window.webContents.send('clear')
+                        mainWindow.webContents.send('clear')
                     }
                 },
                 {
                     label: '保存对话',
                     click: () => {
 
-                        dialog.showSaveDialog(main_window, {
+                        dialog.showSaveDialog(mainWindow, {
                             defaultPath: 'messages.json',
                             filters: [
                                 { name: 'JSON文件', extensions: ['json'] },
@@ -288,7 +288,7 @@ function getTemplate() {
                 {
                     label: '加载对话',
                     click: () => {
-                        dialog.showOpenDialog(main_window, {
+                        dialog.showOpenDialog(mainWindow, {
                             filters: [
                                 { name: 'JSON文件', extensions: ['json'] },
                                 { name: '所有文件', extensions: ['*'] }
@@ -297,7 +297,7 @@ function getTemplate() {
                             if (!result.canceled) {
                                 let messages = loadMessages(result.filePaths[0])
                                 if (messages) {
-                                    main_window.webContents.send('load', messages)
+                                    mainWindow.webContents.send('load', messages)
                                 };
                             }
                         }).catch(err => {
@@ -312,16 +312,16 @@ function getTemplate() {
 
 }
 
-function send_query(text, model, version) {
+function send_query(text, model, version, img_url) {
     const data = {
-        text: text, model: model, version: version, is_plugin: getIsPlugin(model)
+        text: text, model: model, version: version, is_plugin: getIsPlugin(model), img_url: img_url
     }
-    main_window.webContents.send('query', data);
+    mainWindow.webContents.send('query', data);
 }
 
 function mathFormat() {
     function_select.math.statu = !function_select.math.statu;
-    main_window.webContents.send('math-format', function_select.math.statu);
+    mainWindow.webContents.send('math-format', function_select.math.statu);
 }
 
 function textFormat(text) {
@@ -345,7 +345,7 @@ function changeLoop() {
     }
 }
 
-// 单例窗口管理器
+/* 单例窗口管理器 */
 let windowManager = {
     iconWindow: null,
     autoCloseTimer: null,
@@ -373,6 +373,7 @@ let windowManager = {
             y,
             transparent: true,
             frame: false,
+            skipTaskbar: true,
             alwaysOnTop: true,
             resizable: false,
             webPreferences: {
@@ -384,6 +385,10 @@ let windowManager = {
         this.iconWindow.loadFile('./src/frontend/icon.html')
 
         this.iconWindow.setIgnoreMouseEvents(false) // 允许鼠标交互
+
+        this.iconWindow.on('closed', (event) => {
+            this.iconWindow = null;
+        })
 
         // 新增自动关闭逻辑
         this.autoCloseTimer = setTimeout(() => {
@@ -405,15 +410,71 @@ let windowManager = {
     }
 }
 
-// 更新版本选择子菜单的函数
+/* 截图 */
+function createOverlay() {
+    overlayWindow = new BrowserWindow({
+        fullscreen: true,
+        frame: false,
+        transparent: true,
+        skipTaskbar: true,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        }
+    })
+
+    overlayWindow.loadFile('./src/frontend/overlay.html')
+    overlayWindow.setAlwaysOnTop(true, 'screen-saver')
+
+    overlayWindow.on('closed', (event) => {
+        overlayWindow = null;
+    })
+}
+
+ipcMain.on('start-capture', () => {
+    windowManager.destroyIconWindow();
+    createOverlay()
+})
+const { desktopCapturer } = require('electron');
+const { config } = require('node:process');
+
+ipcMain.handle('capture-region', async (_, { start, end, dpr }) => {
+    try {
+        const sources = await desktopCapturer.getSources({ types: ['screen'] });
+        const source = sources.find(s => s.name === 'Entire Screen' || s.name === '整个屏幕');
+
+        // 返回源数据给渲染进程
+        return {
+            source: source,
+            captureRect: {
+                x: Math.min(start.x, end.x) * dpr,
+                y: Math.min(start.y, end.y) * dpr,
+                width: Math.abs(end.x - start.x) * dpr,
+                height: Math.abs(end.y - start.y) * dpr
+            }
+        }
+    } catch (error) {
+        throw new Error(`主进程捕获失败: ${error.message}`)
+    }
+})
+
+ipcMain.on('write-clipboard', (_, dataURL) => {
+    console.log(`img: ${dataURL}`)
+    const config_v = getConfig("default");
+    send_query(config_v.v_prompt, config_v.v_model, config_v.v_version, dataURL)
+    // clipboard.writeImage(nativeImage.createFromDataURL(dataURL));
+    if (overlayWindow) overlayWindow.close();
+})
+
+
+/* 更新版本选择子菜单的函数 */
 function updateVersionsSubmenu() {
-    // 重新构建菜单
     const menu = Menu.buildFromTemplate(getTemplate());
-    Menu.setApplicationMenu(menu); // 重新设置应用菜单
+    Menu.setApplicationMenu(menu);
 }
 
 function createWindow() {
-    main_window = new BrowserWindow({
+    mainWindow = new BrowserWindow({
         width: 400,
         height: 400,
         icon: path.join(__dirname, 'icon/icon.ico'),
@@ -422,26 +483,40 @@ function createWindow() {
         }
     })
 
-    main_window.on('focus', () => {
-        main_window.setAlwaysOnTop(true)
-        setTimeout(() => main_window.setAlwaysOnTop(false), 0);
+    mainWindow.on('focus', () => {
+        mainWindow.setAlwaysOnTop(true)
+        setTimeout(() => mainWindow.setAlwaysOnTop(false), 0);
     })
 
     const menu = Menu.buildFromTemplate(getTemplate())
     Menu.setApplicationMenu(menu)
 
-    main_window.loadFile('./src/frontend/index.html')
+    mainWindow.loadFile('./src/frontend/index.html')
 
     // 在窗口加载完成后发送消息到渲染进程
-    main_window.webContents.on('did-finish-load', () => {
-        main_window.webContents.send('prompt', getConfig("prompt"))
+    mainWindow.webContents.on('did-finish-load', () => {
+        mainWindow.webContents.send('prompt', getConfig("prompt"))
     });
 
     global.last_clipboard_content = clipboard.readText();
+
+    // 绑定窗口关闭事件
+    mainWindow.on('close', (event) => {
+        console.log('窗口即将关闭');
+        if (overlayWindow)
+            overlayWindow.close();
+        windowManager.destroyIconWindow();
+
+    })
+
+    mainWindow.on('closed', () => {
+        console.log('窗口已关闭')
+        mainWindow = null // 释放窗口对象
+    })
 }
 
 app.whenReady().then(() => {
-    ipcMain.on('query-text', async (_event, data) => {
+    ipcMain.handle('query-text', async (_event, data) => {
         data.query = textFormat(data.query);
         console.log(data);
         let result;
@@ -453,16 +528,16 @@ app.whenReady().then(() => {
             let api_url = getConfig("models")[data.model].api_url;
             let api_key = getConfig("models")[data.model].api_key;
             let memory_length = getConfig("memory_length");
-            result = await chatBase(data.query, data.prompt, data.version, api_url, api_key, memory_length);
+            result = await chatBase(data.query, data.prompt, data.version, api_url, api_key, memory_length, data.img_url);
         }
 
-        main_window.webContents.send('response', result);
         console.log(result);
-        main_window.focus();
+        mainWindow.focus();
+        return result;
     })
-    
+
     ipcMain.on('submit', (_event, text) => {
-        send_query(text, global.model, global.version)
+        send_query(text, global.model, global.version, null)
     })
 
     ipcMain.on('open-external', (_event, href) => {
@@ -477,13 +552,13 @@ app.whenReady().then(() => {
 
     ipcMain.on('translation-clicked', () => {
         global.concat = false;
-        send_query(global.last_clipboard_content, inner_model_name.plugin, getConfig("default")["plugin"]);
+        send_query(global.last_clipboard_content, inner_model_name.plugin, getConfig("default")["plugin"], null);
         windowManager.destroyIconWindow();
     })
 
     ipcMain.on('submit-clicked', () => {
         global.concat = false;
-        send_query(global.last_clipboard_content, global.model, global.version);
+        send_query(global.last_clipboard_content, global.model, global.version, null);
         windowManager.destroyIconWindow();
     })
 
@@ -501,7 +576,6 @@ app.whenReady().then(() => {
     })
 
     globalShortcut.register(getConfig("short_cut"), () => {
-        // 获取当前鼠标的位置
         captureMouse()
             .then((mousePosition) => {
                 console.log(mousePosition);
