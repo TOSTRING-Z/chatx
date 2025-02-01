@@ -26,19 +26,42 @@
   .icon:hover {
     transform: scale(1.2);
   }
+
+  #move {
+    font-size: small;
+    color: rgb(0, 137, 228);
+    font-weight: bolder;
+    background-size: cover;
+    cursor: pointer;
+    transition: transform 0.5s;
+    display: inline-block;
+    -webkit-user-select: none;
+    /* Safari */
+    -moz-user-select: none;
+    /* Firefox */
+    -ms-user-select: none;
+    /* IE10+/Edge */
+    user-select: none;
+    /* Standard */
+  }
+
+  #move:hover {
+    font-size: large;
+  }
 </style>
 
 <body>
-  <div style="background-image: url(img/icon/concat.svg);" id="concat" class="icon" onclick="concatClick()"></div>
-  <div style="background-image: url(img/icon/submit.svg);" id="submit" class="icon" onclick="submitClick()"></div>
-  <div style="background-image: url(img/icon/translation.svg);" id="translation" class="icon"
+  <div id="move">+</div>
+  <div style="background-image: url(img/icon/concat.svg)" id="concat" class="icon" onclick="concatClick()"></div>
+  <div style="background-image: url(img/icon/submit.svg)" id="submit" class="icon" onclick="submitClick()"></div>
+  <div style="background-image: url(img/icon/translation.svg)" id="translation" class="icon"
     onclick="translationClick()"></div>
-  <div style="background-image: url(img/icon/clear.svg);" id="clear" class="icon" onclick="clearClick()"></div>
-  <div style="background-image: url(img/icon/screen.svg);" id="screen" class="icon" onclick="startCapture()"></div>
+  <div style="background-image: url(img/icon/clear.svg)" id="clear" class="icon" onclick="clearClick()"></div>
+  <div style="background-image: url(img/icon/screen.svg)" id="screen" class="icon" onclick="startCapture()"></div>
   <script>
-    const { ipcRenderer } = require('electron')
+    const { ipcRenderer } = require("electron");
     function startCapture() {
-      ipcRenderer.send('start-capture')
+      ipcRenderer.send("start-capture");
     }
     function concatClick() {
       ipcRenderer.send("concat-clicked");
@@ -52,6 +75,69 @@
     function clearClick() {
       ipcRenderer.send("clear-clicked");
     }
+
+    /* 窗口拖动 */
+    let initialMouseX = 0;
+    let initialMouseY = 0;
+    let mouseDownTime = 0;
+    let windowInitialX = 0;
+    let windowInitialY = 0;
+    let isDragging = false;
+
+    // 处理鼠标按下事件
+    const handleMouseDown = (e) => {
+      isDragging = false
+      initialMouseX = e.screenX; // 使用screenX/screenY获取相对于屏幕的坐标
+      initialMouseY = e.screenY;
+      mouseDownTime = Date.now();
+      // 获取窗口初始位置
+      ipcRenderer.invoke("app:overlay:get-position").then((bounds) => {
+        windowInitialX = bounds.x;
+        windowInitialY = bounds.y;
+
+        document.addEventListener("mousemove", handleMouseMove);
+        document.addEventListener("mouseup", handleMouseUp);
+      });
+    };
+
+    // 处理鼠标移动事件
+    const handleMouseMove = (e) => {
+      const deltaX = e.screenX - initialMouseX;
+      const deltaY = e.screenY - initialMouseY;
+
+      // 判断是否达到拖动阈值
+      if (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5) {
+        isDragging = true;
+      }
+
+      if (isDragging) {
+        // 计算新位置
+        const newX = windowInitialX + deltaX;
+        const newY = windowInitialY + deltaY;
+
+        // 发送新位置到主进程
+        ipcRenderer.send("app:overlay:set-position", {
+          x: newX,
+          y: newY
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+
+      // 如果不是拖拽且点击时间小于200ms，则触发展开/收起
+      if (!isDragging && Date.now() - mouseDownTime < 200) {
+        toggleExpand();
+      }
+    };
+
+    const toggleExpand = () => {
+      console.log("toggleExpand");
+    };
+
+    document.getElementById("move").addEventListener("mousedown",handleMouseDown);
   </script>
 </body>
 

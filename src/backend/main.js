@@ -1,6 +1,6 @@
-const { app, BrowserWindow, Menu, shell, ipcMain, clipboard, dialog, globalShortcut, screen, nativeImage } = require('electron');
+const { app, BrowserWindow, Menu, shell, ipcMain, clipboard, dialog, globalShortcut, desktopCapturer } = require('electron');
 if (require('electron-squirrel-startup')) return app.quit();
-const { chatBase, clearMessages, saveMessages, loadMessages } = require('./server/llm_service');
+const { chatBase, clearMessages, saveMessages, loadMessages, deleteMessage } = require('./server/llm_service');
 const { captureMouse } = require('./mouse/capture_mouse');
 const { clearInterval } = require('node:timers');
 const { exec } = require('child_process');
@@ -87,7 +87,8 @@ let global = {
     version: getConfig("default")["version"],
     is_plugin: getIsPlugin(this.model),
     last_clipboard_content: null,
-    concat: false
+    concat: false,
+    id: 0
 }
 
 let mainWindow = null;
@@ -256,7 +257,8 @@ function getTemplate() {
                 {
                     label: '控制台',
                     click: () => {
-                        mainWindow.webContents.openDevTools();
+                        // if (windowManager.iconWindow) windowManager.iconWindow.webContents.openDevTools();
+                        if (mainWindow) mainWindow.webContents.openDevTools();
                     }
                 },
                 {
@@ -312,9 +314,14 @@ function getTemplate() {
 
 }
 
+function getId() {
+    global.id += 1;
+    return JSON.stringify(global.id);
+}
+
 function send_query(text, model, version, img_url) {
     const data = {
-        text: text, model: model, version: version, is_plugin: getIsPlugin(model), img_url: img_url
+        text: text, model: model, version: version, is_plugin: getIsPlugin(model), img_url: img_url, id: getId()
     }
     mainWindow.webContents.send('query', data);
 }
@@ -345,6 +352,9 @@ function changeLoop() {
     }
 }
 
+const iconWindowWidth = 200;
+const iconWindowHeight = 80;
+
 /* 单例窗口管理器 */
 let windowManager = {
     iconWindow: null,
@@ -367,8 +377,8 @@ let windowManager = {
         }
 
         this.iconWindow = new BrowserWindow({
-            width: 180,
-            height: 40,
+        width: iconWindowWidth,
+        height: iconWindowHeight,
             x,
             y,
             transparent: true,
@@ -431,12 +441,17 @@ function createOverlay() {
     })
 }
 
+ipcMain.handle('app:overlay:get-position', async (_) => {
+    return windowManager.iconWindow.getBounds();
+})
+ipcMain.on('app:overlay:set-position', async (_, { x, y }) => {
+    windowManager.iconWindow.setBounds({ x: x, y: y, width: iconWindowWidth, height: iconWindowHeight })
+})
+
 ipcMain.on('start-capture', () => {
     windowManager.destroyIconWindow();
     createOverlay()
 })
-const { desktopCapturer } = require('electron');
-const { config } = require('node:process');
 
 ipcMain.handle('capture-region', async (_, { start, end, dpr }) => {
     try {
@@ -458,11 +473,8 @@ ipcMain.handle('capture-region', async (_, { start, end, dpr }) => {
     }
 })
 
-ipcMain.on('write-clipboard', (_, dataURL) => {
-    console.log(`img: ${dataURL}`)
-    const config_v = getConfig("default");
-    send_query(config_v.v_prompt, config_v.v_model, config_v.v_version, dataURL)
-    // clipboard.writeImage(nativeImage.createFromDataURL(dataURL));
+ipcMain.on('query-img', (_, img_url) => {
+    send_query(null, global.model, global.version, img_url);
     if (overlayWindow) overlayWindow.close();
 })
 
@@ -528,12 +540,18 @@ app.whenReady().then(() => {
             let api_url = getConfig("models")[data.model].api_url;
             let api_key = getConfig("models")[data.model].api_key;
             let memory_length = getConfig("memory_length");
-            result = await chatBase(data.query, data.prompt, data.version, api_url, api_key, memory_length, data.img_url);
+            result = await chatBase(data.query, data.prompt, data.version, api_url, api_key, memory_length, data.img_url, data.id);
         }
 
         console.log(result);
         mainWindow.focus();
         return result;
+    })
+
+    ipcMain.handle("delete-message", async (_event, data) => {
+        let statu = await deleteMessage(data.id);
+        console.log(`delect id: ${data.id}, statu: ${statu}`)
+        return statu;
     })
 
     ipcMain.on('submit', (_event, text) => {

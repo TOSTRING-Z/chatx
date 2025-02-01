@@ -59,26 +59,41 @@ function loadMessages(filePath) {
     }
 }
 
-async function chatBase(queryText, prompt = null, version, api_url, api_key, memory_length, img_url = null) {
+function deleteMessage(id) {
+    // 使用 filter 方法删除 id 为 0 的对象
+    messages = messages.filter(message => message.id !== id);
+    return true;
+}
+
+function format_messages(messages_list) {
+    // 遍历 messages_list 数组，并删除每个对象的 id 属性
+    return messages_list.map(message => {
+        let message_copy = JSON.parse(JSON.stringify(message));
+        delete message_copy.id;
+        return message_copy;
+    });
+}
+
+async function chatBase(queryText, prompt = null, version, api_url, api_key, memory_length, img_url = null, id) {
     try {
         let content = queryText;
         if (img_url) {
             content = [
                 {
-                  "type": "text",
-                  "text": queryText
+                    "type": "text",
+                    "text": queryText
                 },
                 {
-                  "type": "image_url",
-                  "image_url": {
-                      "url" : img_url
-                  }
+                    "type": "image_url",
+                    "image_url": {
+                        "url": img_url
+                    }
                 }
-              ];
-        } 
-        messages.push({ "role": "user", "content": content });
+            ];
+        }
+        messages.push({ "role": "user", "content": content, "id": id });
         if (prompt) {
-            messages_list = [{ "role": "system", "content": prompt }]
+            messages_list = [{ "role": "system", "content": prompt, "id": id  }]
             messages_list = messages_list.concat(messages.slice(messages.length - memory_length, messages.length))
         }
         else {
@@ -86,14 +101,15 @@ async function chatBase(queryText, prompt = null, version, api_url, api_key, mem
         }
         const response = await axios.post(api_url, {
             "model": version,
-            "messages": messages_list,
+            "messages": format_messages(messages_list),
         }, {
             headers: {
                 "Content-Type": "application/json",
                 "Authorization": `Bearer ${api_key}`,
             },
         });
-        res_message = response.data.choices[0].message;
+        let res_message = response.data.choices[0].message;
+        res_message.id = id;
         messages.push(res_message);
         return marked.parse(res_message.content.trim());
     } catch (error) {
@@ -103,5 +119,5 @@ async function chatBase(queryText, prompt = null, version, api_url, api_key, mem
 }
 
 module.exports = {
-    chatBase, clearMessages, saveMessages, loadMessages,
+    chatBase, clearMessages, saveMessages, loadMessages, deleteMessage
 };

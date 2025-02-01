@@ -10,5 +10,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   queryText: (data) => ipcRenderer.invoke('query-text', data),
   clickSubmit: (text) => ipcRenderer.send('submit', text),
   openExternal: (href) => ipcRenderer.send('open-external', href),
-  captureRegion: (params) => ipcRenderer.invoke('capture-region', params)
+  captureRegion: (params) => ipcRenderer.invoke('capture-region', params),
+  deleteMessage: (id) => ipcRenderer.invoke('delete-message', id),
 })

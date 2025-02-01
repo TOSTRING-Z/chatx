@@ -88,9 +88,9 @@ document.addEventListener('mouseup', async e => {
     dpr
   })
   // 在渲染进程处理图像
-  const screenshot = await captureScreen(source, captureRect);
+  const img_url = await captureScreen(source, captureRect);
   // 发送BMP缓冲区到主进程
-  ipcRenderer.send('write-clipboard', screenshot);
+  ipcRenderer.send('query-img', img_url);
 })
 
 function updateSelectionBox(e) {
