@@ -1,10 +1,15 @@
 # ChatX
 
+![ChatX](source/chatx.png)
+
 ChatX 是一款功能强大的跨平台应用程序，支持 Windows 和 Ubuntu 系统。它集成了多种大模型功能，如 ChatGPT、ChatGLM 和 DeepSeek 等，旨在为用户提供高效、智能的文本处理和翻译服务。
 
 ## 主要功能
 
 ### 1. 复制翻译
+
+![ChatX](source/chatx-copy.png)
+
 - 支持一键复制文本并自动翻译。
 - 支持多语言翻译，满足不同用户的需求。
 
