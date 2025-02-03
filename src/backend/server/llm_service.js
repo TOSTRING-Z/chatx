@@ -1,35 +1,5 @@
 const axios = require("axios");
-const { Marked } = require("marked");
-const { markedHighlight } = require("marked-highlight");
-const hljs = require("highlight.js");
 const fs = require("fs");
-
-const marked = new Marked(
-    markedHighlight({
-        langPrefix: "hljs language-",
-        highlight(text, lang) {
-            return text;
-        }
-    }),
-    {
-        renderer: {
-            code(text, lang) {
-                const language = hljs.getLanguage(lang) ? lang : "plaintext";
-                const encodeCode = encodeURIComponent(text);
-                const highlightResult = hljs.highlight(text, { language }).value;
-                return `<div class="code-header">
-                            <span class="language-tag">${language}</span>
-                            <button
-                                class="copy-btn"
-                                data-code="${encodeCode}"
-                                title="复制代码"
-                            >复制</button>
-                        </div>
-                        <pre class="hljs"><code>${highlightResult}</code></pre>`;
-            }
-        }
-    }
-);
 
 let messages = [];
 
@@ -111,7 +81,7 @@ async function chatBase(queryText, prompt = null, version, api_url, api_key, mem
         let res_message = response.data.choices[0].message;
         res_message.id = id;
         messages.push(res_message);
-        return marked.parse(res_message.content.trim());
+        return res_message.content;
     } catch (error) {
         console.log(error)
         return error.response.data.msg

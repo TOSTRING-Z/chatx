@@ -5,9 +5,20 @@
   <meta charset="UTF-8" />
   <meta http-equiv="Content-Security-Policy"
     content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com; style-src 'self' https://cdnjs.cloudflare.com 'unsafe-inline'; font-src https://cdnjs.cloudflare.com file:; img-src 'self' data:;" />
-  <link rel="stylesheet" href="css/atom-one-light.min.css" />
   <link rel="stylesheet" href="css/build.css" />
+  <link rel="stylesheet" href="css/atom-one-light.min.css" />
+  <script>
+    MathJax = {
+      tex: {
+        displayMath: [["$$", "$$"], ["\\[", "\\]"]],
+        inlineMath: [[["$", "$"]], ["\\(", "\\)"]]
+      }
+    }
+  </script>
   <script src="js/tex-mml-chtml.js" id="MathJax-script" async></script>
+  <script src="js/marked.min.js"></script>
+  <script src="js/masked_high_light.js"></script>
+  <script src="js/highlight.min.js"></script>
   <style>
     body {
       margin: 0;
@@ -16,7 +27,8 @@
       color: #333;
       display: flex;
       flex-direction: column;
-      min-height: 100vh;
+      max-height: 100vh;
+      overflow: hidden;
     }
 
     /* Scrollbar styles */
@@ -54,6 +66,7 @@
     #messages {
       display: flex;
       flex-direction: column;
+      overflow-x: hidden;
     }
 
     /* Message bubbles */
@@ -62,8 +75,13 @@
       border-radius: 8px;
       background: #f9f9f9;
       max-width: 90%;
+      overflow-x: hidden;
+      overflow-y: auto;
       word-wrap: break-word;
       word-break: break-word;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
     }
 
     .message.user {
@@ -189,6 +207,7 @@
       right: 10px;
       display: flex;
       padding: 2px 8px;
+      margin-left: 4px ;
       justify-content: center;
       align-items: center;
       gap: 2px;
@@ -221,6 +240,19 @@
       height: 2rem;
       display: flex;
       align-items: start;
+    }
+
+    .menu-container::before {
+      content: '';
+      position: absolute;
+      top: 0.1rem;
+      left: -0.1rem;
+      width: 2.2rem;
+      height: 2.2rem;
+      background: white;
+      border-radius: 100%;
+      /* border: 1px solid red; */
+      z-index: 1;
     }
 
     .menu {
@@ -257,7 +289,7 @@
       opacity: 0;
       transition: opacity 0.3s;
       pointer-events: none;
-      z-index: 1;
+      z-index: 0;
       align-items: center;
       justify-content: center;
       display: flex;
@@ -265,19 +297,10 @@
       bottom: 1.25rem;
     }
 
-    .menu-item::before {
-      content: '';
-      position: absolute;
-      top: 1.15rem;
-      right: 1.15rem;
-      width: 2.2rem;
-      height: 2.2rem;
-      background: white;
-      border-radius: 100%;
-    }
-
-    .menu-delete {
+    .menu-item>svg {
       height: 10px;
+      transform:
+        rotate(-45deg) translate(-0.1rem) rotate(0deg);
     }
 
     .menu-container.active .menu-item {
@@ -285,9 +308,14 @@
       pointer-events: auto;
     }
 
-    .menu-container .menu-item:nth-child(2) .menu-delete {
+    .menu-container .menu-item:nth-child(2) {
       transform:
-        rotate(-45deg) translate(-0.1rem) rotate(0deg);
+        rotate(0deg) translate(0, 0.3rem) rotate(0deg)
+    }
+
+    .menu-container .menu-item:nth-child(3) {
+      transform:
+        rotate(0deg) translate(0, 2.5rem) rotate(90deg)
     }
   </style>
 </head>

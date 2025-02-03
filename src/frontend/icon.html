@@ -3,55 +3,44 @@
 <style>
   body {
     margin: 0;
-    background: transparent;
+    /* background-color: rgba(0, 0, 0, 0.5); */
     display: flex;
     justify-content: center;
     align-items: center;
+    height: 100vh;
   }
 
   .icon {
-    width: 32px;
-    height: 32px;
-    background-size: cover;
+    width: 30px;
+    height: 30px;
+    background-size: 80% 80%;
+    /* 图片会被拉伸以覆盖整个元素 */
+    background-position: center;
+    /* 可选，将图片居中显示 */
+    background-repeat: no-repeat;
+    /* 可选，防止图片重复 */
     cursor: pointer;
     transition: transform 0.2s, opacity 0.3s;
     display: inline-block;
+    pointer-events: all;
   }
 
   .icon.hidden {
     opacity: 0;
-    transform: scale(0.8);
+    transform: scale(0.9);
   }
 
   .icon:hover {
-    transform: scale(1.2);
+    transform: scale(1.1);
   }
 
   #move {
-    font-size: small;
-    color: rgb(0, 137, 228);
-    font-weight: bolder;
-    background-size: cover;
-    cursor: pointer;
-    transition: transform 0.5s;
-    display: inline-block;
-    -webkit-user-select: none;
-    /* Safari */
-    -moz-user-select: none;
-    /* Firefox */
-    -ms-user-select: none;
-    /* IE10+/Edge */
-    user-select: none;
-    /* Standard */
-  }
-
-  #move:hover {
-    font-size: large;
+    background-size: 60% 60%;
   }
 </style>
 
 <body>
-  <div id="move">+</div>
+  <div style="background-image: url(img/icon/focus.svg)" id="move" class="icon"></div>
   <div style="background-image: url(img/icon/concat.svg)" id="concat" class="icon" onclick="concatClick()"></div>
   <div style="background-image: url(img/icon/submit.svg)" id="submit" class="icon" onclick="submitClick()"></div>
   <div style="background-image: url(img/icon/translation.svg)" id="translation" class="icon"
@@ -137,7 +126,7 @@
       console.log("toggleExpand");
     };
 
-    document.getElementById("move").addEventListener("mousedown",handleMouseDown);
+    document.getElementById("move").addEventListener("mousedown", handleMouseDown);
   </script>
 </body>
 
