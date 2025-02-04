@@ -249,10 +249,10 @@ const ininFuncItems = () => {
 const store = new Store()
 
 let global = {
-    model: () => getConfig("default")["model"],
-    version: () => getConfig("default")["version"],
-    is_plugin: () => getIsPlugin(this.model),
-    last_clipboard_content: () => clipboard.readText(),
+    model: getConfig("default")["model"],
+    version: getConfig("default")["version"],
+    is_plugin: getIsPlugin(this.model),
+    last_clipboard_content: null,
     concat: false,
     id: 0
 }
@@ -491,6 +491,8 @@ function createMainWindow() {
     windowManager.mainWindow.on('closed', () => {
         windowManager.mainWindow = null;
     })
+
+    global.last_clipboard_content = clipboard.readText();
 }
 
 ipcMain.handle('query-text', async (_event, data) => {

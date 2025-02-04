@@ -57,8 +57,6 @@ npm run electron-start
 npm run package
 # or
 npm run make
-# win
-npm run make-win
 ```
 
 ## 配置
