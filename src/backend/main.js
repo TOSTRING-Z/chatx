@@ -176,7 +176,7 @@ const getClipEvent = (e) => {
                         console.error(error);
                     });
             }
-        }, 100);
+        }, 200);
     }
 }
 
@@ -245,10 +245,10 @@ const ininFuncItems = () => {
 const store = new Store()
 
 let global = {
-    model: getConfig("default")["model"],
-    version: getConfig("default")["version"],
-    is_plugin: getIsPlugin(this.model),
-    last_clipboard_content: clipboard.readText(),
+    model: () => getConfig("default")["model"],
+    version: () => getConfig("default")["version"],
+    is_plugin: () => getIsPlugin(this.model),
+    last_clipboard_content: () => clipboard.readText(),
     concat: false,
     id: 0
 }
@@ -686,6 +686,10 @@ app.whenReady().then(() => {
 
     createMainWindow();
     initShortcut();
+
+    app.on('activate', function () {
+        if (BrowserWindow.getAllWindows().length === 0) createMainWindow()
+    })
 
     app.on('will-quit', () => {
         globalShortcut.unregisterAll();
