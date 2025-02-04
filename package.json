@@ -38,7 +38,7 @@
   "dependencies": {
     "@fortawesome/fontawesome-free": "^5.11.2",
     "@json-editor/json-editor": "^2.15.2",
-    "axios": "^1.7.7",
+    "axios": "^1.7.9",
     "axios-cookiejar-support": "^4.0.7",
     "electron-screenshots": "^0.5.27",
     "electron-squirrel-startup": "^1.0.0",

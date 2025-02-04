@@ -37,9 +37,13 @@ if (isFirstInstall()) {
 
 // 配置插件接口
 function loadTranslation(name) {
-    console.log(`loading plugin: ${name}`);
-    const plugin = require(getConfig("plugins")[name].path);
-    return plugin.main;
+    try {
+        console.log(`loading plugin: ${name}`);
+        const plugin = require(getConfig("plugins")[name].path);
+        return plugin.main;
+    } catch (error) {
+        return () => `插件: ${name}, 路径: ${getConfig("plugins")[name].path}, 加载插件发生错误, 请检查路径和依赖！`
+    }
 }
 
 // 插件配置参数

@@ -1,0 +1,17 @@
+{
+  "name": "plugins",
+  "version": "1.0.0",
+  "description": "ChatX插件",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.7.9",
+    "axios-cookiejar-support": "^5.0.5",
+    "he": "^1.2.0",
+    "jsdom": "^26.0.0"
+  }
+}
