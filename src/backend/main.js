@@ -507,12 +507,10 @@ ipcMain.handle('query-text', async (_event, data) => {
         let api_url = getConfig("models")[data.model].api_url;
         let api_key = getConfig("models")[data.model].api_key;
         let memory_length = getConfig("memory_length");
-        result = await chatBase(data.query, data.prompt, data.version, api_url, api_key, memory_length, data.img_url, data.id);
+        chatBase(data.query, data.prompt, data.version, api_url, api_key, memory_length, data.img_url, data.id, _event);
     }
-
-    console.log(result);
+    
     windowManager.mainWindow.show();
-    return result;
 })
 
 ipcMain.handle("delete-message", async (_event, data) => {
