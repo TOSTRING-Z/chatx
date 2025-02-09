@@ -67,6 +67,7 @@
       display: flex;
       flex-direction: column;
       overflow-x: hidden;
+      overflow-y: hidden;
     }
 
     /* Message bubbles */
@@ -207,7 +208,7 @@
       right: 10px;
       display: flex;
       padding: 2px 8px;
-      margin-left: 4px ;
+      margin-left: 4px;
       justify-content: center;
       align-items: center;
       gap: 2px;
@@ -317,6 +318,44 @@
       transform:
         rotate(0deg) translate(0, 2.5rem) rotate(90deg)
     }
+
+    /* 加载动图 */
+    .thinking {
+      display: flex;
+      justify-content: start;
+      align-items: start;
+      gap: 4px;
+      left: 35px;
+      position: absolute;
+    }
+
+    .dot {
+      width: 4px;
+      height: 4px;
+      background-color: #333;
+      border-radius: 50%;
+      animation: scaleDot 0.6s infinite ease-in-out;
+    }
+
+    .dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes scaleDot {
+
+      0%,
+      100% {
+        transform: scale(1);
+      }
+
+      50% {
+        transform: scale(1.5);
+      }
+    }
   </style>
 </head>
 
@@ -333,10 +372,10 @@
       <div class="p-4 fixed bottom-0 left-0 right-0" id="bottom_div">
         <div class="bg-gradient"></div>
         <div class="wrapper mb-2">
-          <textarea class="w-full p-2 rounded-md mb-2" rows="1" placeholder="提示" id="player"></textarea>
+          <textarea class="w-full p-2 rounded-md mb-2" rows="1" placeholder="系统提示" id="player"></textarea>
         </div>
         <div class="flex relative wrapper">
-          <textarea class="flex-grow p-2 rounded-l-lg" rows="1" placeholder="需要提交的文字" id="input"></textarea>
+          <textarea class="flex-grow p-2 rounded-l-lg" rows="1" placeholder="用户提示/文字" id="input"></textarea>
           <button class="p-2 bg-blue-500 text-white rounded-r-lg" id="submit">
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"
               class="icon-2xl">

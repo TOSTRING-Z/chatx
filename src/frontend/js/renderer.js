@@ -107,8 +107,13 @@ system_message = `<div class="relative space-y-2 space-x-2" data-role="system" d
         </svg>
       </div>
     </div>
-    <div class="message">@message</div>
-  </div>
+    <div class="message" data-content="">@message</div>
+    </div>
+    <div class="thinking">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
 </div>`
 
 function showLog(log) {
@@ -128,6 +133,22 @@ function copy_message(raw) {
   }).catch(err => {
     console.error('复制失败', err);
   });
+}
+
+function streamMessageAdd(chunk) {
+  const messageSystem = document.querySelectorAll(`[data-id='${chunk.id}']`)[1];
+  const message_content = messageSystem.getElementsByClassName('message')[0];
+  if (chunk.content) {
+      message_content.dataset.content += chunk.content;
+      message_content.innerHTML = marked.parse(message_content.dataset.content);
+  }
+  if (chunk.end) {
+    message_content.innerHTML = marked.parse(message_content.dataset.content);
+    const thinking = messageSystem.getElementsByClassName("thinking")[0];
+    thinking.remove();
+    typesetMath();
+    menuEvent(chunk.id, message_content.dataset.content);
+  }
 }
 
 function menuEvent(id, raw) {
@@ -277,6 +298,11 @@ function getIcon(is_plugin) {
   return is_plugin ? "api" : "ai";
 }
 
+
+window.electronAPI.streamData((chunk) => {
+  streamMessageAdd(chunk);
+})
+
 window.electronAPI.handleQuery(async (data) => {
   let text;
   if (data.img_url) {
@@ -291,23 +317,14 @@ window.electronAPI.handleQuery(async (data) => {
     "id": data.id,
     "message": text
   }, "user"));
-  messages.appendChild(system_message.format({
+  let system_message_cursor = system_message.format({
     "icon": getIcon(data.is_plugin),
     "id": data.id,
-    "message": "思考中..."
-  }, "system"));
-  // 设置滚动位置到div的最低端
+    "message": ""
+  }, "system")
+  messages.appendChild(system_message_cursor);
   top_div.scrollTop = top_div.scrollHeight;
-  text = await window.electronAPI.queryText({ prompt: player.value, query: content.value, model: data.model, version: data.version, is_plugin: data.is_plugin, img_url: data.img_url, id: data.id });
-  text = text ? text : "结果返回为空！";
-  response_success(data.id);
-  messages.appendChild(system_message.format({
-    "icon": getIcon(data.is_plugin),
-    "id": data.id,
-    "message": text
-  }, "system"));
-  typesetMath();
-  menuEvent(data.id, text);
+  window.electronAPI.queryText({ prompt: player.value, query: content.value, model: data.model, version: data.version, is_plugin: data.is_plugin, img_url: data.img_url, id: data.id, stream: data.stream });
 })
 
 window.electronAPI.handleModel((data) => {

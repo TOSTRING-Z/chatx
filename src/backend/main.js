@@ -251,6 +251,7 @@ const store = new Store()
 let global = {
     model: getConfig("default")["model"],
     version: getConfig("default")["version"],
+    stream: true,
     is_plugin: getIsPlugin(this.model),
     last_clipboard_content: null,
     concat: false,
@@ -272,6 +273,7 @@ function getModelsSubmenu() {
                 global.model = _model;
                 global.is_plugin = getIsPlugin(_model)
                 global.version = getConfig("models")[_model]["versions"][0];
+                global.stream = getConfig("models")[_model]["stream"];
                 updateVersionsSubmenu();
                 windowManager.mainWindow.webContents.send("model", global)
             },
@@ -450,9 +452,9 @@ function getId() {
     return JSON.stringify(global.id);
 }
 
-function send_query(text, model, version, img_url) {
+function send_query(text, model, version, img_url, stream) {
     const data = {
-        text: text, model: model, version: version, is_plugin: getIsPlugin(model), img_url: img_url, id: getId()
+        text: text, model: model, version: version, is_plugin: getIsPlugin(model), img_url: img_url, id: getId(), stream: stream
     }
     windowManager.mainWindow.webContents.send('query', data);
 }
@@ -498,16 +500,17 @@ function createMainWindow() {
 ipcMain.handle('query-text', async (_event, data) => {
     data.query = funcItems.text.event(data.query);
     console.log(data);
-    let result;
     if (data.is_plugin) {
         const func = inner_model_obj[data.model][data.version].func
-        result = await func(data.query);
+        let content = await func(data.query);
+        _event.sender.send('stream-data', { id: data.id, content: content, end: true });
     }
     else {
         let api_url = getConfig("models")[data.model].api_url;
         let api_key = getConfig("models")[data.model].api_key;
         let memory_length = getConfig("memory_length");
-        chatBase(data.query, data.prompt, data.version, api_url, api_key, memory_length, data.img_url, data.id, _event);
+        let max_tokens = getConfig("max_tokens");
+        chatBase(data.query, data.prompt, data.version, api_url, api_key, memory_length, data.img_url, data.id, _event, data.stream, max_tokens);
     }
     
     windowManager.mainWindow.show();
@@ -520,7 +523,7 @@ ipcMain.handle("delete-message", async (_event, data) => {
 })
 
 ipcMain.on('submit', (_event, text) => {
-    send_query(text, global.model, global.version, null)
+    send_query(text, global.model, global.version, null, global.stream)
 })
 
 ipcMain.on('open-external', (_event, href) => {
@@ -535,13 +538,13 @@ ipcMain.on('concat-clicked', () => {
 
 ipcMain.on('translation-clicked', () => {
     global.concat = false;
-    send_query(global.last_clipboard_content, inner_model_name.plugin, getConfig("default")["plugin"], null);
+    send_query(global.last_clipboard_content, inner_model_name.plugin, getConfig("default")["plugin"], null, null);
     windowManager.destroyIconWindow();
 })
 
 ipcMain.on('submit-clicked', () => {
     global.concat = false;
-    send_query(global.last_clipboard_content, global.model, global.version, null);
+    send_query(global.last_clipboard_content, global.model, global.version, null, global.stream);
     windowManager.destroyIconWindow();
 })
 
@@ -664,7 +667,7 @@ ipcMain.handle('capture-region', async (_, { start, end, dpr }) => {
 })
 
 ipcMain.on('query-img', (_, img_url) => {
-    send_query(null, global.model, global.version, img_url);
+    send_query(null, global.model, global.version, img_url, global.stream);
     if (windowManager.overlayWindow) windowManager.overlayWindow.close();
 })
 

@@ -1,5 +1,6 @@
 const axios = require("axios");
 const fs = require("fs");
+const OpenAI = require('openai');
 
 let messages = [];
 
@@ -44,7 +45,7 @@ function format_messages(messages_list) {
     });
 }
 
-async function chatBase(queryText, prompt = null, version, api_url, api_key, memory_length, img_url = null, id, event, responseType = "stream") {
+async function chatBase(queryText, prompt = null, version, api_url, api_key, memory_length, img_url = null, id, event, stream = true, max_tokens=8000) {
     try {
         let content = queryText;
         if (img_url) {
@@ -70,51 +71,60 @@ async function chatBase(queryText, prompt = null, version, api_url, api_key, mem
             messages_list = messages.slice(messages.length - memory_length, messages.length)
         }
         messages_list.push(message_user)
-        const response = await axios.post(api_url, {
-            "model": version,
-            "messages": format_messages(messages_list),
-        }, {
-            headers: {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${api_key}`,
-            },
-            responseType: 'stream',
-        });
-
         let message_system = { role: 'assistant', content: '', id: id }
 
-        if (responseType === "stream") {
-            const stream = response.data;
-            stream.on('data', (chunk) => {
-                // 处理流式输出
-                const text = chunk.toString();
-                const delta = JSON.parse(text);
-                if (delta.choices.length > 0 && delta.choices[0].message) {
-                    message_system.content += delta.choices[0].message.content;
-                    // 发送数据块到渲染进程
-                    event.sender.send('stream-data', { id: id, content: delta.choices[0].message.content, end: false });
+        if (stream) {
+            try {
+                const matches = api_url.match(/^(.*?)(\/[^\/]+\/[^\/]+)$/);
+                const baseURL = matches[1];
+                const openai = new OpenAI({ baseURL: baseURL, apiKey: api_key })
+                const stream_res = await openai.chat.completions.create({
+                    model: version,
+                    messages: format_messages(messages_list),
+                    stream: true,
+                    max_tokens: max_tokens,
+                })
+                for await (const chunk of stream_res) {
+                    // 处理流式输出
+                    let delta = chunk.choices[0]?.delta;
+                    let content = "";
+                    if (chunk.choices.length > 0 && delta) {
+                        if (delta.hasOwnProperty("reasoning_content") && delta.reasoning_content)
+                            content = delta.reasoning_content;
+                        else if (delta.hasOwnProperty("content") && delta.content) {
+                            content = delta.content;
+                            message_system.content += content;
+                        }
+                        // 发送数据块到渲染进程
+                        event.sender.send('stream-data', { id: id, content: content, end: false });
+                    }
                 }
-            });
-
-            stream.on('end', () => {
                 messages.push(message_user);
                 messages.push(message_system);
-                event.sender.send({ id: id, content: null, end: true });
-            });
-            stream.on('error', (error) => {
+                console.log(message_system)
+                event.sender.send('stream-data', { id: id, content: "", end: true });
+            } catch (error) {
                 console.log(error);
-                event.sender.send({ id: id, content: "发生错误！", end: true });
-            });
+                event.sender.send('stream-data', { id: id, content: "发生错误！", end: true });
+            }
+
+
         } else {
+            const response = await axios.post(api_url, {
+                "model": version,
+                "messages": format_messages(messages_list),
+            }, {
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${api_key}`,
+                },
+            });
             message_system.content = response.data.choices[0].message.content;
             messages.push(message_user);
             messages.push(message_system);
         }
-        return message_system.content;
     } catch (error) {
         console.log(error)
-        console.log(error.response.data)
-        return JSON.stringify(error.response.data)
     }
 }
 

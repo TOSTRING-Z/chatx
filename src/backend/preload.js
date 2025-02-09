@@ -13,5 +13,4 @@ contextBridge.exposeInMainWorld('electronAPI', {
   captureRegion: (params) => ipcRenderer.invoke('capture-region', params),
   deleteMessage: (id) => ipcRenderer.invoke('delete-message', id),
   streamData: (callback) => ipcRenderer.on('stream-data', (_event, value) => callback(value)),
-  streamEnd: (callback) => ipcRenderer.on('stream-end', (_event, value) => callback(value)),
 })
