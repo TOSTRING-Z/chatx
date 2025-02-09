@@ -1,0 +1,13 @@
+{
+    "name": "electron-crawler",
+    "version": "1.0.0",
+    "description": "Electron爬虫示例",
+    "main": "main.js",
+    "scripts": {
+        "start": "electron ."
+    },
+    "dependencies": {
+        "electron": "^28.1.0",
+        "puppeteer": "^24.2.0"
+    }
+}

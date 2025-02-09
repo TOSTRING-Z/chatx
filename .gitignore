@@ -3,5 +3,4 @@ node_modules
 glm_token.py
 .vscode
 *.log
-test
 test.html
