@@ -1,9 +1,9 @@
 const axios = require('axios');
 
-async function jours_if(content) {
+async function jours_if({query}) {
     const regex = /(.*?)\n/g;
     try {
-        const processedContent = `${content.replace(/\./g, '')}\n`;
+        const processedContent = `${query.replace(/\./g, '')}\n`;
         const pubmidJudge = [...processedContent.matchAll(regex)].map(match => match[1]);
 
         if (!pubmidJudge.length) return "";
