@@ -15,7 +15,10 @@ async function main(keyword) {
         page++
     }
 
-    return JSON.stringify(searchResults.slice(0, numResults))
+    if (searchResults.length > 0)
+        return JSON.stringify(searchResults.slice(0, numResults))
+    else
+        return null;
 }
 
 async function parseBaiduPage(url, rankStart) {

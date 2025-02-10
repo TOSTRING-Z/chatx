@@ -307,6 +307,58 @@ function setPrompt(prompt) {
     windowManager.mainWindow.webContents.send('prompt', prompt);
 }
 
+function loadPrompt() {
+    // 获取上次打开的目录
+    const lastDirectory = store.get('lastPromptDirectory') || path.join(os.homedir(), '.chatx');
+    // 打开文件选择对话框
+    dialog
+        .showOpenDialog(windowManager.mainWindow, {
+            properties: ['openFile'],
+            defaultPath: lastDirectory
+        })
+        .then(result => {
+            if (!result.canceled) {
+                const filePath = result.filePaths[0]; // 获取用户选取的文件路径
+                store.set('lastPromptDirectory', path.dirname(filePath)); // 记录当前选择的目录
+                console.log(filePath); // 在控制台输出文件路径
+                const prompt = fs.readFileSync(filePath, 'utf-8');
+                setPrompt(prompt);
+            }
+        })
+        .catch(err => {
+            console.log(err);
+        });
+}
+
+function setChain(chain) {
+    let config = getConfig();
+    config.chain_call = JSON.parse(chain).chain_call;
+    setConfig(config);
+}
+
+function loadChain() {
+    // 获取上次打开的目录
+    const lastDirectory = store.get('lastChainDirectory') || path.join(os.homedir(), '.chatx');
+    // 打开文件选择对话框
+    dialog
+        .showOpenDialog(windowManager.mainWindow, {
+            properties: ['openFile'],
+            defaultPath: lastDirectory
+        })
+        .then(result => {
+            if (!result.canceled) {
+                const filePath = result.filePaths[0]; // 获取用户选取的文件路径
+                store.set('lastChainDirectory', path.dirname(filePath)); // 记录当前选择的目录
+                console.log(filePath); // 在控制台输出文件路径
+                const chain = fs.readFileSync(filePath, 'utf-8');
+                setChain(chain);
+            }
+        })
+        .catch(err => {
+            console.log(err);
+        });
+}
+
 function getTemplate() {
     return [
         {
@@ -344,30 +396,17 @@ function getTemplate() {
             label: "智能体",
             submenu: [
                 {
-                    label: '加载',
+                    label: '系统提示',
                     click: async () => {
-                        // 获取上次打开的目录
-                        const lastDirectory = store.get('lastDirectory') || path.join(os.homedir(), '.chatx');
-                        // 打开文件选择对话框
-                        dialog
-                            .showOpenDialog(windowManager.mainWindow, {
-                                properties: ['openFile'],
-                                defaultPath: lastDirectory
-                            })
-                            .then(result => {
-                                if (!result.canceled) {
-                                    const filePath = result.filePaths[0]; // 获取用户选取的文件路径
-                                    store.set('lastDirectory', path.dirname(filePath)); // 记录当前选择的目录
-                                    console.log(filePath); // 在控制台输出文件路径
-                                    const prompt = fs.readFileSync(filePath, 'utf-8');
-                                    setPrompt(prompt);
-                                }
-                            })
-                            .catch(err => {
-                                console.log(err);
-                            });
+                        loadPrompt();
                     }
-                }
+                },
+                {
+                    label: '链式调用',
+                    click: async () => {
+                        loadChain();
+                    }
+                },
             ]
         },
         {
@@ -497,15 +536,43 @@ function createMainWindow() {
     global.last_clipboard_content = clipboard.readText();
 }
 
-async function llmCall(data, params) {
-    data.api_url = getConfig("models")[params.model].api_url;
-    data.api_key = getConfig("models")[params.model].api_key;
-    data.version = params.version;
-    data.prompt = params.prompt;
+async function retry(func, params) {
+    let retry_time = getConfig("retry_time");
+    let count = 0;
+    let error;
+    while (count < retry_time) {
+        try {
+            let content = await func(params);
+            if (content) {
+                return content;
+            }
+            else {
+                count++;
+                continue;
+            }
+        } catch (_error) {
+            error = _error
+            count++;
+        }
+    }
+    console.log(error);
+    return "发生错误！";
+}
+
+async function llmCall(data, params=null) {
+    if (params) {
+        data.api_url = getConfig("models")[params.model].api_url;
+        data.api_key = getConfig("models")[params.model].api_key;
+        data.version = params.version;
+        data.prompt = params.prompt;
+    } else {
+        data.api_url = getConfig("models")[data.model].api_url;
+        data.api_key = getConfig("models")[data.model].api_key;
+    }
+
     data.memory_length = getConfig("memory_length");
     data.max_tokens = getConfig("max_tokens");
-    let content = await chatBase(data);
-    return content;
+    return await retry(chatBase, data);
 }
 
 async function pluginCall(data, params = null) {
@@ -515,17 +582,12 @@ async function pluginCall(data, params = null) {
     } else {
         func = inner_model_obj[data.model][data.version].func
     }
-    try {
-        let content = await func(data.query);
-        return content;
-    } catch (error) {
-        console.log(error)
-        return "";
-    }
+    return await retry(func, data.query);
 }
 
 ipcMain.handle('query-text', async (_event, data) => {
     data.query = funcItems.text.event(data.query);
+    const primary_data = JSON.parse(JSON.stringify(data))
     data.event = _event;
     if (data.is_plugin) {
         let content = await pluginCall(data);
@@ -537,19 +599,21 @@ ipcMain.handle('query-text', async (_event, data) => {
         for (const step in chain_calls) {
             let params = chain_calls[step];
             data.statu = params.statu;
-            const primary_data = JSON.parse(JSON.stringify(data))
             if (getIsPlugin(params.model))
                 data.query = await pluginCall(data, params);
             else {
                 if (data.statu === "output") {
                     data.prompt = primary_data.prompt
-                    data.query = `<external_information>${data.query}</external_information>\n${primary_data.query}`;
-                    llmCall(data, params);
+                    if (step > 0)
+                        data.query = `<info>${data.query}</info>\n${primary_data.query}`;
+                    llmCall(data);
                 } else {
                     data.query = await llmCall(data, params);
                 }
             }
             console.log(`step: ${step}, query: ${data.query}`)
+            let content = `**阶段:** ${step}\n\n**调用:** ${data.model}\n\n**版本:** ${data.version}\n\n**查询:** \n\n${data.query}\n\n---\n\n`;
+            _event.sender.send('info-data', { id: data.id, content: content});
         }
     }
 

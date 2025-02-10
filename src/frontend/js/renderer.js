@@ -107,13 +107,17 @@ system_message = `<div class="relative space-y-2 space-x-2" data-role="system" d
         </svg>
       </div>
     </div>
-    <div class="message" data-content="">@message</div>
-    </div>
+  </div>
+  <div class="info hidden">
+    <div class="info-header">调用信息</div>
+    <div class="info-content" data-content=""></div>
     <div class="thinking">
       <div class="dot"></div>
       <div class="dot"></div>
       <div class="dot"></div>
     </div>
+  </div>
+  <div class="message" data-content="">@message</div>
 </div>`
 
 function showLog(log) {
@@ -133,6 +137,19 @@ function copy_message(raw) {
   }).catch(err => {
     console.error('复制失败', err);
   });
+}
+
+function InfoAdd(info) {
+  const messageSystem = document.querySelectorAll(`[data-id='${info.id}']`)[1];
+  const info_content = messageSystem.getElementsByClassName('info-content')[0];
+  const info_div = messageSystem.getElementsByClassName('info')[0];
+  if (info_div && info_div.classList.contains('hidden')) {
+    info_div.classList.remove('hidden');
+  }
+  if (info.content) {
+    info_content.dataset.content += info.content;
+    info_content.innerHTML = marked.parse(info_content.dataset.content);
+  }
 }
 
 function streamMessageAdd(chunk) {
@@ -301,6 +318,10 @@ function getIcon(is_plugin) {
 
 window.electronAPI.streamData((chunk) => {
   streamMessageAdd(chunk);
+})
+
+window.electronAPI.infoData((info) => {
+  InfoAdd(info);
 })
 
 window.electronAPI.handleQuery(async (data) => {

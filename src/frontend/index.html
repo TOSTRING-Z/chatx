@@ -319,12 +319,55 @@
         rotate(0deg) translate(0, 2.5rem) rotate(90deg)
     }
 
+    /* 调用信息 */
+    .info-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: start;
+      align-items: start;
+      gap: 4px;
+      color: #999;
+      max-height: 200px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      margin: 0 35px;
+      padding: 10px;
+      background: #f1f1f1;
+    }
+
+    .info-header {
+      display: flex;
+      flex-direction: column;
+      justify-content: start;
+      align-items: start;
+      gap: 4px;
+      color: #999;
+      max-height: 200px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      margin: 0 35px;
+      padding: 5px 10px;
+      background: #f1f1f1;
+      border: 1px solid #999;
+    }
+
+    .info-content hr {
+      display: block;
+      width: 100%;
+      border: 1px solid;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
     /* 加载动图 */
     .thinking {
       display: flex;
       justify-content: start;
       align-items: start;
       gap: 4px;
+      bottom: -10px;
       left: 35px;
       position: absolute;
     }

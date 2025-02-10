@@ -72,7 +72,7 @@ function format(result) {
         return he.encode(text)
     } catch (error) {
         console.log(error);
-        return "翻译出错，请检查网络或者代码！";
+        return null;
     }
 }
 

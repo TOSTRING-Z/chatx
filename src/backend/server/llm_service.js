@@ -126,9 +126,9 @@ async function chatBase({query, prompt = null, version, api_url, api_key, memory
                 return response.data.choices[0].message.content;
             }
         }
+        return true;
     } catch (error) {
-        console.log(error)
-        return "发生错误！"
+        console.log(error);
     }
 }
 

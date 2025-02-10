@@ -12,5 +12,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openExternal: (href) => ipcRenderer.send('open-external', href),
   captureRegion: (params) => ipcRenderer.invoke('capture-region', params),
   deleteMessage: (id) => ipcRenderer.invoke('delete-message', id),
-  streamData: (callback) => ipcRenderer.on('stream-data', (_event, value) => callback(value)),
+  streamData: (callback) => ipcRenderer.on('stream-data', (_event, chunk) => callback(chunk)),
+  infoData: (callback) => ipcRenderer.on('info-data', (_event, info) => callback(info)),
 })
