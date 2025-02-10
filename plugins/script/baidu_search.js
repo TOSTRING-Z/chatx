@@ -4,9 +4,11 @@ const cheerio = require('cheerio')
 async function main({ query, params = null }) {
     let num_results = 2;
     let text_max_len = 500;
+    let jina = "https://r.jina.ai/";
     if (params) {
         num_results = params.num_results;
         text_max_len = params.text_max_len;
+        jina = params.jina;
     }
 
     const searchResults = []
@@ -14,7 +16,7 @@ async function main({ query, params = null }) {
     let nextUrl = `https://www.baidu.com/s?ie=utf-8&tn=baidu&wd=${encodeURIComponent(query)}`
 
     while (searchResults.length < num_results) {
-        const { results, nextPageUrl } = await parseBaiduPage(nextUrl, searchResults.length, num_results, text_max_len)
+        const { results, nextPageUrl } = await parseBaiduPage(nextUrl, searchResults.length, num_results, text_max_len, jina)
         searchResults.push(...results)
         if (!nextPageUrl) break
         nextUrl = nextPageUrl
@@ -27,7 +29,7 @@ async function main({ query, params = null }) {
         return null;
 }
 
-async function parseBaiduPage(url, rankStart, num_results, text_max_len) {
+async function parseBaiduPage(url, rankStart, num_results, text_max_len, jina) {
 
     try {
         const response = await axios.get(url, {
@@ -66,7 +68,7 @@ async function parseBaiduPage(url, rankStart, num_results, text_max_len) {
         const results = []
         for (const i in infos) {
             const info = infos[i];
-            const dirtyText = await getText(info.url);
+            const dirtyText = await getText(info.url, jina);
             var S = require('string');
             var cleanText = S(dirtyText).collapseWhitespace().s;
 
@@ -93,9 +95,9 @@ async function parseBaiduPage(url, rankStart, num_results, text_max_len) {
     }
 }
 
-async function getText(url) {
+async function getText(url, jina) {
     try {
-        const response = await axios.get(`https://r.jina.ai/${url}`, {
+        const response = await axios.get(`${jina}${url}`, {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
                 'Accept-Language': 'zh-CN,zh;q=0.9'
