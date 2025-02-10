@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Baidu Search - Electron</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f0f2f5;
+    }
+    .search-box {
+      background: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    input[type="text"], input[type="number"] {
+      padding: 8px;
+      margin: 5px;
+      width: 200px;
+    }
+    button {
+      background: #1890ff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .result-item {
+      background: white;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 4px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .result-item h3 {
+      margin: 5px 0;
+      color: #1a0dab;
+    }
+    .url {
+      color: #006621;
+      font-size: 0.9em;
+      margin: 5px 0;
+    }
+    .abstract {
+      color: #545454;
+      font-size: 0.9em;
+      line-height: 1.4;
+    }
+    .rank {
+      background: #f8f9fa;
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.8em;
+      color: #70757a;
+    }
+    #loading {
+      display: none;
+      margin: 10px 0;
+      color: #70757a;
+    }
+    .error {
+      color: #dc3545;
+      padding: 10px;
+      background: #f8d7da;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="search-box">
+    <form id="search-form">
+      <input type="text" id="keyword" placeholder="输入搜索关键词" required>
+      <input type="number" id="num-results" placeholder="结果数量 (默认10)" min="1" max="50">
+      <button type="submit">百度搜索</button>
+    </form>
+    <div id="loading">搜索中...</div>
+  </div>
+  <div id="results"></div>
+  <script src="./renderer.js"></script>
+</body>
+</html>

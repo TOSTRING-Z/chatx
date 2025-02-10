@@ -238,9 +238,9 @@ let funcItems = {
 };
 
 const ininFuncItems = () => {
-    funcItems.clip.event = getClipEvent(funcItems.clip); 
-    funcItems.math.event = getMathEvent(funcItems.math); 
-    funcItems.text.event = getTextEvent(funcItems.text); 
+    funcItems.clip.event = getClipEvent(funcItems.clip);
+    funcItems.math.event = getMathEvent(funcItems.math);
+    funcItems.text.event = getTextEvent(funcItems.text);
 }
 
 
@@ -497,22 +497,62 @@ function createMainWindow() {
     global.last_clipboard_content = clipboard.readText();
 }
 
+async function llmCall(data, params) {
+    data.api_url = getConfig("models")[params.model].api_url;
+    data.api_key = getConfig("models")[params.model].api_key;
+    data.version = params.version;
+    data.prompt = params.prompt;
+    data.memory_length = getConfig("memory_length");
+    data.max_tokens = getConfig("max_tokens");
+    let content = await chatBase(data);
+    return content;
+}
+
+async function pluginCall(data, params = null) {
+    let func;
+    if (params) {
+        func = inner_model_obj[params.model][params.version].func
+    } else {
+        func = inner_model_obj[data.model][data.version].func
+    }
+    try {
+        let content = await func(data.query);
+        return content;
+    } catch (error) {
+        console.log(error)
+        return "";
+    }
+}
+
 ipcMain.handle('query-text', async (_event, data) => {
     data.query = funcItems.text.event(data.query);
-    console.log(data);
+    data.event = _event;
     if (data.is_plugin) {
-        const func = inner_model_obj[data.model][data.version].func
-        let content = await func(data.query);
+        let content = await pluginCall(data);
         _event.sender.send('stream-data', { id: data.id, content: content, end: true });
     }
     else {
-        let api_url = getConfig("models")[data.model].api_url;
-        let api_key = getConfig("models")[data.model].api_key;
-        let memory_length = getConfig("memory_length");
-        let max_tokens = getConfig("max_tokens");
-        chatBase(data.query, data.prompt, data.version, api_url, api_key, memory_length, data.img_url, data.id, _event, data.stream, max_tokens);
+        // 链式调用
+        let chain_calls = getConfig("chain_call");
+        for (const step in chain_calls) {
+            let params = chain_calls[step];
+            data.statu = params.statu;
+            const primary_data = JSON.parse(JSON.stringify(data))
+            if (getIsPlugin(params.model))
+                data.query = await pluginCall(data, params);
+            else {
+                if (data.statu === "output") {
+                    data.prompt = primary_data.prompt
+                    data.query = `<external_information>${data.query}</external_information>\n${primary_data.query}`;
+                    llmCall(data, params);
+                } else {
+                    data.query = await llmCall(data, params);
+                }
+            }
+            console.log(`step: ${step}, query: ${data.query}`)
+        }
     }
-    
+
     windowManager.mainWindow.show();
 })
 
@@ -702,10 +742,10 @@ app.whenReady().then(() => {
         globalShortcut.unregisterAll();
         windowManager.destroyIconWindow();
     });
-    
+
     app.on('window-all-closed', function () {
         if (process.platform !== 'darwin') app.quit()
     })
 
-    
+
 })

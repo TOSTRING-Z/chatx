@@ -45,14 +45,14 @@ function format_messages(messages_list) {
     });
 }
 
-async function chatBase(queryText, prompt = null, version, api_url, api_key, memory_length, img_url = null, id, event, stream = true, max_tokens=8000) {
+async function chatBase({query, prompt = null, version, api_url, api_key, memory_length, img_url = null, id, event, stream = true, max_tokens=8000, statu="output"}) {
     try {
-        let content = queryText;
+        let content = query;
         if (img_url) {
             content = [
                 {
                     "type": "text",
-                    "text": queryText
+                    "text": query
                 },
                 {
                     "type": "image_url",
@@ -73,7 +73,7 @@ async function chatBase(queryText, prompt = null, version, api_url, api_key, mem
         messages_list.push(message_user)
         let message_system = { role: 'assistant', content: '', id: id }
 
-        if (stream) {
+        if (stream && statu==="output") {
             try {
                 const matches = api_url.match(/^(.*?)(\/[^\/]+\/[^\/]+)$/);
                 const baseURL = matches[1];
@@ -107,24 +107,28 @@ async function chatBase(queryText, prompt = null, version, api_url, api_key, mem
                 console.log(error);
                 event.sender.send('stream-data', { id: id, content: "发生错误！", end: true });
             }
-
-
         } else {
             const response = await axios.post(api_url, {
                 "model": version,
                 "messages": format_messages(messages_list),
+                "max_tokens": max_tokens,
             }, {
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${api_key}`,
                 },
             });
-            message_system.content = response.data.choices[0].message.content;
-            messages.push(message_user);
-            messages.push(message_system);
+            if (statu==="output") {
+                message_system.content = response.data.choices[0].message.content;
+                messages.push(message_user);
+                messages.push(message_system);
+            } else {
+                return response.data.choices[0].message.content;
+            }
         }
     } catch (error) {
         console.log(error)
+        return "发生错误！"
     }
 }
 

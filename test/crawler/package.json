@@ -7,7 +7,5 @@
         "start": "electron ."
     },
     "dependencies": {
-        "electron": "^28.1.0",
-        "puppeteer": "^24.2.0"
     }
 }
