@@ -3,9 +3,15 @@ const fs = require("fs");
 const OpenAI = require('openai');
 
 let messages = [];
+let stop_ids = [];
+
+function getStopIds() {
+    return stop_ids;
+}
 
 function clearMessages() {
     messages = [];
+    stop_ids = [];
 }
 
 function saveMessages(filePath) {
@@ -34,6 +40,10 @@ function deleteMessage(id) {
     // 使用 filter 方法删除 id 为 0 的对象
     messages = messages.filter(message => message.id !== id);
     return true;
+}
+
+function stopMessage(id) {
+    stop_ids.push(id);
 }
 
 function format_messages(messages_list) {
@@ -85,6 +95,9 @@ async function chatBase({query, prompt = null, version, api_url, api_key, memory
                     max_tokens: max_tokens,
                 })
                 for await (const chunk of stream_res) {
+                    if (stop_ids.includes(id)) {
+                        break;
+                    }
                     // 处理流式输出
                     let delta = chunk.choices[0]?.delta;
                     let content = "";
@@ -128,10 +141,10 @@ async function chatBase({query, prompt = null, version, api_url, api_key, memory
         }
         return true;
     } catch (error) {
-        console.log(error);
+        return null;
     }
 }
 
 module.exports = {
-    chatBase, clearMessages, saveMessages, loadMessages, deleteMessage
+    chatBase, clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds
 };

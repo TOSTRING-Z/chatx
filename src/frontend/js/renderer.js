@@ -111,11 +111,12 @@ system_message = `<div class="relative space-y-2 space-x-2" data-role="system" d
   <div class="info hidden">
     <div class="info-header">调用信息</div>
     <div class="info-content" data-content=""></div>
-    <div class="thinking">
-      <div class="dot"></div>
-      <div class="dot"></div>
-      <div class="dot"></div>
-    </div>
+  </div>
+  <div class="thinking">
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <div class="dot"></div>
+    <button class="btn">停止生成</button>
   </div>
   <div class="message" data-content="">@message</div>
 </div>`
@@ -156,8 +157,8 @@ function streamMessageAdd(chunk) {
   const messageSystem = document.querySelectorAll(`[data-id='${chunk.id}']`)[1];
   const message_content = messageSystem.getElementsByClassName('message')[0];
   if (chunk.content) {
-      message_content.dataset.content += chunk.content;
-      message_content.innerHTML = marked.parse(message_content.dataset.content);
+    message_content.dataset.content += chunk.content;
+    message_content.innerHTML = marked.parse(message_content.dataset.content);
   }
   if (chunk.end) {
     message_content.innerHTML = marked.parse(message_content.dataset.content);
@@ -324,6 +325,18 @@ window.electronAPI.infoData((info) => {
   InfoAdd(info);
 })
 
+function addEventStop(messageSystem, id) {
+  const message_content = messageSystem.getElementsByClassName('message')[0];
+  const thinking = messageSystem.getElementsByClassName("thinking")[0];
+  const btn = messageSystem.getElementsByClassName("btn")[0];
+  btn.addEventListener("click", () => {
+    window.electronAPI.streamMessageStop(id);
+    thinking.remove();
+    typesetMath();
+    menuEvent(id, message_content.dataset.content);
+  })
+}
+
 window.electronAPI.handleQuery(async (data) => {
   let text;
   if (data.img_url) {
@@ -343,6 +356,7 @@ window.electronAPI.handleQuery(async (data) => {
     "id": data.id,
     "message": ""
   }, "system")
+  addEventStop(system_message_cursor, data.id);
   messages.appendChild(system_message_cursor);
   top_div.scrollTop = top_div.scrollHeight;
   window.electronAPI.queryText({ prompt: player.value, query: content.value, model: data.model, version: data.version, is_plugin: data.is_plugin, img_url: data.img_url, id: data.id, stream: data.stream });

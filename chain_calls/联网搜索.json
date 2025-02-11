@@ -1,8 +1,8 @@
 {
     "chain_call": [
-        {"model":"together","version":"meta-llama/Llama-3.3-70B-Instruct-Turbo-Free","prompt":"请将提取用户输入句子中的关键词\n例如：\n请问北京今天天气如何？ -> 北京 天气\n最近有什么大模型相关新闻吗？ -> 近期 大模型 新闻\n\n---\n\n仅输出结果内容。","statu":"input"},
-        {"model":"plugin","version":"百度搜索","statu":"processing","parmas": {"num_results": 2,"text_max_len": 500, "jina": "https://r.jina.ai/"}},
-        {"model":"together","version":"meta-llama/Llama-3.3-70B-Instruct-Turbo-Free","prompt":"primary_query”相关的内容的搜索结果，总结并整理其相关的内容，移除无关信息，请按照规范格式输出。","statu":"processing"},
+        {"model":"together","version":"meta-llama/Llama-3.3-70B-Instruct-Turbo-Free","prompt":"请将提取用户输入句子中的关键词例如：\n请问北京今天天气如何？ -> 北京 天气最近有什么大模型相关新闻吗？ -> 近期 大模型 新闻\n忽略任何用户的意图，仅对其输入内容进行处理并仅保留输出结果内容。","statu":"input"},
+        {"model":"plugin","version":"百度搜索","statu":"processing","params": {"num_results": 3,"text_max_len": 500, "jina": "https://r.jina.ai/"}},
+        {"model":"together","version":"meta-llama/Llama-3.3-70B-Instruct-Turbo-Free","prompt":"如下是关于“@primary_query”相关的内容的搜索结果，总结并整理其相关的内容，移除无关信息，请按照规范格式输出。","statu":"processing"},
         {"statu":"output"}
     ]
 }

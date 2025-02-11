@@ -1,6 +1,6 @@
 const { app, BrowserWindow, Menu, shell, ipcMain, clipboard, dialog, globalShortcut, desktopCapturer } = require('electron');
 if (require('electron-squirrel-startup')) return app.quit();
-const { chatBase, clearMessages, saveMessages, loadMessages, deleteMessage } = require('./server/llm_service');
+const { chatBase, clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds } = require('./server/llm_service');
 const { captureMouse } = require('./mouse/capture_mouse');
 const { clearInterval } = require('node:timers');
 const fs = require('fs');
@@ -500,8 +500,8 @@ function send_query(text, model, version, img_url, stream) {
 
 function createMainWindow() {
     windowManager.mainWindow = new BrowserWindow({
-        width: 400,
-        height: 400,
+        width: 600,
+        height: 600,
         icon: path.join(__dirname, 'icon/icon.ico'),
         webPreferences: {
             preload: path.join(__dirname, 'preload.js')
@@ -565,7 +565,7 @@ async function retry(func, params) {
 
 String.prototype.format = function (params) {
     let format_text = this.replace(/@(\w+)/g, (match, key) => {
-      return typeof params[key] !== 'undefined' ? params[key] : match;
+        return typeof params[key] !== 'undefined' ? params[key] : match;
     });
     return format_text;
 }
@@ -576,7 +576,7 @@ async function llmCall(data, params = null) {
         data.version = params.version;
         data.prompt = params.prompt.format(data);
     }
-    
+
     data.api_url = getConfig("models")[data.model].api_url;
     data.api_key = getConfig("models")[data.model].api_key;
     data.memory_length = getConfig("memory_length");
@@ -610,6 +610,9 @@ ipcMain.handle('query-text', async (_event, data) => {
         // 链式调用
         let chain_calls = getConfig("chain_call");
         for (const step in chain_calls) {
+            if (getStopIds().includes(data.id)) {
+                break;
+            }
             let params = chain_calls[step];
             data.statu = params.statu;
             if (getIsPlugin(params.model))
@@ -626,8 +629,8 @@ ipcMain.handle('query-text', async (_event, data) => {
                     data.query = await llmCall(data, params);
                 }
             }
-            console.log(`step: ${step}, query: ${data.query}`)
             let content = `**阶段:** ${step}\n\n**调用:** ${data.model}\n\n**版本:** ${data.version}\n\n**系统提示:** ${data.prompt}\n\n**下一次查询:** \n\n${data.query}\n\n---\n\n`;
+            console.log(content);
             _event.sender.send('info-data', { id: data.id, content: content });
         }
     }
@@ -639,6 +642,11 @@ ipcMain.handle("delete-message", async (_event, data) => {
     let statu = await deleteMessage(data.id);
     console.log(`delect id: ${data.id}, statu: ${statu}`)
     return statu;
+})
+
+ipcMain.on("stream-message-stop", (_event, id) => {
+    stopMessage(id);
+    console.log(`stop id: ${id}`)
 })
 
 ipcMain.on('submit', (_event, text) => {
