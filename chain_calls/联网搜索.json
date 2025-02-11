@@ -1,8 +1,8 @@
 {
     "chain_call": [
-        {"model":"chatgpt","version":"gpt-4o-mini","prompt":"请将用户的输入修改为搜索引擎需要的关键词或者句子，仅输出结果内容。","statu":"input"},
+        {"model":"together","version":"meta-llama/Llama-3.3-70B-Instruct-Turbo-Free","prompt":"请将提取用户输入句子中的关键词\n例如：\n请问北京今天天气如何？ -> 北京 天气\n最近有什么大模型相关新闻吗？ -> 近期 大模型 新闻\n\n---\n\n仅输出结果内容。","statu":"input"},
         {"model":"plugin","version":"百度搜索","statu":"processing"},
-        {"model":"chatgpt","version":"gpt-4o-mini","prompt":"请整理用户输入的主要内容，移除无用信息（如链接等），请按照规范格式输出。","statu":"processing"},
+        {"model":"together","version":"meta-llama/Llama-3.3-70B-Instruct-Turbo-Free","prompt":"请整理用户输入的主要内容，移除无用信息（如链接等），请按照规范格式输出。","statu":"processing"},
         {"statu":"output"}
     ]
 }
