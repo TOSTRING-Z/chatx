@@ -1,8 +1,8 @@
 {
     "chain_call": [
-        {"model":"chatgpt","version":"gpt-4o-mini","prompt":"请将用户的输入修改为搜索引擎需要的关键词或者句子，仅输出结果内容。","statu":"input"},
-        {"model":"plugin","version":"百度搜索","statu":"processing"},
-        {"model":"chatgpt","version":"gpt-4o-mini","prompt":"请整理用户输入的主要内容，移除无用信息（如链接等），请按照规范格式输出。","statu":"processing"},
+        {"model":"together","version":"meta-llama/Llama-3.3-70B-Instruct-Turbo-Free","prompt":"请将用户的输入修改为搜索引擎需要的关键词或，要求简短，仅输出结果内容。","statu":"input"},
+        {"model":"plugin","version":"百度搜索","statu":"processing","parmas": {"num_results": 2,"text_max_len": 500, "jina": "https://r.jina.ai/"}},
+        {"model":"together","version":"meta-llama/Llama-3.3-70B-Instruct-Turbo-Free","prompt":"如下为“@primary_query”相关的内容的搜索结果，总结并整理其相关的内容，移除无关信息，请按照规范格式输出。","statu":"processing"},
         {"statu":"output"}
     ]
 }
