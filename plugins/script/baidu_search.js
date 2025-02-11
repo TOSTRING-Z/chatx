@@ -1,5 +1,6 @@
 const axios = require('axios')
 const cheerio = require('cheerio')
+const S = require('string');
 
 async function main({ query, params = null }) {
     let num_results = 2;
@@ -69,16 +70,18 @@ async function parseBaiduPage(url, rankStart, num_results, text_max_len, jina) {
         for (const i in infos) {
             const info = infos[i];
             const dirtyText = await getText(info.url, jina);
-            var S = require('string');
-            var cleanText = S(dirtyText).collapseWhitespace().s;
+            if (dirtyText) {
+                let cleanText = S(dirtyText).collapseWhitespace().s;
 
-            if (cleanText) {
-                results.push({
-                    title: info.title,
-                    text: cleanText.slice(text_max_len)
-                })
-                rankStart++;
+                if (cleanText) {
+                    results.push({
+                        title: info.title,
+                        text: cleanText.slice(text_max_len)
+                    })
+                    rankStart++;
+                }
             }
+            
             if (rankStart >= num_results) {
                 break;
             }
@@ -108,7 +111,7 @@ async function getText(url, jina) {
         const text = $('body').text();
         return text;
     } catch (error) {
-        console.error('getUrl error!')
+        console.error('getText error!')
         return null;
     }
 
