@@ -536,6 +536,10 @@ function createMainWindow() {
     global.last_clipboard_content = clipboard.readText();
 }
 
+function isValidOutput(output) {
+    return !!output; // 如果 output 是假值，返回 false；否则返回 true
+}
+
 async function retry(func, params) {
     let retry_time = getConfig("retry_time");
     let count = 0;
@@ -543,7 +547,7 @@ async function retry(func, params) {
     while (count < retry_time) {
         try {
             let content = await func(params);
-            if (content) {
+            if (isValidOutput(content)) {
                 return content;
             }
             else {
@@ -559,17 +563,22 @@ async function retry(func, params) {
     return "发生错误！";
 }
 
-async function llmCall(data, params=null) {
-    if (params) {
-        data.api_url = getConfig("models")[params.model].api_url;
-        data.api_key = getConfig("models")[params.model].api_key;
-        data.version = params.version;
-        data.prompt = params.prompt;
-    } else {
-        data.api_url = getConfig("models")[data.model].api_url;
-        data.api_key = getConfig("models")[data.model].api_key;
-    }
+String.prototype.format = function (params) {
+    let format_text = this.replace(/@(\w+)/g, (match, key) => {
+      return typeof params[key] !== 'undefined' ? params[key] : match;
+    });
+    return format_text;
+}
 
+async function llmCall(data, params = null) {
+    if (params) {
+        data.model = params.model;
+        data.version = params.version;
+        data.prompt = params.prompt.format(data);
+    }
+    
+    data.api_url = getConfig("models")[data.model].api_url;
+    data.api_key = getConfig("models")[data.model].api_key;
     data.memory_length = getConfig("memory_length");
     data.max_tokens = getConfig("max_tokens");
     return await retry(chatBase, data);
@@ -577,17 +586,21 @@ async function llmCall(data, params=null) {
 
 async function pluginCall(data, params = null) {
     let func;
+    data.prompt = "";
     if (params) {
-        func = inner_model_obj[params.model][params.version].func
-    } else {
-        func = inner_model_obj[data.model][data.version].func
+        data.model = params.model;
+        data.version = params.version;
     }
-    return await retry(func, data.query);
+    func = inner_model_obj[data.model][data.version].func
+    if (params.hasOwnProperty("params"))
+        data.params = params.params;
+    return await retry(func, data);
 }
 
 ipcMain.handle('query-text', async (_event, data) => {
     data.query = funcItems.text.event(data.query);
-    const primary_data = JSON.parse(JSON.stringify(data))
+    let primary_data = JSON.parse(JSON.stringify(data));
+    data.primary_query = primary_data.query;
     data.event = _event;
     if (data.is_plugin) {
         let content = await pluginCall(data);
@@ -603,7 +616,9 @@ ipcMain.handle('query-text', async (_event, data) => {
                 data.query = await pluginCall(data, params);
             else {
                 if (data.statu === "output") {
-                    data.prompt = primary_data.prompt
+                    data.model = primary_data.model;
+                    data.version = primary_data.version;
+                    data.prompt = primary_data.prompt;
                     if (step > 0)
                         data.query = `<info>${data.query}</info>\n${primary_data.query}`;
                     llmCall(data);
@@ -612,8 +627,8 @@ ipcMain.handle('query-text', async (_event, data) => {
                 }
             }
             console.log(`step: ${step}, query: ${data.query}`)
-            let content = `**阶段:** ${step}\n\n**调用:** ${data.model}\n\n**版本:** ${data.version}\n\n**查询:** \n\n${data.query}\n\n---\n\n`;
-            _event.sender.send('info-data', { id: data.id, content: content});
+            let content = `**阶段:** ${step}\n\n**调用:** ${data.model}\n\n**版本:** ${data.version}\n\n**系统提示:** ${data.prompt}\n\n**下一次查询:** \n\n${data.query}\n\n---\n\n`;
+            _event.sender.send('info-data', { id: data.id, content: content });
         }
     }
 
