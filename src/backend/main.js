@@ -590,10 +590,10 @@ async function pluginCall(data, params = null) {
     if (params) {
         data.model = params.model;
         data.version = params.version;
+        if (params.hasOwnProperty("params"))
+            data.params = params.params;
     }
     func = inner_model_obj[data.model][data.version].func
-    if (params.hasOwnProperty("params"))
-        data.params = params.params;
     return await retry(func, data);
 }
 
@@ -629,7 +629,7 @@ ipcMain.handle('query-text', async (_event, data) => {
                     data.query = await llmCall(data, params);
                 }
             }
-            let content = `**阶段:** ${step}\n\n**调用:** ${data.model}\n\n**版本:** ${data.version}\n\n**系统提示:** ${data.prompt}\n\n**下一次查询:** \n\n${data.query}\n\n---\n\n`;
+            let content = `**阶段:** ${step}\n\n**调用:** ${data.model}\n\n**版本:** ${data.version}\n\n**系统提示:** ${data.prompt}\n\n**下一次查询:** \n\n\`\`\`\n${data.query}\n\`\`\`\n\n---\n\n`;
             console.log(content);
             _event.sender.send('info-data', { id: data.id, content: content });
         }

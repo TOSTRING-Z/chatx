@@ -207,51 +207,89 @@ function menuEvent(id, raw) {
 const { Marked } = globalThis.marked;
 const { markedHighlight } = globalThis.markedHighlight;
 
+const marked = new Marked(
+  markedHighlight({
+    langPrefix: "hljs language-",
+    highlight(code, lang) {
+      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+      return hljs.highlight(code, { language }).value;
+    }
+  })
+);
+
+const marked_input = new Marked({
+  renderer: {
+    html({ type, raw }) {
+      return formatText(type, raw);
+    },
+    link({ type, raw }) {
+      return formatText(type, raw);
+    },
+    text({ raw }) {
+      return raw;
+    },
+  }
+});
+
 const formatCode = (type, raw, text) => {
-  const language = hljs.getLanguage(type) ? type : "plaintext";
-  const encodeCode = encodeURIComponent(text);
-  const highlightResult = hljs.highlight(raw, { language }).value;
+  const encodeCode = encodeURIComponent(raw);
   return `<div class="code-header">
-        <span class="language-tag">${language}</span>
-        <button
+            <span class="language-tag">${type}</span>
+            <button
             class="copy-btn"
             data-code="${encodeCode}"
-            title="复制代码"
-        >复制</button>
-    </div>
-    <pre class="hljs"><code>${highlightResult}</code></pre>`;
+            title="复制代码">复制</button>
+          </div>
+          <pre class="hljs"><code>${text}</code></pre>`;
 }
 
-const formatText = (type, raw, text) => {
+const formatText = (type, raw) => {
   const language = hljs.getLanguage(type) ? type : "plaintext";
   const highlightResult = hljs.highlight(raw, { language }).value;
   return highlightResult;
 }
 
-const marked = new Marked(
-  markedHighlight({
-    langPrefix: "hljs language-",
-    highlight(text, lang) {
-      return text;
+const renderer = {
+  code({ lang, raw, text }) {
+    return formatCode(lang, raw, text);
+  },
+  html({ type, raw }) {
+    return formatText(type, raw);
+  },
+  link({ type, raw }) {
+    return formatText(type, raw);
+  },
+  text(token) {
+    if (token.hasOwnProperty("tokens")) {
+      return this.parser.parseInline(token.tokens);
+    } else if (token.hasOwnProperty("typeThink")) {
+      return `<div class="think">${token.text}</div>`;
+    } else {
+      return token.raw;
     }
-  }),
-  {
-    renderer: {
-      link({ type, raw, text }) {
-        return formatText(type, raw, text);
-      },
-      html({ type, raw, text }) {
-        return formatText(type, raw, text);
-      },
-      text({ raw }) {
-        return raw;
-      },
-      code({ lang, raw, text }) {
-        return formatCode(lang, raw, text);
-      },
+  },
+}
+
+const think = {
+  name: 'think',
+  level: 'block',
+  start(src) { return src.match(/<think>/)?.index; },
+  tokenizer(src, tokens) {
+    const rule = /^<think>([\s\S]*?)<\/think>/;
+    const match = rule.exec(src);
+    if (match) {
+      const token = {
+        type: "text",
+        typeThink: true,
+        raw: match[0],
+        text: match[1],
+      };
+      return token
     }
-  }
-);
+  },
+};
+
+marked.use({ renderer, extensions: [think] });
 
 var typesetMath = function () { };
 
@@ -263,7 +301,7 @@ String.prototype.format = function (params, role) {
       if (role === "system") {
         param = marked.parse(params[key].trim());
       } else {
-        param = marked.parse(params[key].trim());
+        param = marked_input.parse(params[key].trim());
       }
     } else {
       param = params[key];

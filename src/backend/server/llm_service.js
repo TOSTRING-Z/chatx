@@ -73,12 +73,12 @@ async function chatBase({query, prompt = null, version, api_url, api_key, memory
             ];
         }
         message_user = { "role": "user", "content": content, "id": id };
-        if (prompt) {
+        if (!!prompt) {
             messages_list = [{ "role": "system", "content": prompt, "id": id }]
-            messages_list = messages_list.concat(messages.slice(messages.length - memory_length, messages.length))
+            messages_list = messages_list.concat(messages.slice(messages.length - memory_length * 2, messages.length))
         }
         else {
-            messages_list = messages.slice(messages.length - memory_length, messages.length)
+            messages_list = messages.slice(messages.length - memory_length * 2, messages.length)
         }
         messages_list.push(message_user)
         let message_system = { role: 'assistant', content: '', id: id }
