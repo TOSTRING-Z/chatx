@@ -53,7 +53,6 @@ async function parseBaiduPage(url, rankStart, num_results, text_max_len, jina) {
                 abstract = $el.text()
                     .replace(title, '')
                     .replace(/\s+/g, ' ')
-                    .substring(0, 300)
             }
 
             if (title && url) {
@@ -61,7 +60,7 @@ async function parseBaiduPage(url, rankStart, num_results, text_max_len, jina) {
                     rank: rankStart + i + 1,
                     title,
                     url,
-                    abstract: abstract.slice(0, 300)
+                    abstract: abstract
                 })
             }
         })
@@ -76,6 +75,7 @@ async function parseBaiduPage(url, rankStart, num_results, text_max_len, jina) {
                 if (cleanText) {
                     results.push({
                         title: info.title,
+                        abstract: info.abstract,
                         text: cleanText.slice(text_max_len)
                     })
                     rankStart++;
