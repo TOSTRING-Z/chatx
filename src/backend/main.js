@@ -598,6 +598,7 @@ async function pluginCall(data, params = null) {
 }
 
 ipcMain.handle('query-text', async (_event, data) => {
+    windowManager.mainWindow.show();
     data.query = funcItems.text.event(data.query);
     let primary_data = JSON.parse(JSON.stringify(data));
     data.primary_query = primary_data.query;
@@ -634,8 +635,6 @@ ipcMain.handle('query-text', async (_event, data) => {
             _event.sender.send('info-data', { id: data.id, content: content });
         }
     }
-
-    windowManager.mainWindow.show();
 })
 
 ipcMain.handle("delete-message", async (_event, data) => {

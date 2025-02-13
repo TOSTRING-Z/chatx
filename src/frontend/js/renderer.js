@@ -440,11 +440,14 @@ window.electronAPI.handleLoad((data) => {
       }, "user"));
     } else {
       text = data[i].content;
-      messages.appendChild(system_message.format({
+      const messageSystem = system_message.format({
         "icon": getIcon(false),
         "id": data[i].id,
         "message": text
-      }, "system"));
+      }, "system")
+      messages.appendChild(messageSystem);
+      const thinking = messageSystem.getElementsByClassName("thinking")[0];
+      thinking.remove();
       typesetMath();
       menuEvent(data[i].id, text);
     }
