@@ -38,8 +38,12 @@ function loadMessages(filePath) {
 
 function deleteMessage(id) {
     // 使用 filter 方法删除 id 为 0 的对象
-    messages = messages.filter(message => message.id !== id);
-    return true;
+    try {
+        messages = messages.filter(message => message.id !== id);
+        return true;
+    } catch (error) {
+        return false;
+    }
 }
 
 function stopMessage(id) {

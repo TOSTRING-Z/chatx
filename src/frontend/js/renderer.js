@@ -329,11 +329,8 @@ window.electronAPI.handleMathFormat((math_statu) => {
   }
 })
 
-async function delete_message(id, model) {
-  await window.electronAPI.deleteMessage({
-    id: id,
-    model, model
-  });
+async function delete_message(id) {
+  await window.electronAPI.deleteMessage(id);
   var elements = document.querySelectorAll(`[data-id="${id}"]`);
   elements.forEach(function (element) {
     element.remove();

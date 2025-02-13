@@ -563,9 +563,14 @@ async function retry(func, params) {
     return "发生错误！";
 }
 
-String.prototype.format = function (params) {
-    let format_text = this.replace(/@(\w+)/g, (match, key) => {
-        return typeof params[key] !== 'undefined' ? params[key] : match;
+String.prototype.format = function (querys) {
+    let format_text = this.replace(/@{query\[(\d+)\]}/g, (match, i) => {
+        try {
+            return querys[parseInt(i)];
+        } catch (e) {
+            console.log(e);
+            return match;
+        }
     });
     return format_text;
 }
@@ -574,7 +579,7 @@ async function llmCall(data, params = null) {
     if (params) {
         data.model = params.model;
         data.version = params.version;
-        data.prompt = params.prompt.format(data);
+        data.prompt = params.prompt.format(data.querys);
     }
 
     data.api_url = getConfig("models")[data.model].api_url;
@@ -597,11 +602,16 @@ async function pluginCall(data, params = null) {
     return await retry(func, data);
 }
 
+function copy(data) {
+    return JSON.parse(JSON.stringify(data));
+}
+
 ipcMain.handle('query-text', async (_event, data) => {
     windowManager.mainWindow.show();
+    let primary_data = copy(data);
     data.query = funcItems.text.event(data.query);
-    let primary_data = JSON.parse(JSON.stringify(data));
-    data.primary_query = primary_data.query;
+    data.querys = []
+    data.querys.push(copy(data.query))
     data.event = _event;
     if (data.is_plugin) {
         let content = await pluginCall(data);
@@ -616,18 +626,23 @@ ipcMain.handle('query-text', async (_event, data) => {
             }
             let params = chain_calls[step];
             data.statu = params.statu;
-            if (getIsPlugin(params.model))
+            if (getIsPlugin(params.model)) {
                 data.query = await pluginCall(data, params);
+                data.querys.push(copy(data.query));
+            }
             else {
                 if (data.statu === "output") {
                     data.model = primary_data.model;
                     data.version = primary_data.version;
                     data.prompt = primary_data.prompt;
-                    if (step > 0)
-                        data.query = `<info>${data.query}</info>\n${primary_data.query}`;
+                    if (step > 0) {
+                        data.query = `<info>${data.query}</info>\n${data.querys[0]}`;
+                        data.querys.push(copy(data.query));
+                    }
                     llmCall(data);
                 } else {
                     data.query = await llmCall(data, params);
+                    data.querys.push(copy(data.query));
                 }
             }
             let content = `**阶段:** ${step}\n\n**调用:** ${data.model}\n\n**版本:** ${data.version}\n\n**系统提示:** ${data.prompt}\n\n**下一次查询:** \n\n\`\`\`\n${data.query}\n\`\`\`\n\n---\n\n`;
@@ -637,9 +652,9 @@ ipcMain.handle('query-text', async (_event, data) => {
     }
 })
 
-ipcMain.handle("delete-message", async (_event, data) => {
-    let statu = await deleteMessage(data.id);
-    console.log(`delect id: ${data.id}, statu: ${statu}`)
+ipcMain.handle("delete-message", async (_event, id) => {
+    let statu = await deleteMessage(id);
+    console.log(`delect id: ${id}, statu: ${statu}`)
     return statu;
 })
 
