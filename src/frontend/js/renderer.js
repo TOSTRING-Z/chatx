@@ -71,8 +71,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-let prompt;
-
 user_message = `<div class="relative space-y-2 space-x-2" data-role="user" data-id="@id">
   <div class="flex flex-row-reverse w-full">
     <div class="menu-container">
@@ -409,13 +407,11 @@ window.electronAPI.handleModel((data) => {
   }
 })
 
-window.electronAPI.handlePrompt((text) => {
-  prompt = text;
+window.electronAPI.handlePrompt((prompt) => {
   player.value = prompt;
 })
 
 window.electronAPI.handleClear(() => {
-  player.value = prompt;
   messages.innerHTML = null;
 })
 
