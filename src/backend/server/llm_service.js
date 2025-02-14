@@ -1,6 +1,7 @@
 const axios = require("axios");
 const fs = require("fs");
-const OpenAI = require('openai');
+// const OpenAI = require('openai');
+const { streamSse } = require("./stream.js")
 
 let messages = [];
 let stop_ids = [];
@@ -59,7 +60,7 @@ function format_messages(messages_list) {
     });
 }
 
-async function chatBase({query, prompt = null, version, api_url, api_key, memory_length, img_url = null, id, event, stream = true, max_tokens=8000, statu="output"}) {
+async function chatBase({ query, prompt = null, version, api_url, api_key, memory_length, img_url = null, id, event, stream = true, max_tokens = 8000, statu = "output" }) {
     try {
         let content = query;
         if (img_url) {
@@ -87,17 +88,34 @@ async function chatBase({query, prompt = null, version, api_url, api_key, memory
         messages_list.push(message_user)
         let message_system = { role: 'assistant', content: '', id: id }
 
-        if (stream && statu==="output") {
+        if (stream && statu === "output") {
             try {
-                const matches = api_url.match(/^(.*?)(\/[^\/]+\/[^\/]+)$/);
-                const baseURL = matches[1];
-                const openai = new OpenAI({ baseURL: baseURL, apiKey: api_key })
-                const stream_res = await openai.chat.completions.create({
-                    model: version,
-                    messages: format_messages(messages_list),
-                    stream: true,
-                    max_tokens: max_tokens,
-                })
+                // const matches = api_url.match(/^(.*?)(\/[^\/]+\/[^\/]+)$/);
+                // const baseURL = matches[1];
+                // const openai = new OpenAI({ baseURL: baseURL, apiKey: api_key })
+                // const stream_res = await openai.chat.completions.create({
+                //     model: version,
+                //     messages: format_messages(messages_list),
+                //     stream: true,
+                //     max_tokens: max_tokens,
+                // })
+
+                const resp = await fetch(new URL(api_url), {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "Authorization": `Bearer ${api_key}`,
+                    },
+                    body: JSON.stringify({
+                        model: version,
+                        messages: format_messages(messages_list),
+                        stream: true,
+                        max_tokens: max_tokens,
+                    }),
+                });
+
+                const stream_res = streamSse(resp);
+
                 for await (const chunk of stream_res) {
                     if (stop_ids.includes(id)) {
                         break;
@@ -116,6 +134,7 @@ async function chatBase({query, prompt = null, version, api_url, api_key, memory
                         event.sender.send('stream-data', { id: id, content: content, end: false });
                     }
                 }
+
                 messages.push(message_user);
                 messages.push(message_system);
                 console.log(message_system)
@@ -135,7 +154,7 @@ async function chatBase({query, prompt = null, version, api_url, api_key, memory
                     "Authorization": `Bearer ${api_key}`,
                 },
             });
-            if (statu==="output") {
+            if (statu === "output") {
                 message_system.content = response.data.choices[0].message.content;
                 messages.push(message_user);
                 messages.push(message_system);
