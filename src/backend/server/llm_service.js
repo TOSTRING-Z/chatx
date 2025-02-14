@@ -1,6 +1,5 @@
-const axios = require("axios");
 const fs = require("fs");
-const { streamSse } = require("./stream.js")
+const { streamSse,streamJSON } = require("./stream.js")
 
 let messages = [];
 let stop_ids = [];
@@ -167,22 +166,26 @@ async function chatBase({ query, prompt = null, version, api_url, api_key, memor
                 event.sender.send('stream-data', { id: id, content: "发生错误！", end: true });
             }
         } else {
-            const response = await axios.post(api_url, {
-                "model": version,
-                "messages": format_messages(messages_list),
-                "max_tokens": max_tokens,
-            }, {
+            const resp = await fetch(new URL(api_url), {
+                method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${api_key}`,
                 },
+                body: JSON.stringify({
+                    model: version,
+                    messages: format_messages(messages_list, params),
+                    stream: false,
+                    max_tokens: max_tokens,
+                }),
             });
+            const data = await resp.json();
             if (statu === "output") {
-                message_system.content = response.data.choices[0].message.content;
+                message_system.content = data.choices[0].message.content;
                 messages.push(message_user);
                 messages.push(message_system);
             } else {
-                return response.data.choices[0].message.content;
+                return data.choices[0].message.content;
             }
         }
         return true;
