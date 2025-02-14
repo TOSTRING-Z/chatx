@@ -72,10 +72,8 @@
 
     /* Message bubbles */
     .message {
-      padding: 0.5rem 20px 4rem 20px;
       border-radius: 8px;
       background: #f9f9f9;
-      max-width: 90%;
       overflow-x: hidden;
       overflow-y: auto;
       word-wrap: break-word;
@@ -84,10 +82,16 @@
       flex-direction: column;
       gap: 0.4rem;
       position: relative;
+      text-align: justify;
+      max-width: calc(100%);
     }
 
     [data-role="user"] .message {
-      padding: 0.5rem 20px 0rem 20px;
+      padding: 0 40px 0 0;
+    }
+
+    [data-role="system"] .message {
+      padding: 0 0 2rem 30px;
     }
 
     .message.user {
@@ -244,7 +248,7 @@
     /* delete-message */
 
     .menu-container {
-      position: relative;
+      position: absolute;
       width: 2rem;
       height: 2rem;
       display: flex;
@@ -328,12 +332,15 @@
     }
 
     /* 调用信息 */
+    .info {
+      padding-left: 30px;
+    }
+
     .info-content {
       color: #999;
       max-height: 400px;
       overflow-y: auto;
       overflow-x: hidden;
-      margin: 0 20px;
       padding: 10px;
       border: 1px solid;
       border-top: none;
@@ -353,7 +360,6 @@
       max-height: 200px;
       overflow-y: auto;
       overflow-x: hidden;
-      margin: 0 20px;
       padding: 5px 10px;
       background: #f1f1f1;
       border: 1px solid #999;
@@ -395,7 +401,7 @@
       justify-content: start;
       align-items: center;
       gap: 4px;
-      bottom: 2rem;
+      bottom: 0;
       left: 25px;
       position: absolute;
       z-index: 2;

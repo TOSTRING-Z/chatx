@@ -359,6 +359,19 @@ function loadChain() {
         });
 }
 
+function formatDate() {
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 月份是从0开始的
+    const day = date.getDate().toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    
+    // 返回格式化的日期字符串，例如 "2023-11-08 15:46:42"
+    return `${year}-${month}-${day}_${hours}:${minutes}:${seconds}`;
+  }
+
 function getTemplate() {
     return [
         {
@@ -436,14 +449,17 @@ function getTemplate() {
                 {
                     label: '保存对话',
                     click: () => {
+                        const lastPath = path.join(store.get('lastSavePath') || path.join(os.homedir(), '.chatx'), `messages_${formatDate()}.json`);
+                        console.log(lastPath)
                         dialog.showSaveDialog(windowManager.mainWindow, {
-                            defaultPath: 'messages.json',
+                            defaultPath: lastPath,
                             filters: [
                                 { name: 'JSON文件', extensions: ['json'] },
                                 { name: '所有文件', extensions: ['*'] }
                             ]
                         }).then(result => {
                             if (!result.canceled) {
+                                store.set('lastSavePath', path.dirname(result.filePath));
                                 saveMessages(result.filePath);
                             }
                         }).catch(err => {
@@ -454,7 +470,9 @@ function getTemplate() {
                 {
                     label: '加载对话',
                     click: () => {
+                        const lastPath = store.get('lastSavePath') || path.join(os.homedir(), '.chatx');
                         dialog.showOpenDialog(windowManager.mainWindow, {
+                            defaultPath: lastPath,
                             filters: [
                                 { name: 'JSON文件', extensions: ['json'] },
                                 { name: '所有文件', extensions: ['*'] }

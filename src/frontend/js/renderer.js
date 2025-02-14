@@ -83,7 +83,7 @@ user_message = `<div class="relative space-y-2 space-x-2" data-role="user" data-
 </div>`;
 
 system_message = `<div class="relative space-y-2 space-x-2" data-role="system" data-id="@id">
-  <div class="flex flex-row w-full">
+  <div class="absolute">
     <div class="menu-container">
       <img class="menu system" src="img/@icon.svg" alt="System Avatar">
       <div class="menu-item">
