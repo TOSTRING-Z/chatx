@@ -308,6 +308,9 @@ function getVersionsSubmenu() {
 }
 
 function setPrompt(prompt) {
+    const config = getConfig();
+    config.prompt = prompt;
+    setConfig(config);
     windowManager.mainWindow.webContents.send('prompt', prompt);
 }
 
