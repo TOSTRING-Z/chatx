@@ -1,6 +1,5 @@
 const axios = require("axios");
 const fs = require("fs");
-// const OpenAI = require('openai');
 const { streamSse } = require("./stream.js")
 
 let messages = [];
@@ -51,16 +50,50 @@ function stopMessage(id) {
     stop_ids.push(id);
 }
 
-function format_messages(messages_list) {
+function copy(data) {
+    return JSON.parse(JSON.stringify(data));
+}
+
+function format_messages(messages_list, params) {
+    params = params ? params : {};
     // 遍历 messages_list 数组，并删除每个对象的 id 属性
-    return messages_list.map(message => {
-        let message_copy = JSON.parse(JSON.stringify(message));
+    messages_list = messages_list.map(message => {
+        let message_copy = copy(message);
         delete message_copy.id;
         return message_copy;
     });
+
+    // 判断是否是视觉模型
+    if (!params.hasOwnProperty("vision")) {
+        messages_list = messages_list.filter(message => {
+            if (typeof message.content !== "string") {
+                return false;
+            }
+            return true;
+        })
+    }
+    else {
+        messages_list = messages_list.filter(message => {
+            if (typeof message.content !== "string") {
+                switch (message.content[1].type) {
+                    case "image_url":
+                        return params.vision.includes("image")
+                    case "video_url":
+                        return params.vision.includes("video")
+                    default:
+                        return false;
+                }
+            }
+            return true;
+        })
+    }
+
+    return messages_list;
+
 }
 
-async function chatBase({ query, prompt = null, version, api_url, api_key, memory_length, img_url = null, id, event, stream = true, max_tokens = 8000, statu = "output" }) {
+
+async function chatBase({ query, prompt = null, version, api_url, api_key, memory_length, img_url = null, id, event, stream = true, max_tokens = 8000, statu = "output", params = null }) {
     try {
         let content = query;
         if (img_url) {
@@ -90,16 +123,6 @@ async function chatBase({ query, prompt = null, version, api_url, api_key, memor
 
         if (stream && statu === "output") {
             try {
-                // const matches = api_url.match(/^(.*?)(\/[^\/]+\/[^\/]+)$/);
-                // const baseURL = matches[1];
-                // const openai = new OpenAI({ baseURL: baseURL, apiKey: api_key })
-                // const stream_res = await openai.chat.completions.create({
-                //     model: version,
-                //     messages: format_messages(messages_list),
-                //     stream: true,
-                //     max_tokens: max_tokens,
-                // })
-
                 const resp = await fetch(new URL(api_url), {
                     method: "POST",
                     headers: {
@@ -108,7 +131,7 @@ async function chatBase({ query, prompt = null, version, api_url, api_key, memor
                     },
                     body: JSON.stringify({
                         model: version,
-                        messages: format_messages(messages_list),
+                        messages: format_messages(messages_list, params),
                         stream: true,
                         max_tokens: max_tokens,
                     }),
@@ -164,6 +187,7 @@ async function chatBase({ query, prompt = null, version, api_url, api_key, memor
         }
         return true;
     } catch (error) {
+        event.sender.send('info-data', { id: id, content: `chatBase 发生错误:\n\`\`\`\n${JSON.stringify(error)}\n\`\`\`\n` });
         return null;
     }
 }

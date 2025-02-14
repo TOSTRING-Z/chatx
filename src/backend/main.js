@@ -282,6 +282,7 @@ function getModelsSubmenu() {
     })
 }
 
+
 function getVersionsSubmenu() {
     let versions;
     if (global.is_plugin) {
@@ -292,6 +293,9 @@ function getVersionsSubmenu() {
     }
     console.log(versions);
     return versions.map((_version) => {
+        if (typeof _version !== "string") {
+            _version = _version.version
+        }
         return {
             type: 'radio',
             checked: global.version == _version,
@@ -602,6 +606,9 @@ async function llmCall(data, params = null) {
 
     data.api_url = getConfig("models")[data.model].api_url;
     data.api_key = getConfig("models")[data.model].api_key;
+    data.params = getConfig("models")[data.model].versions.find(version => {
+        return typeof version !== "string" && version.version === data.version
+    });
     data.memory_length = getConfig("memory_length");
     data.max_tokens = getConfig("max_tokens");
     return await retry(chatBase, data);
