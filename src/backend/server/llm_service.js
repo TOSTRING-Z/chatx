@@ -91,60 +91,77 @@ function format_messages(messages_list, params) {
 
 }
 
+function format(template, params) {
+    const keys = Object.keys(params);
+    const values = Object.values(params);
+    return new Function(...keys, `return \`$${template}\`;`)(...values);
+}
 
-async function chatBase({ query, prompt = null, version, api_url, api_key, memory_length, img_url = null, id, event, stream = true, max_tokens = 8000, statu = "output", params = null }) {
+String.prototype.format = function (data) {
+    let format_text = this.replace(/(\{.*?\})/g, (match) => {
+        try {
+            return format(match, data);
+        } catch (e) {
+            console.log(e);
+            return match;
+        }
+    });
+    return format_text;
+}
+
+async function chatBase(data) {
     try {
-        let content = query;
-        if (img_url) {
+        let content = data.input;
+        if (data.img_url) {
             content = [
                 {
                     "type": "text",
-                    "text": query
+                    "text": data.input
                 },
                 {
                     "type": "image_url",
                     "image_url": {
-                        "url": img_url
+                        "url": data.img_url
                     }
                 }
             ];
         }
-        message_user = { "role": "user", "content": content, "id": id };
-        if (!!prompt) {
-            messages_list = [{ "role": "system", "content": prompt, "id": id }]
-            messages_list = messages_list.concat(messages.slice(messages.length - memory_length * 2, messages.length))
+        message_user = { "role": "user", "content": content, "id": data.id };
+        if (!!data.prompt) {
+            messages_list = [{ "role": "system", "content": data.prompt, "id": data.id }]
+            messages_list = messages_list.concat(messages.slice(messages.length - data.memory_length * 2, messages.length))
         }
         else {
-            messages_list = messages.slice(messages.length - memory_length * 2, messages.length)
+            messages_list = messages.slice(messages.length - data.memory_length * 2, messages.length)
         }
         messages_list.push(message_user)
-        let message_system = { role: 'assistant', content: '', id: id }
+        let message_system = { role: 'assistant', content: '', id: data.id }
 
-        if (stream && statu === "output") {
+        if (data.stream && data.end) {
             try {
-                const resp = await fetch(new URL(api_url), {
+                const resp = await fetch(new URL(data.api_url), {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": `Bearer ${api_key}`,
+                        "Authorization": `Bearer ${data.api_key}`,
                     },
                     body: JSON.stringify({
-                        model: version,
-                        messages: format_messages(messages_list, params),
+                        model: data.version,
+                        messages: format_messages(messages_list, data.params),
                         stream: true,
-                        max_tokens: max_tokens,
+                        max_tokens: data.max_tokens,
                     }),
                 });
 
                 const stream_res = streamSse(resp);
 
                 for await (const chunk of stream_res) {
-                    if (stop_ids.includes(id)) {
+                    if (stop_ids.includes(data.id)) {
                         break;
                     }
                     // 处理流式输出
                     let delta = chunk.choices[0]?.delta;
-                    let content = "";
+                    content = "";
                     if (chunk.choices.length > 0 && delta) {
                         if (delta.hasOwnProperty("reasoning_content") && delta.reasoning_content)
                             content = delta.reasoning_content;
@@ -153,44 +170,47 @@ async function chatBase({ query, prompt = null, version, api_url, api_key, memor
                             message_system.content += content;
                         }
                         // 发送数据块到渲染进程
-                        event.sender.send('stream-data', { id: id, content: content, end: false });
+                        data.event.sender.send('stream-data', { id: data.id, content: content, end: false });
                     }
                 }
 
                 messages.push(message_user);
                 messages.push(message_system);
                 console.log(message_system)
-                event.sender.send('stream-data', { id: id, content: "", end: true });
+                data.event.sender.send('stream-data', { id: data.id, content: "", end: true });
+                return true;
             } catch (error) {
                 console.log(error);
-                event.sender.send('stream-data', { id: id, content: "发生错误！", end: true });
+                data.event.sender.send('info-data', { id: data.id, content: `### chatBase 发生错误！\n\n` });
             }
         } else {
-            const resp = await fetch(new URL(api_url), {
+            const resp = await fetch(new URL(data.api_url), {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
-                    "Authorization": `Bearer ${api_key}`,
+                    "Authorization": `Bearer ${data.api_key}`,
                 },
                 body: JSON.stringify({
-                    model: version,
-                    messages: format_messages(messages_list, params),
+                    model: data.version,
+                    messages: format_messages(messages_list, data.params),
                     stream: false,
-                    max_tokens: max_tokens,
+                    max_tokens: data.max_tokens,
                 }),
             });
-            const data = await resp.json();
-            if (statu === "output") {
-                message_system.content = data.choices[0].message.content;
+            const respJson = await resp.json();
+            if (data.end) {
+                data.output = respJson.choices[0].message.content;
+                message_system.content = data.output;
                 messages.push(message_user);
                 messages.push(message_system);
+                data.event.sender.send('stream-data', { id: data.id, content: data.output_template.format(data), end: true });
+                return true;
             } else {
-                return data.choices[0].message.content;
+                return respJson.choices[0].message.content;
             }
         }
-        return true;
     } catch (error) {
-        event.sender.send('info-data', { id: id, content: `chatBase 发生错误:\n\`\`\`\n${JSON.stringify(error)}\n\`\`\`\n` });
+        data.event.sender.send('info-data', { id: data.id, content: `### chatBase 发生错误！\n\n` });
         return null;
     }
 }

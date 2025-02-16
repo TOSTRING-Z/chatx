@@ -1,9 +1,9 @@
 const axios = require('axios');
 
-async function jours_if({query}) {
+async function jours_if({input}) {
     const regex = /(.*?)\n/g;
     try {
-        const processedContent = `${query.replace(/\./g, '')}\n`;
+        const processedContent = `${input.replace(/\./g, '')}\n`;
         const pubmidJudge = [...processedContent.matchAll(regex)].map(match => match[1]);
 
         if (!pubmidJudge.length) return "";
@@ -33,11 +33,11 @@ async function pmids_if(pmids) {
     return jours_if(content)
 }
 
-function main(query) {
-    if (query.trim().match(/^[\d,]+$/)) {
-        return pmids_if(query);
+function main(input) {
+    if (input.trim().match(/^[\d,]+$/)) {
+        return pmids_if(input);
     } else {
-        return jours_if(query);
+        return jours_if(input);
     }
 }
 

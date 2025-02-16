@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bouncing Yellow Ball</title>
+<style>
+  #square {
+    width: 300px;
+    height: 300px;
+    position: relative;
+    background-color: transparent;
+    border: 1px solid black;
+    margin: 50px;
+    transform: rotate(0deg);
+    transition: transform 5s linear;
+  }
+
+  #ball {
+    width: 30px;
+    height: 30px;
+    background-color: yellow;
+    border-radius: 50%;
+    position: absolute;
+    top: 135px;
+    left: 135px;
+  }
+</style>
+</head>
+<body>
+<div id="square">
+  <div id="ball"></div>
+</div>
+
+<script>
+// JavaScript code within the <script> tag
+  const square = document.getElementById('square');
+const ball = document.getElementById('ball');
+
+let x = 135, y = 135; // Initial position of the ball
+let dx = 2, dy = 2; // Velocity of the ball
+
+function moveBall() {
+  // Update ball position
+  x += dx;
+  y += dy;
+
+  // Check for collision with square walls
+  if (x + ball.offsetWidth > square.offsetWidth || x < 0) {
+    dx = -dx; // Reverse X direction
+  }
+  if (y + ball.offsetHeight > square.offsetHeight || y < 0) {
+    dy = -dy; // Reverse Y direction
+  }
+
+  // Update ball position
+  ball.style.left = x + 'px';
+  ball.style.top = y + 'px';
+
+  // Rotate the square
+  let currentRotation = square.style.transform.match(/rotate\(([^deg]+)deg\)/);
+  let rotation = currentRotation ? parseFloat(currentRotation[1]) : 0;
+  rotation += 0.5; // Increment rotation
+  square.style.transform = `rotate(${rotation}deg)`;
+}
+
+// Move the ball every 10 milliseconds
+setInterval(moveBall, 10);
+
+</script>
+
+</body>
+</html>

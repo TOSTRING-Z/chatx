@@ -1,9 +1,9 @@
 async function main({ input }) {
-    const rule = /^<think>([\s\S]*?)<\/think>/;
+    const rule = /(\{[\s\S]*?\})/g;
     const match = rule.exec(input);
 
     if (match) {
-        return match[1]
+        return JSON.parse(match[1]);
     }
     return null;
 }

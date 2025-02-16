@@ -91,22 +91,22 @@
   },
   "plugins": {
     "百度翻译[新]": {
-      "path": "@{resourcesPath}/resource/plugins/script/trans_baidu_new.js"
+      "path": "{resourcesPath}/resource/plugins/script/trans_baidu_new.js"
     },
     "百度翻译[旧]": {
-      "path": "@{resourcesPath}/resource/plugins/script/trans_baidu_old.js"
+      "path": "{resourcesPath}/resource/plugins/script/trans_baidu_old.js"
     },
     "谷歌翻译": {
-      "path": "@{resourcesPath}/resource/plugins/script/trans_google.js"
+      "path": "{resourcesPath}/resource/plugins/script/trans_google.js"
     },
     "影响因子查询": {
-      "path": "@{resourcesPath}/resource/plugins/script/if_pmid.js"
+      "path": "{resourcesPath}/resource/plugins/script/if_pmid.js"
     },
     "百度搜索": {
-      "path": "@{resourcesPath}/resource/plugins/script/baidu_search.js"
+      "path": "{resourcesPath}/resource/plugins/script/baidu_search.js"
     },
     "提取思维链": {
-      "path": "@{resourcesPath}/resource/plugins/script/get_think.js"
+      "path": "{resourcesPath}/resource/plugins/script/get_think.js"
     }
   },
   "chain_call": [

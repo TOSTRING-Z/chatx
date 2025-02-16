@@ -56,10 +56,10 @@ function format(result) {
     return text
 }
 
-async function main({query}) {
+async function main({input}) {
     try {
-        let query_text = encodeURIComponent(query);
-        let mode = getMode(query)
+        let query_text = encodeURIComponent(input);
+        let mode = getMode(input)
         axiosCookieJarSupport(axios);
         let cookieJar = new CookieJar();
         cookieJar.setCookie('NID=521=0J6p2ro0DWAsD4w-Nd79sxGMWVKnRiAZm7Lwz2T8uphfjPuqSnchmKd4jM3paI3AisxeVqgWv3s-sqxX43Ui91R4YfmpvvfT9rRl8sIUCwBV-nHBRG6yEXK80TjHKBABqD_jp5HtsBKRFPQwk-1a4gmlNiO-XjskXh9cIAVMshn_pDuiP8an2kUJ_nPutK424SdckqXrdcG7rhsT', 'https://www.google.com/')

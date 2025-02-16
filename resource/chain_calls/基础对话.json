@@ -1,5 +1,7 @@
 {
     "chain_call": [
-        {"statu":"output"}
+        {
+            "end": true
+        }
     ]
 }

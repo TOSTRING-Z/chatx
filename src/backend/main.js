@@ -10,27 +10,23 @@ const path = require('path');
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
 
-String.prototype.format = function (querys) {
-    let format_text = this.replace(/@{query\[(\d+)\]}/g, (match, i) => {
-        try {
-            return querys[parseInt(i)];
-        } catch (e) {
-            console.log(e);
-            return match;
-        }
-    });
-    return format_text;
+function format(template, params) {
+    const keys = Object.keys(params);
+    const values = Object.values(params);
+    return new Function(...keys, `return \`$${template}\`;`)(...values);
 }
 
-String.prototype.formatSource = function (process) {
-    let format_text = this.replace(/@\{(.*?)\}/g, (match, key) => {
+String.prototype.format = function (data) {
+    let format_text = this.replaceAll("{{","@bracket_left").replaceAll("}}","@bracket_right");
+    format_text = format_text.replace(/(\{.*?\})/g, (match,cmd) => {
         try {
-            return process[key];
+            return format(cmd, data);
         } catch (e) {
             console.log(e);
             return match;
         }
     });
+    format_text = format_text.replaceAll("@bracket_left","{").replaceAll("@bracket_right","}")
     return format_text;
 }
 
@@ -61,7 +57,7 @@ if (isFirstInstall()) {
 
 // 配置插件接口
 function loadTranslation(name) {
-    const pluginPath = getConfig("plugins")[name].path.formatSource(process);
+    const pluginPath = getConfig("plugins")[name].path.format(process);
     try {
         console.log(`loading plugin: ${name}`);
         const plugin = require(pluginPath);
@@ -399,10 +395,10 @@ function formatDate() {
     const hours = date.getHours().toString().padStart(2, '0');
     const minutes = date.getMinutes().toString().padStart(2, '0');
     const seconds = date.getSeconds().toString().padStart(2, '0');
-    
+
     // 返回格式化的日期字符串，例如 "2023-11-08 15:46:42"
     return `${year}-${month}-${day}_${hours}:${minutes}:${seconds}`;
-  }
+}
 
 function getTemplate() {
     return [
@@ -590,15 +586,24 @@ function isValidOutput(output) {
     return !!output; // 如果 output 是假值，返回 false；否则返回 true
 }
 
-async function retry(func, params) {
+function copy(data) {
+    return JSON.parse(JSON.stringify(data));
+}
+
+async function retry(func, data) {
+    if (data.hasOwnProperty("output_format")){
+        data.input = data.output_format;
+    } else {
+        data.input = data.query;
+    }
     let retry_time = getConfig("retry_time");
     let count = 0;
     let error;
     while (count < retry_time) {
         try {
-            let content = await func(params);
-            if (isValidOutput(content)) {
-                return content;
+            let output = await func(data);
+            if (isValidOutput(output)) {
+                return output;
             }
             else {
                 count++;
@@ -617,7 +622,15 @@ async function llmCall(data, params = null) {
     if (params) {
         data.model = params.model;
         data.version = params.version;
-        data.prompt = params.prompt.format(data.querys);
+        data.prompt = params.prompt.format(data);
+        if (params.hasOwnProperty("output_template")) {
+            data.output_template = params.output_template;
+        } else {
+            data.output_template = null;
+        }
+        if (params.hasOwnProperty("end")) {
+            data.end = params.end
+        }
     }
 
     data.api_url = getConfig("models")[data.model].api_url;
@@ -627,32 +640,53 @@ async function llmCall(data, params = null) {
     });
     data.memory_length = getConfig("memory_length");
     data.max_tokens = getConfig("max_tokens");
-    return await retry(chatBase, data);
+    data.output = await retry(chatBase, data);
+    data.outputs.push(copy(data.output));
+    if (data.output_template) {
+        data.output_format = data.output_template.format(data);
+    } else {
+        data.output_format = data.output;
+    }
+    data.output_formats.push(copy(data.output_format));
+    return data.output_format;
 }
 
 async function pluginCall(data, params = null) {
-    let func;
-    data.prompt = "";
     if (params) {
         data.model = params.model;
         data.version = params.version;
-        if (params.hasOwnProperty("params"))
+        if (params.hasOwnProperty("output_template")) {
+            data.output_template = params.output_template;
+        } else {
+            data.output_template = null;
+        }
+        if (params.hasOwnProperty("params")){
             data.params = params.params;
+        }
+        if (params.hasOwnProperty("end")) {
+            data.end = params.end
+        }
     }
-    func = inner_model_obj[data.model][data.version].func
-    return await retry(func, data);
-}
 
-function copy(data) {
-    return JSON.parse(JSON.stringify(data));
+    data.prompt = "";
+    let func = inner_model_obj[data.model][data.version].func
+    data.output = await retry(func, data);
+    data.outputs.push(copy(data.output));
+    if (data.output_template) {
+        data.output_format = data.output_template.format(data);
+    } else {
+        data.output_format = data.output;
+    }
+    data.output_formats.push(copy(data.output_format));
+    return data.output_format;
 }
 
 ipcMain.handle('query-text', async (_event, data) => {
     windowManager.mainWindow.show();
     let primary_data = copy(data);
     data.query = funcItems.text.event(data.query);
-    data.querys = []
-    data.querys.push(copy(data.query))
+    data.outputs = []
+    data.output_formats = []
     data.event = _event;
     if (data.is_plugin) {
         let content = await pluginCall(data);
@@ -666,27 +700,36 @@ ipcMain.handle('query-text', async (_event, data) => {
                 break;
             }
             let params = chain_calls[step];
-            data.statu = params.statu;
+            data.end = params.end;
             if (getIsPlugin(params.model)) {
-                data.query = await pluginCall(data, params);
-                data.querys.push(copy(data.query));
-            }
-            else {
-                if (data.statu === "output") {
-                    data.model = primary_data.model;
-                    data.version = primary_data.version;
-                    data.prompt = primary_data.prompt;
-                    if (step > 0) {
-                        data.query = `<info>${data.query}</info>\n${data.querys[0]}`;
-                        data.querys.push(copy(data.query));
-                    }
-                    llmCall(data);
-                } else {
-                    data.query = await llmCall(data, params);
-                    data.querys.push(copy(data.query));
+                if (data.end) {
+                    if (!params.hasOwnProperty("model"))
+                        data.model = primary_data.model;
+                    if (!params.hasOwnProperty("version"))
+                        data.version = primary_data.version;
+                    await pluginCall(data);
+                    _event.sender.send('stream-data', { id: data.id, content: data.output_format, end: true });
+                    break;
+                }
+                else {
+                    await pluginCall(data, params);
                 }
             }
-            let content = `**阶段:** ${step}\n\n**调用:** ${data.model}\n\n**版本:** ${data.version}\n\n**系统提示:** ${data.prompt}\n\n**下一次查询:** \n\n\`\`\`\n${data.query}\n\`\`\`\n\n---\n\n`;
+            else {
+                if (data.end) {
+                    if (!params.hasOwnProperty("model"))
+                        data.model = primary_data.model;
+                    if (!params.hasOwnProperty("version"))
+                        data.version = primary_data.version;
+                    if (!params.hasOwnProperty("prompt"))
+                        data.prompt = primary_data.prompt.format(data);
+                    await llmCall(data);
+                    break;
+                } else {
+                    await llmCall(data, params);
+                }
+            }
+            let content = `**阶段:** ${step}\n\n**调用:** ${data.model}\n\n**版本:** ${data.version}\n\n**系统提示:** ${data.prompt}\n\n**模板输出:** \n\n\`\`\`\n${data.output_format}\n\`\`\`\n\n---\n\n`;
             console.log(content);
             _event.sender.send('info-data', { id: data.id, content: content });
         }

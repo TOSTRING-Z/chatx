@@ -76,10 +76,10 @@ function format(result) {
     }
 }
 
-async function main({query}) {
+async function main({input}) {
     try {
-        let query_text = encodeURIComponent(query);
-        let mode = getMode(query)
+        let query_text = encodeURIComponent(input);
+        let mode = getMode(input)
         axiosCookieJarSupport(axios);
         let cookieJar = new CookieJar();
         cookieJar.setCookie('BAIDUID=A8A82BD2F42CC6BD4E0FD54ABB746B32:FG=1', 'https://fanyi.baidu.com')
@@ -87,7 +87,7 @@ async function main({query}) {
         let response = await axios.post(get, {
             'from': mode[0],
             'to': mode[1],
-            'sign': hash(query).toString(),
+            'sign': hash(input).toString(),
             'simple_means_flag': '3',
             'token': 'f1ea842a77d73327b3124c62454b13df',
             'domain': 'common',

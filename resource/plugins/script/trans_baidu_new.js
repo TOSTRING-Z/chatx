@@ -47,7 +47,7 @@ function format(result) {
   }
 }
 
-async function main({query}) {
+async function main({input}) {
   try {
     axiosCookieJarSupport(axios);
     let cookieJar = new CookieJar();
@@ -58,10 +58,10 @@ async function main({query}) {
     let response = await axios.post(
         TRANSLATION_API_URL,
       {
-        from: mode(query)[0],
-        to: mode(query)[1],
+        from: mode(input)[0],
+        to: mode(input)[1],
         source: "txt",
-        query: query
+        query: input
       },
       {
         jar: cookieJar,

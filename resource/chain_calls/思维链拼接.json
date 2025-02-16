@@ -1,10 +1,17 @@
 {
     "chain_call": [
-        {"model":"together","version":"deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free","prompt":"请思考后回答","statu":"input"},
-        {"model":"plugin","version":"提取思维链","statu":"processing"},
-        {"statu":"output"}
+        {
+            "model": "together",
+            "version": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B-free",
+            "prompt": "请思考后回答"
+        },
+        {
+            "model": "plugin",
+            "version": "提取思维链",
+            "output_template": "<think>{output}</think>\n- query:{query}\n- answer:"
+        },
+        {
+            "end": true
+        }
     ]
 }
-
-
-

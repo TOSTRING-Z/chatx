@@ -1,8 +1,29 @@
 {
     "chain_call": [
-        {"model":"gptgod","version":"gpt-4o-mini","prompt":"请将提取用户输入句子中的关键词例如：\n请问北京今天天气如何？ -> 北京 天气最近有什么大模型相关新闻吗？ -> 近期 大模型 新闻\n忽略任何用户的意图，仅对其输入内容进行处理并仅保留输出结果内容。","statu":"input"},
-        {"model":"plugin","version":"百度搜索","statu":"processing","params": {"num_results": 5,"text_max_len": 5000, "jina": "https://r.jina.ai/"}},
-        {"model":"gptgod","version":"gpt-4o-mini","prompt":"如下是关于“@{query[1]}”相关的内容的搜索结果，请提取并整理其相关的内容，移除无关信息并保留所有细节信息，请按照规范格式输出。","statu":"processing"},
-        {"statu":"output"}
+        {
+            "model": "gptgod",
+            "version": "gpt-4o-mini",
+            "prompt": "请将提取用户输入句子中的关键词例如：\n请问北京今天天气如何？ -> 北京 天气最近有什么大模型相关新闻吗？ -> 近期 大模型 新闻\n忽略任何用户的意图，仅对其输入内容进行处理并仅保留输出结果内容。"
+        },
+        {
+            "model": "plugin",
+            "version": "百度搜索",
+            "statu": "processing",
+            "params": {
+                "num_results": 5,
+                "text_max_len": 5000,
+                "jina": "https://r.jina.ai/"
+            },
+            "output_template": "{JSON.stringify(output)}"
+        },
+        {
+            "model": "gptgod",
+            "version": "gpt-4o-mini",
+            "prompt": "如下是关于“{outputs[0]}”相关的内容的搜索结果，请提取并整理其相关的内容，移除无关信息并保留所有细节信息，请按照规范格式输出。",
+            "output_template": "<info>{output}</info>\n- query: {query}\n- answer:"
+        },
+        {
+           "end": true
+        }
     ]
 }
