@@ -32,7 +32,7 @@
             "model": "together",
             "version": "meta-llama/Llama-3.3-70B-Instruct-Turbo-Free",
             "prompt": "请检查前面3个阶段的问题。",
-            "output_template": "\n用户查询如下:{query}\n\n- 请根据以上多个阶段的结果进行回答。\n\n- 请仔细检查各个阶段的回答,确保结果的可靠性。\n\n<think>阶段1回答: {outputs[2]}\n\n阶段2回答: {outputs[3]}\n\n阶段3回答: {outputs[4]}\n\n多个阶段中的可能问题: {outputs[5]}</think>\n"
+            "output_template": "用户查询如下:{query}\n\n- 请根据以上多个阶段的结果进行回答。\n\n- 请仔细检查各个阶段的回答,确保结果的可靠性。\n\n<think>阶段1回答: {outputs[2]}\n\n阶段2回答: {outputs[3]}\n\n阶段3回答: {outputs[4]}\n\n多个阶段中的可能问题: {outputs[5]}</think>\n"
         },
         {
             "end": true

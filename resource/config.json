@@ -109,6 +109,7 @@
       "path": "{resourcesPath}/resource/plugins/script/get_think.js"
     }
   },
+  "info_template": "**阶段:** {step}\n\n**调用:** {model}\n\n**版本:** {version}\n\n**系统提示:** {prompt}\n\n**模板输出:** \n\n```\n{output_format}\n\n```",
   "chain_call": [
     {
       "statu": "output"

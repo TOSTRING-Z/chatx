@@ -699,6 +699,7 @@ ipcMain.handle('query-text', async (_event, data) => {
             if (getStopIds().includes(data.id)) {
                 break;
             }
+            data.step = step;
             let params = chain_calls[step];
             data.end = params.end;
             if (getIsPlugin(params.model)) {
@@ -729,7 +730,7 @@ ipcMain.handle('query-text', async (_event, data) => {
                     await llmCall(data, params);
                 }
             }
-            let content = `**阶段:** ${step}\n\n**调用:** ${data.model}\n\n**版本:** ${data.version}\n\n**系统提示:** ${data.prompt}\n\n**模板输出:** \n\n\`\`\`\n${data.output_format}\n\`\`\`\n\n---\n\n`;
+            let content = getConfig("info_template").format(data);
             console.log(content);
             _event.sender.send('info-data', { id: data.id, content: content });
         }
