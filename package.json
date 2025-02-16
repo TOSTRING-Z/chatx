@@ -21,15 +21,7 @@
           "test",
           "plugins"
         ],
-        "extraResources": [
-          {
-            "from": "chain_calls/",
-            "to": "resources",
-            "filter": [
-              "*.json"
-            ]
-          }
-        ]
+        "extraResources": ["chain_calls/"]
       },
       "makers": [
         {
