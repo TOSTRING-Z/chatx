@@ -12,11 +12,23 @@
         "name": "chatx",
         "icon": "src/backend/icon/icon",
         "platform": "all",
-        "asar": false,
+        "asar": true,
+        "compression": "maximum",
         "ignore": [
           ".vscode",
           ".git",
-          "package-lock.json"
+          "package-lock.json",
+          "test",
+          "plugins"
+        ],
+        "extraResources": [
+          {
+            "from": "chain_calls/",
+            "to": "resources",
+            "filter": [
+              "*.json"
+            ]
+          }
         ]
       },
       "makers": [
