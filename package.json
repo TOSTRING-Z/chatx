@@ -18,10 +18,11 @@
           ".vscode",
           ".git",
           "package-lock.json",
-          "test",
-          "plugins"
+          "test"
         ],
-        "extraResources": ["chain_calls/"]
+        "extraResource": [
+          "resource"
+        ]
       },
       "makers": [
         {
@@ -40,7 +41,6 @@
     }
   },
   "dependencies": {
-    "electron-screenshots": "^0.5.27",
     "electron-squirrel-startup": "^1.0.0",
     "electron-store": "^4.0.0",
     "jsdom": "^26.0.0"

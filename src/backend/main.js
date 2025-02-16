@@ -10,10 +10,34 @@ const path = require('path');
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
 
+String.prototype.format = function (querys) {
+    let format_text = this.replace(/@{query\[(\d+)\]}/g, (match, i) => {
+        try {
+            return querys[parseInt(i)];
+        } catch (e) {
+            console.log(e);
+            return match;
+        }
+    });
+    return format_text;
+}
+
+String.prototype.formatSource = function (process) {
+    let format_text = this.replace(/@\{(.*?)\}/g, (match, key) => {
+        try {
+            return process[key];
+        } catch (e) {
+            console.log(e);
+            return match;
+        }
+    });
+    return format_text;
+}
+
 /* 复制配置文件到用户目录 */
 const copyConfigFile = () => {
     // 配置文件源路径
-    const sourcePath = path.join(__dirname, 'config.json');
+    const sourcePath = path.join(process.resourcesPath, 'resource/', 'config.json');
     // 目标路径为用户目录下的 .chatx 目录
     const targetPath = path.join(os.homedir(), '.chatx', 'config.json');
 
@@ -37,12 +61,13 @@ if (isFirstInstall()) {
 
 // 配置插件接口
 function loadTranslation(name) {
+    const pluginPath = getConfig("plugins")[name].path.formatSource(process);
     try {
         console.log(`loading plugin: ${name}`);
-        const plugin = require(getConfig("plugins")[name].path);
+        const plugin = require(pluginPath);
         return plugin.main;
     } catch (error) {
-        return () => `插件: ${name}, 路径: ${getConfig("plugins")[name].path}, 加载插件发生错误, 请检查路径和依赖！`
+        return () => `插件: ${name}, 路径: ${pluginPath}, 加载插件发生错误, 请检查路径和依赖！`
     }
 }
 
@@ -316,7 +341,7 @@ function setPrompt(prompt) {
 
 function loadPrompt() {
     // 获取上次打开的目录
-    const lastDirectory = store.get('lastPromptDirectory') || path.join(os.homedir(), '.chatx');
+    const lastDirectory = store.get('lastPromptDirectory') || path.join(process.resourcesPath, 'resource/', 'system_prompts/');
     // 打开文件选择对话框
     dialog
         .showOpenDialog(windowManager.mainWindow, {
@@ -345,7 +370,7 @@ function setChain(chain) {
 
 function loadChain() {
     // 获取上次打开的目录
-    const lastDirectory = store.get('lastChainDirectory') || path.join(os.homedir(), '.chatx');
+    const lastDirectory = store.get('lastChainDirectory') || path.join(process.resourcesPath, 'resource/', 'chain_calls/');
     // 打开文件选择对话框
     dialog
         .showOpenDialog(windowManager.mainWindow, {
@@ -456,7 +481,7 @@ function getTemplate() {
                 {
                     label: '保存对话',
                     click: () => {
-                        const lastPath = path.join(store.get('lastSavePath') || path.join(os.homedir(), '.chatx'), `messages_${formatDate()}.json`);
+                        const lastPath = path.join(store.get('lastSavePath') || path.join(process.resourcesPath, 'resource/', 'messages/'), `messages_${formatDate()}.json`);
                         console.log(lastPath)
                         dialog.showSaveDialog(windowManager.mainWindow, {
                             defaultPath: lastPath,
@@ -477,7 +502,7 @@ function getTemplate() {
                 {
                     label: '加载对话',
                     click: () => {
-                        const lastPath = store.get('lastSavePath') || path.join(os.homedir(), '.chatx');
+                        const lastPath = store.get('lastSavePath') || path.join(process.resourcesPath, 'resource/', 'messages/');
                         dialog.showOpenDialog(windowManager.mainWindow, {
                             defaultPath: lastPath,
                             filters: [
@@ -586,18 +611,6 @@ async function retry(func, params) {
     }
     console.log(error);
     return "发生错误！";
-}
-
-String.prototype.format = function (querys) {
-    let format_text = this.replace(/@{query\[(\d+)\]}/g, (match, i) => {
-        try {
-            return querys[parseInt(i)];
-        } catch (e) {
-            console.log(e);
-            return match;
-        }
-    });
-    return format_text;
 }
 
 async function llmCall(data, params = null) {
