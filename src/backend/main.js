@@ -596,6 +596,9 @@ async function retry(func, data) {
     } else {
         data.input = data.query;
     }
+    if (data.input_template){
+        data.input = data.input_template.format(data);
+    }
     let retry_time = getConfig("retry_time");
     let count = 0;
     let error;
@@ -628,6 +631,11 @@ async function llmCall(data, params = null) {
         } else {
             data.output_template = null;
         }
+        if (params.hasOwnProperty("input_template")) {
+            data.input_template = params.input_template;
+        } else {
+            data.input_template = null;
+        }
         if (params.hasOwnProperty("end")) {
             data.end = params.end
         }
@@ -659,6 +667,11 @@ async function pluginCall(data, params = null) {
             data.output_template = params.output_template;
         } else {
             data.output_template = null;
+        }
+        if (params.hasOwnProperty("input_template")) {
+            data.input_template = params.input_template;
+        } else {
+            data.input_template = null;
         }
         if (params.hasOwnProperty("params")){
             data.params = params.params;
