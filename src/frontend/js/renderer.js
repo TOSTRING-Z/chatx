@@ -257,6 +257,9 @@ const renderer = {
   link({ type, raw }) {
     return formatText(type, raw);
   },
+  em({ raw }) {
+    return raw;
+  },
   text(token) {
     if (token.hasOwnProperty("tokens")) {
       return this.parser.parseInline(token.tokens);

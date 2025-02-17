@@ -4,6 +4,8 @@
   "retry_time": 10,
   "icon_time": 5,
   "prompt": "",
+  "stream": true,
+  "info_template": "**阶段:** {step}\n\n**调用:** {model}\n\n**版本:** {version}\n\n**系统提示:** {prompt}\n\n**模板输出:** \n\n```\n{output_format}\n```\n\n",
   "default": {
     "model": "gptgod",
     "version": "gpt-4o-mini",
@@ -63,8 +65,18 @@
         "glm-4-0520",
         "glm-4-alltools",
         "glm-4-long",
-        "glm-4v-flash",
-        "glm-4v-plus"
+        {
+          "version": "glm-4v-flash",
+          "vision": [
+            "image"
+          ]
+        },
+        {
+          "version": "glm-4v-plus",
+          "vision": [
+            "image"
+          ]
+        }
       ]
     },
     "deepseek": {
@@ -85,7 +97,12 @@
         "meta-llama/Meta-Llama-3.1-8B-Instruct",
         "THUDM/glm-4-9b-chat",
         "deepseek-ai/deepseek-vl2",
-        "Pro/Qwen/Qwen2-VL-7B-Instruct"
+        {
+          "version": "Pro/Qwen/Qwen2-VL-7B-Instruct",
+          "vision": [
+            "image"
+          ]
+        }
       ]
     }
   },
@@ -107,12 +124,14 @@
     },
     "提取思维链": {
       "path": "{resourcesPath}/resource/plugins/script/get_think.js"
+    },
+    "JSON解析": {
+      "path": "{resourcesPath}/resource/plugins/script/json_parse.js"
     }
   },
-  "info_template": "**阶段:** {step}\n\n**调用:** {model}\n\n**版本:** {version}\n\n**系统提示:** {prompt}\n\n**模板输出:** \n\n```\n{output_format}\n```\n\n",
   "chain_call": [
     {
-      "statu": "output"
+      "end": true
     }
   ]
 }

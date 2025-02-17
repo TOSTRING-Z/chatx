@@ -272,7 +272,7 @@ const store = new Store()
 let global = {
     model: getConfig("default")["model"],
     version: getConfig("default")["version"],
-    stream: true,
+    stream: getConfig("stream"),
     is_plugin: getIsPlugin(this.model),
     last_clipboard_content: null,
     concat: false,
@@ -294,7 +294,6 @@ function getModelsSubmenu() {
                 global.model = _model;
                 global.is_plugin = getIsPlugin(_model)
                 global.version = getConfig("models")[_model]["versions"][0];
-                global.stream = getConfig("models")[_model]["stream"];
                 updateVersionsSubmenu();
                 windowManager.mainWindow.webContents.send("model", global)
             },
