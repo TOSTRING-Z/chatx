@@ -617,7 +617,7 @@ async function retry(func, data) {
         }
     }
     console.log(error);
-    return "发生错误！";
+    return null;
 }
 
 async function llmCall(data, params = null) {
@@ -625,19 +625,6 @@ async function llmCall(data, params = null) {
         data.model = params.model;
         data.version = params.version;
         data.prompt = params.prompt.format(data);
-        if (params.hasOwnProperty("output_template")) {
-            data.output_template = params.output_template;
-        } else {
-            data.output_template = null;
-        }
-        if (params.hasOwnProperty("input_template")) {
-            data.input_template = params.input_template;
-        } else {
-            data.input_template = null;
-        }
-        if (params.hasOwnProperty("end")) {
-            data.end = params.end
-        }
     }
 
     data.api_url = getConfig("models")[data.model].api_url;
@@ -648,6 +635,9 @@ async function llmCall(data, params = null) {
     data.memory_length = getConfig("memory_length");
     data.max_tokens = getConfig("max_tokens");
     data.output = await retry(chatBase, data);
+    if (!data.output) {
+        data.event.sender.send('info-data', { id: data.id, content: `### 重试失败！\n\n`, end: true });
+    }
     data.outputs.push(copy(data.output));
     if (data.output_template) {
         data.output_format = data.output_template.format(data);
@@ -662,22 +652,6 @@ async function pluginCall(data, params = null) {
     if (params) {
         data.model = params.model;
         data.version = params.version;
-        if (params.hasOwnProperty("output_template")) {
-            data.output_template = params.output_template;
-        } else {
-            data.output_template = null;
-        }
-        if (params.hasOwnProperty("input_template")) {
-            data.input_template = params.input_template;
-        } else {
-            data.input_template = null;
-        }
-        if (params.hasOwnProperty("params")){
-            data.params = params.params;
-        }
-        if (params.hasOwnProperty("end")) {
-            data.end = params.end
-        }
     }
 
     data.prompt = "";
@@ -713,7 +687,22 @@ ipcMain.handle('query-text', async (_event, data) => {
             }
             data.step = step;
             let params = chain_calls[step];
-            data.end = params.end;
+            if (params.hasOwnProperty("output_template")) {
+                data.output_template = params.output_template;
+            } else {
+                data.output_template = null;
+            }
+            if (params.hasOwnProperty("input_template")) {
+                data.input_template = params.input_template;
+            } else {
+                data.input_template = null;
+            }
+            if (params.hasOwnProperty("params")){
+                data.params = params.params;
+            }
+            if (params.hasOwnProperty("end")) {
+                data.end = params.end
+            }
             if (getIsPlugin(params.model)) {
                 if (data.end) {
                     if (!params.hasOwnProperty("model"))

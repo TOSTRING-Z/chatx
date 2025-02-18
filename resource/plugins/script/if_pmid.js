@@ -1,6 +1,6 @@
 const axios = require('axios');
 
-async function jours_if({input}) {
+async function jours_if(input) {
     const regex = /(.*?)\n/g;
     try {
         const processedContent = `${input.replace(/\./g, '')}\n`;
@@ -23,8 +23,8 @@ async function jours_if({input}) {
     }
 }
 
-async function pmids_if(pmids) {
-    let url = `https://eutils.pubmedplus.com/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&retmax=100&retstart=0&id=${pmids}`
+async function pmids_if(input) {
+    let url = `https://eutils.pubmedplus.com/entrez/eutils/esummary.fcgi?db=pubmed&retmode=json&retmax=100&retstart=0&id=${input}`
     const response = await axios.post(url);
     const result = response.data.result;
     const content = result.uids.map(uid => {
@@ -33,7 +33,7 @@ async function pmids_if(pmids) {
     return jours_if(content)
 }
 
-function main(input) {
+function main({input}) {
     if (input.trim().match(/^[\d,]+$/)) {
         return pmids_if(input);
     } else {

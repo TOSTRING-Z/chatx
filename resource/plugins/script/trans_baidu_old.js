@@ -124,7 +124,8 @@ async function main({input}) {
         
         return format(response.data)
     } catch (error) {
-        return error
+        console.log(error);
+        return null;
     }
 
 }
