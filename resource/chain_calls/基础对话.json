@@ -3,5 +3,10 @@
         {
             "end": true
         }
+    ],
+    "extre": [
+        {
+            "type": "system-prompt"
+        }
     ]
 }

@@ -17,17 +17,21 @@ function format(template, params) {
 }
 
 String.prototype.format = function (data) {
-    let format_text = this.replaceAll("{{","@bracket_left").replaceAll("}}","@bracket_right");
-    format_text = format_text.replace(/(\{.*?\})/g, (match,cmd) => {
-        try {
-            return format(cmd, data);
-        } catch (e) {
-            console.log(e);
-            return match;
-        }
-    });
-    format_text = format_text.replaceAll("@bracket_left","{").replaceAll("@bracket_right","}")
-    return format_text;
+    if (!!this) {
+        let format_text = this.replaceAll("{{", "@bracket_left").replaceAll("}}", "@bracket_right");
+        format_text = format_text.replace(/(\{.*?\})/g, (match, cmd) => {
+            try {
+                return format(cmd, data);
+            } catch (e) {
+                console.log(e);
+                return match;
+            }
+        });
+        format_text = format_text.replaceAll("@bracket_left", "{").replaceAll("@bracket_right", "}")
+        return format_text;
+    } else {
+        return this
+    }
 }
 
 /* 复制配置文件到用户目录 */
@@ -56,12 +60,12 @@ if (isFirstInstall()) {
 /* 插件配置 */
 
 // 配置插件接口
-function loadTranslation(name) {
+function loadPlugin(name) {
     const pluginPath = getConfig("plugins")[name].path.format(process);
     try {
         console.log(`loading plugin: ${name}`);
         const plugin = require(pluginPath);
-        return plugin.main;
+        return {func: plugin.main, extre: plugin?.extre};
     } catch (error) {
         return () => `插件: ${name}, 路径: ${pluginPath}, 加载插件发生错误, 请检查路径和依赖！`
     }
@@ -81,9 +85,9 @@ let inner_model_obj = {
 };
 
 // 加载插件
-Object.keys(getConfig("plugins")).forEach((name) => {
-    inner_model[inner_model_name.plugin]["versions"].push(name);
-    inner_model_obj[inner_model_name.plugin][name] = { func: loadTranslation(name) }
+Object.keys(getConfig("plugins")).forEach((_version) => {
+    inner_model[inner_model_name.plugin]["versions"].push(_version);
+    inner_model_obj[inner_model_name.plugin][_version] = loadPlugin(_version)
 })
 
 /* 单例窗口管理器 */
@@ -295,7 +299,6 @@ function getModelsSubmenu() {
                 global.is_plugin = getIsPlugin(_model)
                 global.version = getConfig("models")[_model]["versions"][0];
                 updateVersionsSubmenu();
-                windowManager.mainWindow.webContents.send("model", global)
             },
             label: _model
         }
@@ -307,9 +310,11 @@ function getVersionsSubmenu() {
     let versions;
     if (global.is_plugin) {
         versions = inner_model[inner_model_name.plugin]["versions"];
+        windowManager.mainWindow.webContents.send("extre_load", inner_model_obj[global.model][versions[0]].extre)
     }
     else {
         versions = getConfig("models")[global.model]["versions"];
+        windowManager.mainWindow.webContents.send("extre_load", getConfig("extre"))
     }
     console.log(versions);
     return versions.map((_version) => {
@@ -321,6 +326,9 @@ function getVersionsSubmenu() {
             checked: global.version == _version,
             click: () => {
                 global.version = _version
+                if (global.is_plugin) {
+                    windowManager.mainWindow.webContents.send("extre_load", inner_model_obj[global.model][_version].extre)
+                }
             },
             label: _version
         }
@@ -360,13 +368,13 @@ function loadPrompt() {
 function setChain(chain) {
     let config = getConfig();
     config.chain_call = JSON.parse(chain).chain_call;
+    config.extre = JSON.parse(chain).extre;
+    windowManager.mainWindow.webContents.send("extre_load", config.extre);
     setConfig(config);
 }
 
 function loadChain() {
-    // 获取上次打开的目录
     const lastDirectory = store.get('lastChainDirectory') || path.join(process.resourcesPath, 'resource/', 'chain_calls/');
-    // 打开文件选择对话框
     dialog
         .showOpenDialog(windowManager.mainWindow, {
             properties: ['openFile'],
@@ -374,9 +382,9 @@ function loadChain() {
         })
         .then(result => {
             if (!result.canceled) {
-                const filePath = result.filePaths[0]; // 获取用户选取的文件路径
-                store.set('lastChainDirectory', path.dirname(filePath)); // 记录当前选择的目录
-                console.log(filePath); // 在控制台输出文件路径
+                const filePath = result.filePaths[0];
+                store.set('lastChainDirectory', path.dirname(filePath));
+                console.log(filePath);
                 const chain = fs.readFileSync(filePath, 'utf-8');
                 setChain(chain);
             }
@@ -531,15 +539,8 @@ function updateVersionsSubmenu() {
     Menu.setApplicationMenu(menu);
 }
 
-function getId() {
-    global.id += 1;
-    return JSON.stringify(global.id);
-}
-
-function send_query(text, model, version, img_url, stream) {
-    const data = {
-        text: text, model: model, version: version, is_plugin: getIsPlugin(model), img_url: img_url, id: getId(), stream: stream
-    }
+function send_query(data, model, version, stream) {
+    data = { ...data, model, version, stream, is_plugin: getIsPlugin(model), id: ++global.id }
     windowManager.mainWindow.webContents.send('query', data);
 }
 
@@ -567,6 +568,7 @@ function createMainWindow() {
     windowManager.mainWindow.webContents.on('did-finish-load', () => {
         setPrompt(getConfig("prompt"));
         ininFuncItems();
+        windowManager.mainWindow.webContents.send("extre_load", getConfig("extre"))
     });
 
     // 绑定窗口关闭事件
@@ -590,12 +592,12 @@ function copy(data) {
 }
 
 async function retry(func, data) {
-    if (data.hasOwnProperty("output_format")){
+    if (data.hasOwnProperty("output_format")) {
         data.input = data.output_format;
     } else {
         data.input = data.query;
     }
-    if (data.input_template){
+    if (data.input_template) {
         data.input = data.input_template.format(data);
     }
     let retry_time = getConfig("retry_time");
@@ -667,6 +669,29 @@ async function pluginCall(data, params = null) {
     return data.output_format;
 }
 
+ipcMain.handle('get-file-path', async (_event) => {
+
+    return new Promise((resolve,rejects) => {
+        const lastDirectory = store.get('lastFileDirectory') || path.join(os.homedir(), '.chatx', 'config.json');
+        dialog
+            .showOpenDialog(windowManager.mainWindow, {
+                properties: ['openFile'],
+                defaultPath: lastDirectory
+            })
+            .then(result => {
+                if (!result.canceled) {
+                    const filePath = result.filePaths[0];
+                    store.set('lastFileDirectory', path.dirname(filePath));
+                    console.log(filePath);
+                    resolve(filePath)
+                }
+            })
+            .catch(err => {
+                rejects(err);
+            });
+        });
+    })
+
 ipcMain.handle('query-text', async (_event, data) => {
     windowManager.mainWindow.show();
     let primary_data = copy(data);
@@ -697,7 +722,7 @@ ipcMain.handle('query-text', async (_event, data) => {
             } else {
                 data.input_template = null;
             }
-            if (params.hasOwnProperty("params")){
+            if (params.hasOwnProperty("params")) {
                 data.params = params.params;
             }
             if (params.hasOwnProperty("end")) {
@@ -723,7 +748,7 @@ ipcMain.handle('query-text', async (_event, data) => {
                         data.model = primary_data.model;
                     if (!params.hasOwnProperty("version"))
                         data.version = primary_data.version;
-                    if (!params.hasOwnProperty("prompt"))
+                    if (!params.hasOwnProperty("prompt") && !!params.prompt)
                         data.prompt = primary_data.prompt.format(data);
                     await llmCall(data);
                     break;
@@ -749,8 +774,8 @@ ipcMain.on("stream-message-stop", (_event, id) => {
     console.log(`stop id: ${id}`)
 })
 
-ipcMain.on('submit', (_event, text) => {
-    send_query(text, global.model, global.version, null, global.stream)
+ipcMain.on('submit', (_event, formData) => {
+    send_query(formData, global.model, global.version, global.stream)
 })
 
 ipcMain.on('open-external', (_event, href) => {
@@ -765,13 +790,13 @@ ipcMain.on('concat-clicked', () => {
 
 ipcMain.on('translation-clicked', () => {
     global.concat = false;
-    send_query(global.last_clipboard_content, inner_model_name.plugin, getConfig("default")["plugin"], null, null);
+    send_query({ query: global.last_clipboard_content }, inner_model_name.plugin, getConfig("default")["plugin"], null);
     windowManager.destroyIconWindow();
 })
 
 ipcMain.on('submit-clicked', () => {
     global.concat = false;
-    send_query(global.last_clipboard_content, global.model, global.version, null, global.stream);
+    send_query({ query: global.last_clipboard_content }, global.model, global.version, global.stream);
     windowManager.destroyIconWindow();
 })
 
@@ -894,7 +919,7 @@ ipcMain.handle('capture-region', async (_, { start, end, dpr }) => {
 })
 
 ipcMain.on('query-img', (_, img_url) => {
-    send_query(null, global.model, global.version, img_url, global.stream);
+    send_query({ img_url: img_url }, global.model, global.version, global.stream);
     if (windowManager.overlayWindow) windowManager.overlayWindow.close();
 })
 

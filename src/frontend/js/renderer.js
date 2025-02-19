@@ -19,13 +19,34 @@ document.addEventListener("click", (event) => {
 
 });
 
-const player = document.getElementById("player");
+const system_prompt = document.getElementById("system_prompt");
 const content = document.getElementById("content");
 const input = document.getElementById("input");
 const submit = document.getElementById("submit");
 const messages = document.getElementById("messages");
 const top_div = document.getElementById("top_div");
 const bottom_div = document.getElementById("bottom_div");
+const file_reader = document.getElementById("file_reader");
+
+const formData = {
+  query: null,
+  prompt: null,
+  file_path: null,
+  img_url: null
+}
+
+function getFileName(path) {
+  return path.split('/').pop().split('\\').pop();
+}
+
+file_reader.addEventListener("click",async function(e){
+  formData.file_path = await window.electronAPI.getFilePath();
+  if (!!formData.file_path) {
+    e.target.innerText = getFileName(formData.file_path);
+  } else {
+    e.target.innerText = "选择文件";
+  }
+})
 
 const input_h = input.clientHeight;
 
@@ -37,7 +58,7 @@ function autoResizeTextarea(textarea) {
 }
 
 function init_size() {
-  player.style.height = input_h + "px";
+  system_prompt.style.height = input_h + "px";
   input.style.height = input_h + "px";
   top_div.style.height = window.innerHeight - bottom_div.clientHeight + "px";
 }
@@ -47,7 +68,7 @@ document.addEventListener("DOMContentLoaded", function () {
   autoResizeTextarea(input);
 
   // 监听输入事件，自动调整高度
-  [input, player].forEach(textarea => {
+  [input, system_prompt].forEach(textarea => {
     textarea.addEventListener("input", function () {
       autoResizeTextarea(textarea);
       if (this.value.trim() !== '') {
@@ -148,6 +169,7 @@ function InfoAdd(info) {
   if (info.content) {
     info_content.dataset.content += info.content;
     info_content.innerHTML = marked.parse(info_content.dataset.content);
+    info_content.scrollTop = info_content.scrollHeight;
   }
 }
 
@@ -374,18 +396,14 @@ function addEventStop(messageSystem, id) {
 }
 
 window.electronAPI.handleQuery(async (data) => {
-  let text;
   if (data.img_url) {
-    content.value = input.value;
-    text = content.value;
-    text = `![user](${data.img_url})${text}`;
+    data.query = `![user](${data.img_url})\n${data.query}`;
   } else {
-    content.value = data.text;
-    text = content.value;
+    data.query = data.query;
   }
   messages.appendChild(user_message.format({
     "id": data.id,
-    "message": text
+    "message": data.query
   }, "user"));
   let system_message_cursor = system_message.format({
     "icon": getIcon(data.is_plugin),
@@ -395,23 +413,27 @@ window.electronAPI.handleQuery(async (data) => {
   addEventStop(system_message_cursor, data.id);
   messages.appendChild(system_message_cursor);
   top_div.scrollTop = top_div.scrollHeight;
-  window.electronAPI.queryText({ prompt: player.value, query: content.value, model: data.model, version: data.version, is_plugin: data.is_plugin, img_url: data.img_url, id: data.id, stream: data.stream });
+  window.electronAPI.queryText(data);
 })
 
-window.electronAPI.handleModel((data) => {
-  content.value = null;
-  if (data.is_plugin) {
-    player.style.display = "none";
-    init_size();
-  }
-  else {
-    player.style.display = "block";
-    init_size();
-  }
+window.electronAPI.handleExtreLoad((data) => {
+  system_prompt.style.display = "none";
+  file_reader.style.display = "none";
+  data.forEach(item => {
+    switch (item.type) {
+      case "system-prompt":
+        system_prompt.style.display = "block";
+        break;
+      case "file-reader":
+        file_reader.style.display = "block";
+        break;
+    }
+  })
+  init_size();
 })
 
 window.electronAPI.handlePrompt((prompt) => {
-  player.value = prompt;
+  system_prompt.value = prompt;
 })
 
 window.electronAPI.handleClear(() => {
@@ -451,5 +473,7 @@ window.electronAPI.handleLoad((data) => {
 })
 
 submit.addEventListener("click", () => {
-  window.electronAPI.clickSubmit(input.value);
+  formData.query = input.value;
+  formData.system_prompt = system_prompt.value;
+  window.electronAPI.clickSubmit(formData);
 })

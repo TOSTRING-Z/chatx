@@ -114,7 +114,7 @@
       border-radius: 15px 5px 5px 15px;
     }
 
-    #player {
+    #system_prompt {
       width: 100%;
       margin: 2px;
       padding: 0.4rem;
@@ -409,11 +409,25 @@
 
     .btn {
       border: 1px solid;
+      width: fit-content;
       padding: 2px;
       border-radius: 5px;
       background: white;
       font-size: small;
+      cursor: pointer;
     }
+
+    .ellipsis-div {
+      /* 设置最大宽度 */
+      max-width: -webkit-fill-available;
+      /* 使内容不换行 */
+      white-space: nowrap;
+      /* 隐藏超出部分 */
+      overflow: hidden;
+      /* 用省略号代替超出部分 */
+      text-overflow: ellipsis;
+    }
+
 
     .dot {
       width: 4px;
@@ -457,12 +471,15 @@
       <!-- Input area -->
       <div class="p-4 fixed bottom-0 left-0 right-0" id="bottom_div">
         <div class="bg-gradient"></div>
-        <div class="wrapper mb-2">
-          <textarea class="w-full p-2 rounded-md mb-2" rows="1" placeholder="系统提示" id="player"></textarea>
+        <div class="flex-wrap mb-2">
+          <textarea class="w-full p-2 rounded-md mb-2" rows="1" placeholder="系统提示" id="system_prompt"></textarea>
         </div>
-        <div class="flex relative wrapper">
+        <div class="flex-wrap mb-2 flex-col">
+          <div class="btn ellipsis-div" id="file_reader">选择文件</div>
+        </div>
+        <div class="flex relative flex-wrap">
           <textarea class="flex-grow p-2 rounded-l-lg" rows="1" placeholder="用户提示/文字" id="input"></textarea>
-          <button class="p-2 bg-blue-500 text-white rounded-r-lg" id="submit">
+          <button class="p-2 text-white rounded-r-lg" id="submit">
             <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"
               class="icon-2xl">
               <path fill-rule="evenodd" clip-rule="evenodd"

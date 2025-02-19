@@ -127,11 +127,19 @@
     },
     "JSON解析": {
       "path": "{resourcesPath}/resource/plugins/script/json_parse.js"
+    },
+    "pdf文字提取": {
+      "path": "{resourcesPath}/resource/plugins/script/pdf_reader.js"
     }
   },
   "chain_call": [
     {
       "end": true
     }
+  ],
+  "extre": [
+      {
+          "type": "system-prompt"
+      }
   ]
 }

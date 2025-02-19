@@ -8,7 +8,6 @@
         {
             "model": "plugin",
             "version": "百度搜索",
-            "statu": "processing",
             "params": {
                 "num_results": 5,
                 "text_max_len": 5000,
@@ -24,6 +23,11 @@
         },
         {
            "end": true
+        }
+    ],
+    "extre": [
+        {
+            "type": "system-prompt"
         }
     ]
 }
