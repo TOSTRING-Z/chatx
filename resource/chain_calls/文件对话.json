@@ -2,7 +2,7 @@
     "chain_call": [
         {
             "model": "plugin",
-            "version": "pdf文字提取"
+            "version": "文件读取"
         },
         {
             "model": "gptgod",

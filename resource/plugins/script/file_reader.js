@@ -20,19 +20,29 @@ async function main({ file_path }) {
     // 读取PDF文件
     let dataBuffer = fs.readFileSync(file_path);
     let obj;
-    switch (getFileExtension(file_path)) {
+    switch (getFileExtension) {
         case "docx" || "doc":
-            console.log("dox")
             obj = officeParser.parseOfficeAsync(dataBuffer)
             break;
         case "pdf":
-            console.log("pdf")
             obj = pdf(dataBuffer)
             break;
         default:
-            console.log(dataBuffer.toString())
             return dataBuffer.toString();
     }
+
+    return new Promise((resolve, rejects) => {
+        obj.then(function (data) {
+            resolve(data.text);
+        }).catch(function (error) {
+            console.log(error);
+            rejects(error);
+        });
+    })
 }
 
-main({file_path:"/home/tostring/下载/stream.ts"})
+const extre = [{ type: 'file-reader' }];
+
+module.exports = {
+    main, extre
+};

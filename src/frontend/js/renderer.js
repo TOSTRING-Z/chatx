@@ -474,6 +474,6 @@ window.electronAPI.handleLoad((data) => {
 
 submit.addEventListener("click", () => {
   formData.query = input.value;
-  formData.system_prompt = system_prompt.value;
+  formData.prompt = system_prompt.value;
   window.electronAPI.clickSubmit(formData);
 })
