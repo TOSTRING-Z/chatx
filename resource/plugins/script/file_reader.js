@@ -17,28 +17,31 @@ function getFileExtension(filename) {
   }
 
 async function main({ file_path }) {
-    // 读取PDF文件
     let dataBuffer = fs.readFileSync(file_path);
-    let obj;
-    switch (getFileExtension) {
+    switch (getFileExtension(file_path)) {
         case "docx" || "doc":
-            obj = officeParser.parseOfficeAsync(dataBuffer)
-            break;
+            return new Promise((resolve, rejects) => {
+                officeParser.parseOfficeAsync(dataBuffer).then(function (data) {
+                    resolve(data);
+                }).catch(function (error) {
+                    console.log(error);
+                    rejects(error);
+                });
+            })
         case "pdf":
-            obj = pdf(dataBuffer)
-            break;
+            return new Promise((resolve, rejects) => {
+                pdf(dataBuffer).then(function (data) {
+                    resolve(data.text);
+                }).catch(function (error) {
+                    console.log(error);
+                    rejects(error);
+                });
+            })
         default:
             return dataBuffer.toString();
     }
 
-    return new Promise((resolve, rejects) => {
-        obj.then(function (data) {
-            resolve(data.text);
-        }).catch(function (error) {
-            console.log(error);
-            rejects(error);
-        });
-    })
+    
 }
 
 const extre = [{ type: 'file-reader' }];

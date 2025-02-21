@@ -602,8 +602,10 @@ async function retry(func, data) {
     }
     let retry_time = getConfig("retry_time");
     let count = 0;
-    let error;
     while (count < retry_time) {
+        if (getStopIds().includes(data.id)) {
+            return null;
+        }
         try {
             let output = await func(data);
             if (isValidOutput(output)) {
@@ -614,11 +616,9 @@ async function retry(func, data) {
                 continue;
             }
         } catch (_error) {
-            error = _error
             count++;
         }
     }
-    console.log(error);
     return null;
 }
 
@@ -638,7 +638,8 @@ async function llmCall(data, params = null) {
     data.max_tokens = getConfig("max_tokens");
     data.output = await retry(chatBase, data);
     if (!data.output) {
-        data.event.sender.send('info-data', { id: data.id, content: `### 重试失败！\n\n`, end: true });
+        data.event.sender.send('stream-data', { id: data.id, content: `### 重试失败！\n\n`, end: true });
+        return null;
     }
     data.outputs.push(copy(data.output));
     if (data.output_template) {
@@ -659,6 +660,10 @@ async function pluginCall(data, params = null) {
     data.prompt = "";
     let func = inner_model_obj[data.model][data.version].func
     data.output = await retry(func, data);
+    if (!data.output) {
+        data.event.sender.send('stream-data', { id: data.id, content: `### 重试失败！\n\n`, end: true });
+        return null;
+    }
     data.outputs.push(copy(data.output));
     if (data.output_template) {
         data.output_format = data.output_template.format(data);
@@ -816,8 +821,8 @@ function createConfigWindow() {
         windowManager.configWindow.focus();
     } else {
         windowManager.configWindow = new BrowserWindow({
-            width: 400,
-            height: 400,
+            width: 600,
+            height: 600,
             titleBarStyle: 'hidden',
             titleBarOverlay: {
                 height: 20

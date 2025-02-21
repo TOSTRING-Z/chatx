@@ -396,14 +396,17 @@ function addEventStop(messageSystem, id) {
 }
 
 window.electronAPI.handleQuery(async (data) => {
+  let user_content;
   if (data.img_url) {
-    data.query = `![user](${data.img_url})\n${data.query}`;
+    data.query = input.value;
+    data.prompt = system_prompt.value;
+    user_content = `![user](${data.img_url})\n${data.query}`;
   } else {
-    data.query = data.query;
+    user_content = data.query;
   }
   messages.appendChild(user_message.format({
     "id": data.id,
-    "message": data.query
+    "message": user_content
   }, "user"));
   let system_message_cursor = system_message.format({
     "icon": getIcon(data.is_plugin),

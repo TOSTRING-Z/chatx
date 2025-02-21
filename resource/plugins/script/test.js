@@ -1,38 +1,10 @@
-const fs = require('fs');
-const pdf = require('pdf-parse');
 const officeParser = require('officeparser');
 
-function getFileExtension(filename) {
-    // 使用split方法以点（.）分割文件名
-    var parts = filename.split('.');
-    
-    // 检查分割后的数组长度是否大于1，以及文件名是否不包含点
-    if (parts.length > 1 && filename.indexOf('.') !== 0) {
-      // 使用pop方法获取数组的最后一个元素，即文件后缀
-      return parts.pop().toLowerCase();
-    } else {
-      // 如果没有后缀，返回null
-      return null;
-    }
-  }
+// get file buffers
+const fileBuffers = fs.readFileSync("/home/tostring/桌面/document/改稿3/Author_Checklist_NCOMMS-24-36631B_1740011481_65.docx");
+officeParser.parseOfficeAsync(fileBuffers)
+    .then(data => console.log(data))
+    .catch(err => console.error(err))
 
-async function main({ file_path }) {
-    // 读取PDF文件
-    let dataBuffer = fs.readFileSync(file_path);
-    let obj;
-    switch (getFileExtension(file_path)) {
-        case "docx" || "doc":
-            console.log("dox")
-            obj = officeParser.parseOfficeAsync(dataBuffer)
-            break;
-        case "pdf":
-            console.log("pdf")
-            obj = pdf(dataBuffer)
-            break;
-        default:
-            console.log(dataBuffer.toString())
-            return dataBuffer.toString();
-    }
-}
-
-main({file_path:"/home/tostring/下载/stream.ts"})
+const filePath = "/home/tostring/桌面/document/改稿3/Author_Checklist_NCOMMS-24-36631B_1740011481_65.docx"; // 替换为你的文件路径
+readOfficeFile(filePath);
