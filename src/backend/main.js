@@ -597,6 +597,11 @@ async function retry(func, data) {
     } else {
         data.input = data.query;
     }
+    if (data.hasOwnProperty("prompt_format")) {
+        data.system_prompt = data.prompt_format;
+    } else {
+        data.system_prompt = data.prompt;
+    }
     if (data.input_template) {
         data.input = data.input_template.format(data);
     }
@@ -626,7 +631,6 @@ async function llmCall(data, params = null) {
     if (params) {
         data.model = params.model;
         data.version = params.version;
-        data.prompt = params.prompt.format(data);
     }
 
     data.api_url = getConfig("models")[data.model].api_url;
@@ -636,6 +640,11 @@ async function llmCall(data, params = null) {
     });
     data.memory_length = getConfig("memory_length");
     data.max_tokens = getConfig("max_tokens");
+    if (data.prompt_template) {
+        data.prompt_format = data.prompt_template.format(data);
+    } else {
+        data.prompt_format = data.prompt
+    }
     data.output = await retry(chatBase, data);
     if (!data.output) {
         data.event.sender.send('stream-data', { id: data.id, content: `### 重试失败！\n\n`, end: true });
@@ -657,7 +666,7 @@ async function pluginCall(data, params = null) {
         data.version = params.version;
     }
 
-    data.prompt = "";
+    data.prompt_format = "";
     let func = inner_model_obj[data.model][data.version].func
     data.output = await retry(func, data);
     if (!data.output) {
@@ -698,7 +707,11 @@ ipcMain.handle('get-file-path', async (_event) => {
     })
 
 ipcMain.handle('query-text', async (_event, data) => {
-    windowManager.mainWindow.show();
+    if (process.platform !== 'win32') {
+        windowManager.mainWindow.show();
+    } else {
+        windowManager.mainWindow.focus();
+    }
     let primary_data = copy(data);
     data.query = funcItems.text.event(data.query);
     data.outputs = []
@@ -727,6 +740,11 @@ ipcMain.handle('query-text', async (_event, data) => {
             } else {
                 data.input_template = null;
             }
+            if (params.hasOwnProperty("prompt_template")) {
+                data.prompt_template = params.prompt_template;
+            } else {
+                data.prompt_template = null;
+            }
             if (params.hasOwnProperty("params")) {
                 data.params = params.params;
             }
@@ -753,8 +771,6 @@ ipcMain.handle('query-text', async (_event, data) => {
                         data.model = primary_data.model;
                     if (!params.hasOwnProperty("version"))
                         data.version = primary_data.version;
-                    if (!params.hasOwnProperty("prompt") && !!params.prompt)
-                        data.prompt = primary_data.prompt.format(data);
                     await llmCall(data);
                     break;
                 } else {

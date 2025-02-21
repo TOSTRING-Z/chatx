@@ -127,8 +127,8 @@ async function chatBase(data) {
             ];
         }
         message_user = { "role": "user", "content": content, "id": data.id };
-        if (!!data.prompt) {
-            messages_list = [{ "role": "system", "content": data.prompt, "id": data.id }]
+        if (!!data.system_prompt) {
+            messages_list = [{ "role": "system", "content": data.system_prompt, "id": data.id }]
             messages_list = messages_list.concat(messages.slice(messages.length - data.memory_length * 2, messages.length))
         }
         else {

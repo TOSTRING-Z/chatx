@@ -397,9 +397,9 @@ function addEventStop(messageSystem, id) {
 
 window.electronAPI.handleQuery(async (data) => {
   let user_content;
+  data.prompt = system_prompt.value;
   if (data.img_url) {
     data.query = input.value;
-    data.prompt = system_prompt.value;
     user_content = `![user](${data.img_url})\n${data.query}`;
   } else {
     user_content = data.query;
