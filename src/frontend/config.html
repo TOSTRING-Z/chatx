@@ -5,8 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>配置</title>
-    <link rel="stylesheet" href="css/font-awesome/css/all.min.css" />
-    <link rel="stylesheet" href="css/bootstrap.min.css" />
+    <link rel="stylesheet" href="css/jsoneditor/dist/jsoneditor.min.css" />
     <style>
         body {
             margin: 0;
@@ -61,21 +60,15 @@
     </div>
 
 </body>
-<script src="js/jsoneditor.js"></script>
+<script src="js/jsoneditor.min.js"></script>
 <script>
     const { ipcRenderer } = require('electron')
     // 初始化JSON Editor
-    const editor = new JSONEditor(document.getElementById('json-editor'), {
-        schema: {
-            type: 'object'
-        },
-        theme: 'bootstrap4',
-        iconlib: "fontawesome5"
-    });
+    const editor = new JSONEditor(document.getElementById('json-editor'), {});
 
     // 加载配置
     ipcRenderer.invoke('get-config').then(config => {
-        editor.setValue(config);
+        editor.set(config);
     });
 
     // 保存配置
@@ -90,7 +83,7 @@
         setInterval(() => { newElement.remove() }, 2000)
     }
     document.getElementById('save-btn').addEventListener('click', async () => {
-        const config = editor.getValue();
+        const config = editor.get();
         const statu = ipcRenderer.invoke('set-config', config);
         if (statu)
             showLog('配置已保存！');
