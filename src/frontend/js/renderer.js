@@ -245,8 +245,12 @@ const marked_input = new Marked({
     link({ type, raw }) {
       return formatText(type, raw);
     },
-    text({ raw }) {
-      return raw;
+    text(token) {
+      if (token.hasOwnProperty("tokens")) {
+        return this.parser.parseInline(token.tokens);
+      } else {
+        return token.raw;
+      }
     },
   }
 });
@@ -286,7 +290,8 @@ const renderer = {
     if (token.hasOwnProperty("tokens")) {
       return this.parser.parseInline(token.tokens);
     } else if (token.hasOwnProperty("typeThink")) {
-      return `<div class="think">${token.text}</div>`;
+      const highlightResult = marked_input.parse(token.text);
+      return `<div class="think">${highlightResult}</div>`;
     } else {
       return token.raw;
     }
