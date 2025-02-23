@@ -1,7 +1,7 @@
 const { Window } = require("./Window");
-const { utils } = require('./globals');
+const { global, utils } = require('./globals');
 
-const { BrowserWindow } = require('electron');
+const { BrowserWindow, ipcMain, clipboard } = require('electron');
 
 class IconWindow extends Window {
     constructor(windowManager) {
@@ -47,7 +47,7 @@ class IconWindow extends Window {
 
         this.window.setIgnoreMouseEvents(false) // 允许鼠标交互
 
-        this.window.on('closed', (event) => {
+        this.window.on('closed', () => {
             this.window = null;
         })
 
@@ -71,7 +71,30 @@ class IconWindow extends Window {
     }
 
     setup() {
-        
+
+        ipcMain.on('concat-clicked', () => {
+            global.concat = true;
+            this.window.destroy();
+        })
+
+        ipcMain.on('translation-clicked', () => {
+            global.concat = false;
+            this.windowManager.mainWindow.send_query({ query: global.last_clipboard_content }, inner_model_name.plugin, utils.getConfig("default")["plugin"], null);
+            this.window.destroy();
+        })
+
+        ipcMain.on('submit-clicked', () => {
+            global.concat = false;
+            this.windowManager.mainWindow.send_query({ query: global.last_clipboard_content }, global.model, global.version, global.stream);
+            this.window.destroy();
+        })
+
+        ipcMain.on('clear-clicked', () => {
+            global.concat = false;
+            this.window.destroy();
+            global.last_clipboard_content = "";
+            clipboard.writeText(global.last_clipboard_content);
+        })
     }
 
 }

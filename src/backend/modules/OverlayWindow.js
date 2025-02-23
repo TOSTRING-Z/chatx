@@ -1,4 +1,5 @@
 const { Window } = require("./Window");
+const { global } = require("./globals")
 
 const { BrowserWindow, ipcMain, desktopCapturer } = require('electron');
 
@@ -37,16 +38,16 @@ class OverlayWindow extends Window {
     setup() {
 
         ipcMain.handle('app:overlay:get-position', async (_) => {
-            return this.windowManager.iconWindow.getBounds();
+            return this.windowManager.iconWindow.window.getBounds();
         })
 
         ipcMain.on('app:overlay:set-position', async (_, { x, y }) => {
-            this.windowManager.iconWindow.setBounds({ x: x, y: y, width: this.windowManager.iconWindowWidth, height: this.windowManager.iconWindowHeight })
+            this.windowManager.iconWindow.window.setBounds({ x: x, y: y, width: this.windowManager.iconWindowWidth, height: this.windowManager.iconWindowHeight })
         })
 
         ipcMain.on('start-capture', () => {
-            this.windowManager.destroyIconWindow();
-            this.createOverlay()
+            this.windowManager.iconWindow.destroy();
+            this.create()
         })
 
         ipcMain.handle('capture-region', async (_, { start, end, dpr }) => {
@@ -70,8 +71,8 @@ class OverlayWindow extends Window {
         })
 
         ipcMain.on('query-img', (_, img_url) => {
-            send_query({ img_url: img_url }, global.model, global.version, global.stream);
-            if (this.windowManager.overlayWindow) this.windowManager.overlayWindow.close();
+            this.windowManager.mainWindow.send_query({ img_url: img_url }, global.model, global.version, global.stream);
+            this.windowManager.overlayWindow.destroy();
         })
     }
 

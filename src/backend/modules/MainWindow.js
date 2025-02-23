@@ -232,30 +232,6 @@ class MainWindow extends Window {
             console.log(href)
             shell.openExternal(href);
         })
-
-        ipcMain.on('concat-clicked', () => {
-            global.concat = true;
-            this.windowManager.iconWindow.destroy();
-        })
-
-        ipcMain.on('translation-clicked', () => {
-            global.concat = false;
-            this.send_query({ query: global.last_clipboard_content }, inner.model_name.plugin, utils.getConfig("default")["plugin"], null);
-            this.windowManager.iconWindow.destroy();
-        })
-
-        ipcMain.on('submit-clicked', () => {
-            global.concat = false;
-            this.send_query({ query: global.last_clipboard_content }, global.model, global.version, global.stream);
-            this.windowManager.iconWindow.destroy();
-        })
-
-        ipcMain.on('clear-clicked', () => {
-            global.concat = false;
-            this.windowManager.iconWindow.destroy();
-            global.last_clipboard_content = "";
-            clipboard.writeText(global.last_clipboard_content);
-        })
     }
 
     send_query(data, model, version, stream) {
