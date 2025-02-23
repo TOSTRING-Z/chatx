@@ -1,5 +1,5 @@
 const { Window } = require("./Window");
-const { global, utils } = require('./globals');
+const { global, utils, inner } = require('./globals');
 
 const { BrowserWindow, ipcMain, clipboard } = require('electron');
 
@@ -79,7 +79,7 @@ class IconWindow extends Window {
 
         ipcMain.on('translation-clicked', () => {
             global.concat = false;
-            this.windowManager.mainWindow.send_query({ query: global.last_clipboard_content }, inner_model_name.plugin, utils.getConfig("default")["plugin"], null);
+            this.windowManager.mainWindow.send_query({ query: global.last_clipboard_content }, inner.model_name.plugin, utils.getConfig("default")["plugin"], null);
             this.window.destroy();
         })
 

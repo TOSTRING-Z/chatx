@@ -140,11 +140,20 @@ class MainWindow extends Window {
             } else {
                 this.window.focus();
             }
-            let primary_data = utils.copy(data);
-            data.query = this.funcItems.text.event(data.query);
+            let defaults = {
+                query: this.funcItems.text.event(data.query),
+                model: utils.copy(data.model),
+                version: utils.copy(data.version),
+                output_template: null,
+                input_template: null,
+                prompt_template: null,
+                params: null,
+                img_url: null,
+                end: null,
+                event: _event
+            }
             data.outputs = []
             data.output_formats = []
-            data.event = _event;
             if (data.is_plugin) {
                 let content = await this.pluginCall(data);
                 _event.sender.send('stream-data', { id: data.id, content: content, end: true });
@@ -156,53 +165,20 @@ class MainWindow extends Window {
                     if (getStopIds().includes(data.id)) {
                         break;
                     }
-                    data.step = step;
-                    let params = chain_calls[step];
-                    if (params.hasOwnProperty("output_template")) {
-                        data.output_template = params.output_template;
-                    } else {
-                        data.output_template = null;
-                    }
-                    if (params.hasOwnProperty("input_template")) {
-                        data.input_template = params.input_template;
-                    } else {
-                        data.input_template = null;
-                    }
-                    if (params.hasOwnProperty("prompt_template")) {
-                        data.prompt_template = params.prompt_template;
-                    } else {
-                        data.prompt_template = null;
-                    }
-                    if (params.hasOwnProperty("params")) {
-                        data.params = params.params;
-                    }
-                    if (params.hasOwnProperty("end")) {
-                        data.end = params.end
-                    }
-                    if (utils.getIsPlugin(params.model)) {
+
+                    data = { ...data, ...defaults, ...chain_calls[step], step: step };
+
+                    if (utils.getIsPlugin(data.model)) {
+                        await this.pluginCall(data);
                         if (data.end) {
-                            if (!params.hasOwnProperty("model"))
-                                data.model = primary_data.model;
-                            if (!params.hasOwnProperty("version"))
-                                data.version = primary_data.version;
-                            await this.pluginCall(data);
                             _event.sender.send('stream-data', { id: data.id, content: data.output_format, end: true });
                             break;
                         }
-                        else {
-                            await this.pluginCall(data, params);
-                        }
                     }
                     else {
+                        await this.llmCall(data);
                         if (data.end) {
-                            if (!params.hasOwnProperty("model"))
-                                data.model = primary_data.model;
-                            if (!params.hasOwnProperty("version"))
-                                data.version = primary_data.version;
-                            await this.llmCall(data);
                             break;
-                        } else {
-                            await this.llmCall(data, params);
                         }
                     }
                     let content = utils.getConfig("info_template").format(data);
@@ -275,12 +251,7 @@ class MainWindow extends Window {
         return null;
     }
 
-    async llmCall(data, params = null) {
-        if (params) {
-            data.model = params.model;
-            data.version = params.version;
-        }
-
+    async llmCall(data) {
         data.api_url = utils.getConfig("models")[data.model].api_url;
         data.api_key = utils.getConfig("models")[data.model].api_key;
         data.params = utils.getConfig("models")[data.model].versions.find(version => {
@@ -308,12 +279,7 @@ class MainWindow extends Window {
         return data.output_format;
     }
 
-    async pluginCall(data, params = null) {
-        if (params) {
-            data.model = params.model;
-            data.version = params.version;
-        }
-
+    async pluginCall(data) {
         data.prompt_format = "";
         let func = inner.model_obj[data.model][data.version].func
         data.output = await this.retry(func, data);
