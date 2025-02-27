@@ -1,5 +1,4 @@
 const fs = require('fs');
-const pdf = require('pdf-parse');
 const officeParser = require('officeparser');
 
 function getFileExtension(filename) {
@@ -19,19 +18,10 @@ function getFileExtension(filename) {
 async function main({ file_path }) {
     let dataBuffer = fs.readFileSync(file_path);
     switch (getFileExtension(file_path)) {
-        case "docx" || "doc":
+        case "docx" || "doc" || "pdf" | "odt" | "odp" | "ods" | "pptx" | "xlsx":
             return new Promise((resolve, rejects) => {
                 officeParser.parseOfficeAsync(dataBuffer).then(function (data) {
                     resolve(data);
-                }).catch(function (error) {
-                    console.log(error);
-                    rejects(error);
-                });
-            })
-        case "pdf":
-            return new Promise((resolve, rejects) => {
-                pdf(dataBuffer).then(function (data) {
-                    resolve(data.text);
                 }).catch(function (error) {
                     console.log(error);
                     rejects(error);

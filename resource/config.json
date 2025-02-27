@@ -5,7 +5,7 @@
   "icon_time": 5,
   "prompt": "",
   "stream": true,
-  "info_template": "**阶段:** {step}\n\n**调用:** {model}\n\n**版本:** {version}\n\n**系统提示:** {prompt}\n\n**模板输出:** \n\n```\n{output_format}\n```\n\n",
+  "info_template": "**阶段:** {step}\n\n**调用:** {model}\n\n**版本:** {version}\n\n**系统提示:** {prompt_format}\n\n**模板输出:** \n\n```\n{output_format}\n```\n\n",
   "default": {
     "model": "gptgod",
     "version": "gpt-4o-mini",

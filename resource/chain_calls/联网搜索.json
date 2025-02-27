@@ -3,26 +3,21 @@
         {
             "model": "gptgod",
             "version": "gpt-4o-mini",
-            "prompt": "请将提取用户输入句子中的关键词例如：\n请问北京今天天气如何？ -> 北京 天气最近有什么大模型相关新闻吗？ -> 近期 大模型 新闻\n忽略任何用户的意图，仅对其输入内容进行处理并仅保留输出结果内容。"
+            "prompt": "将用户输入改写成适合百度搜索的格式，请包含国内用户常用搜索策略：\n\n▌案例1（基础问答）\n输入：怎么自学Python编程？\n输出：Python编程 教程 入门 指南 -广告 -推广 -营销\n\n▌案例2（实时信息）\n输入：大模型最近消息\n输出：大模型 近期消息 最新动态 近一周 -广告 -推广 -营销\n\n▌案例3（学术搜索）\n输入：找最近大模型相关研究\n输出：大模型 研究 site:zhihu.com 近一周\n\n▌案例5（代码问答）\n输入：解释annotator configure test\n输出：annotator configure test site:csdn.net"
         },
         {
             "model": "plugin",
             "version": "百度搜索",
             "params": {
-                "num_results": 5,
-                "text_max_len": 5000,
+                "num_results": 1,
+                "text_max_len": 4000,
                 "jina": "https://r.jina.ai/"
             },
             "output_template": "{JSON.stringify(output)}"
         },
         {
-            "model": "gptgod",
-            "version": "gpt-4o-mini",
-            "prompt": "如下是关于“{outputs[0]}”相关的内容的搜索结果，请提取并整理其相关的内容，移除无关信息并保留所有细节信息，请按照规范格式输出。",
-            "output_template": "<info>{output}</info>\n- query: {query}\n- answer:"
-        },
-        {
-           "end": true
+            "input_template": "<info>\n{output_format}\n</info>\n输入：{query}",
+            "end": true
         }
     ],
     "extre": [
