@@ -27,7 +27,6 @@ function loadMessages(filePath) {
     try {
         const data = fs.readFileSync(filePath, "utf-8");
         messages = JSON.parse(data);
-        console.log("加载成功");
         return messages;
     } catch (error) {
         console.log(error);

@@ -3,7 +3,7 @@ const { store, global, inner, utils } = require('./globals')
 const { chatBase, clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds } = require('../server/llm_service');
 const { captureMouse } = require('../mouse/capture_mouse');
 
-const { BrowserWindow, Menu, shell, ipcMain, clipboard, dialog, globalShortcut, desktopCapturer } = require('electron');
+const { BrowserWindow, Menu, shell, ipcMain, clipboard, dialog } = require('electron');
 const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
 const fs = require('fs');
@@ -140,7 +140,9 @@ class MainWindow extends Window {
             } else {
                 this.window.focus();
             }
+            // chain_calls中默认值
             let defaults = {
+                prompt: this.funcItems.text.event(data.prompt),
                 query: this.funcItems.text.event(data.query),
                 model: utils.copy(data.model),
                 version: utils.copy(data.version),
@@ -148,7 +150,6 @@ class MainWindow extends Window {
                 input_template: null,
                 prompt_template: null,
                 params: null,
-                img_url: null,
                 end: null,
                 event: _event
             }
@@ -167,19 +168,23 @@ class MainWindow extends Window {
                     }
 
                     data = { ...data, ...defaults, ...chain_calls[step], step: step };
-
+                    let statu;
                     if (utils.getIsPlugin(data.model)) {
-                        await this.pluginCall(data);
+                        statu = await this.pluginCall(data);
                         if (data.end) {
                             _event.sender.send('stream-data', { id: data.id, content: data.output_format, end: true });
                             break;
                         }
                     }
                     else {
-                        await this.llmCall(data);
+                        statu = await this.llmCall(data);
                         if (data.end) {
                             break;
                         }
+                    }
+                    if (!statu) {
+                        _event.sender.send('stream-data', { id: data.id, content: "发生错误！", end: true });
+                        break;
                     }
                     let content = utils.getConfig("info_template").format(data);
                     console.log(content);
@@ -266,7 +271,6 @@ class MainWindow extends Window {
         }
         data.output = await this.retry(chatBase, data);
         if (!data.output) {
-            data.event.sender.send('stream-data', { id: data.id, content: `### 重试失败！\n\n`, end: true });
             return null;
         }
         data.outputs.push(utils.copy(data.output));
@@ -284,7 +288,6 @@ class MainWindow extends Window {
         let func = inner.model_obj[data.model][data.version].func
         data.output = await this.retry(func, data);
         if (!data.output) {
-            data.event.sender.send('stream-data', { id: data.id, content: `### 重试失败！\n\n`, end: true });
             return null;
         }
         data.outputs.push(utils.copy(data.output));
@@ -525,8 +528,13 @@ class MainWindow extends Window {
                                         const maxId = messages.reduce((max, current) => {
                                             return parseInt(current.id) > parseInt(max.id) ? current : max;
                                         }, messages[0]);
-                                        global.id = parseInt(maxId.id);
-                                        this.window.webContents.send('load', messages)
+                                        if (!!maxId.id) {
+                                            global.id = parseInt(maxId.id);
+                                            this.window.webContents.send('load', messages)
+                                            console.log(`加载成功：${result.filePaths[0]}`)
+                                        } else {
+                                            console.log(`加载失败：${result.filePaths[0]}`)
+                                        }
                                     };
                                 }
                             }).catch(err => {

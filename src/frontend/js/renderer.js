@@ -255,8 +255,8 @@ const marked_input = new Marked({
   }
 });
 
-const formatCode = (type, raw, text) => {
-  const encodeCode = encodeURIComponent(raw);
+const formatCode = (type, text) => {
+  const encodeCode = encodeURIComponent(text);
   return `<div class="code-header">
             <span class="language-tag">${type}</span>
             <button
@@ -274,8 +274,8 @@ const formatText = (type, raw) => {
 }
 
 const renderer = {
-  code({ lang, raw, text }) {
-    return formatCode(lang, raw, text);
+  code({ lang, text }) {
+    return formatCode(lang, text);
   },
   html({ type, raw }) {
     return formatText(type, raw);
