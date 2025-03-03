@@ -144,6 +144,7 @@ class MainWindow extends Window {
             let defaults = {
                 prompt: this.funcItems.text.event(data.prompt),
                 query: this.funcItems.text.event(data.query),
+                img_url: data?.img_url,
                 model: utils.copy(data.model),
                 version: utils.copy(data.version),
                 output_template: null,
@@ -206,7 +207,7 @@ class MainWindow extends Window {
         })
 
         ipcMain.on('submit', (_event, formData) => {
-            this.send_query(formData, global.model, global.version, global.stream)
+            this.send_query(formData, global.model, global.version)
         })
 
         ipcMain.on('open-external', (_event, href) => {
@@ -215,8 +216,8 @@ class MainWindow extends Window {
         })
     }
 
-    send_query(data, model, version, stream) {
-        data = { ...data, model, version, stream, is_plugin: utils.getIsPlugin(model), id: ++global.id }
+    send_query(data, model, version) {
+        data = { ...data, model, version, is_plugin: utils.getIsPlugin(model), id: ++global.id }
         this.window.webContents.send('query', data);
     }
 
@@ -260,10 +261,13 @@ class MainWindow extends Window {
         data.api_url = utils.getConfig("models")[data.model].api_url;
         data.api_key = utils.getConfig("models")[data.model].api_key;
         data.params = utils.getConfig("models")[data.model].versions.find(version => {
-            return typeof version !== "string" && version.version === data.version
+            return typeof version !== "string" && version.version === data.version;
         });
+        if (data.params?.hasOwnProperty("llm_parmas"))
+            data.llm_parmas = data.params.llm_parmas;
+        else
+            data.llm_parmas = utils.getConfig("llm_parmas");
         data.memory_length = utils.getConfig("memory_length");
-        data.max_tokens = utils.getConfig("max_tokens");
         if (data.prompt_template) {
             data.prompt_format = data.prompt_template.format(data);
         } else {

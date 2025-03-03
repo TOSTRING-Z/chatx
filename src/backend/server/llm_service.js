@@ -1,5 +1,5 @@
 const fs = require("fs");
-const { streamSse,streamJSON } = require("./stream.js")
+const { streamSse } = require("./stream.js")
 
 let messages = [];
 let stop_ids = [];
@@ -136,7 +136,13 @@ async function chatBase(data) {
         messages_list.push(message_user)
         let message_system = { role: 'assistant', content: '', id: data.id }
 
-        if (data.stream && data.end) {
+        let body = {
+            model: data.version,
+            messages: format_messages(messages_list, data.params),
+            ...data.llm_parmas
+        }
+
+        if (body?.stream && data.end) {
             try {
                 const resp = await fetch(new URL(data.api_url), {
                     method: "POST",
@@ -144,12 +150,7 @@ async function chatBase(data) {
                         "Content-Type": "application/json",
                         "Authorization": `Bearer ${data.api_key}`,
                     },
-                    body: JSON.stringify({
-                        model: data.version,
-                        messages: format_messages(messages_list, data.params),
-                        stream: true,
-                        max_tokens: data.max_tokens,
-                    }),
+                    body: JSON.stringify(body),
                 });
 
                 const stream_res = streamSse(resp);
@@ -183,18 +184,14 @@ async function chatBase(data) {
                 data.event.sender.send('info-data', { id: data.id, content: `### chatBase 发生错误！\n\n` });
             }
         } else {
+            body.stream = false;
             const resp = await fetch(new URL(data.api_url), {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                     "Authorization": `Bearer ${data.api_key}`,
                 },
-                body: JSON.stringify({
-                    model: data.version,
-                    messages: format_messages(messages_list, data.params),
-                    stream: false,
-                    max_tokens: data.max_tokens,
-                }),
+                body: JSON.stringify(body),
             });
             const respJson = await resp.json();
             if (data.end) {

@@ -23,7 +23,6 @@ const utils = new Utils(inner);
 const global = {
     model: utils.getConfig("default")["model"],
     version: utils.getConfig("default")["version"],
-    stream: utils.getConfig("stream"),
     is_plugin: utils.getIsPlugin(this.model),
     last_clipboard_content: null,
     concat: false,

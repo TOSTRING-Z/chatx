@@ -42,7 +42,7 @@ class OverlayWindow extends Window {
         })
 
         ipcMain.on('app:overlay:set-position', async (_, { x, y }) => {
-            this.windowManager.iconWindow.window.setBounds({ x: x, y: y, width: this.windowManager.iconWindowWidth, height: this.windowManager.iconWindowHeight })
+            this.windowManager.iconWindow.window.setBounds({ x: x, y: y, width: this.windowManager.iconWindow.width, height: this.windowManager.iconWindow.height })
         })
 
         ipcMain.on('start-capture', () => {

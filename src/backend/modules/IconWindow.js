@@ -6,8 +6,8 @@ const { BrowserWindow, ipcMain, clipboard } = require('electron');
 class IconWindow extends Window {
     constructor(windowManager) {
         super(windowManager);
-        this.iconWindowWidth = 200;
-        this.iconWindowHeight = 40;
+        this.width = 200;
+        this.height = 40;
     }
 
     create(position) {
@@ -27,8 +27,8 @@ class IconWindow extends Window {
         }
 
         this.window = new BrowserWindow({
-            width: this.iconWindowWidth,
-            height: this.iconWindowHeight,
+            width: this.width,
+            height: this.height,
             x,
             y,
             transparent: true,
