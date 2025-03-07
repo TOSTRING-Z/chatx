@@ -42,15 +42,7 @@ class MainWindow extends Window {
                 statu: true,
                 event: null,
                 click: () => {
-                    if (this.funcItems.clip.statu) {
-                        clearInterval(this.funcItems.clip.event)
-                        this.funcItems.clip.event = null;
-                        this.funcItems.clip.statu = !this.funcItems.clip.statu;
-                    }
-                    else {
-                        this.funcItems.clip.statu = !this.funcItems.clip.statu;
-                        this.funcItems.clip.event = this.getClipEvent(this.funcItems.clip);
-                    }
+                    this.funcItems.clip.statu = !this.funcItems.clip.statu;
                 }
             },
             math: {
@@ -305,32 +297,32 @@ class MainWindow extends Window {
     }
 
     getClipEvent(e) {
-        if (e.statu) {
-            return setInterval(async () => {
-                let clipboardContent = clipboard.readText();
+        return setInterval(async () => {
+            let clipboardContent = clipboard.readText();
 
-                if (clipboardContent !== global.last_clipboard_content) {
-                    if (global.concat) {
-                        global.last_clipboard_content = `${global.last_clipboard_content} ${clipboardContent}`;
-                        clipboard.writeText(global.last_clipboard_content);
-                    } else {
-                        global.last_clipboard_content = clipboardContent;
+            if (clipboardContent !== global.last_clipboard_content) {
+                if (global.concat) {
+                    global.last_clipboard_content = `${global.last_clipboard_content} ${clipboardContent}`;
+                    clipboard.writeText(global.last_clipboard_content);
+                } else {
+                    global.last_clipboard_content = clipboardContent;
+                }
+                if (this.funcItems.text.statu) {
+                    try {
+                        // 使用jsdom解析剪贴板内容，假设它是HTML
+                        const dom = new JSDOM(global.last_clipboard_content);
+                        const plainText = dom.window.document.body.textContent;
+                        global.last_clipboard_content = plainText
+
+                        // 将纯文本写回剪贴板
+                        clipboard.writeText(plainText);
+
+                        console.log('Clipboard content has been converted to plain text.');
+                    } catch (error) {
+                        console.error('Failed to clear clipboard formatting:', error);
                     }
-                    if (this.funcItems.text.statu) {
-                        try {
-                            // 使用jsdom解析剪贴板内容，假设它是HTML
-                            const dom = new JSDOM(global.last_clipboard_content);
-                            const plainText = dom.window.document.body.textContent;
-                            global.last_clipboard_content = plainText
-
-                            // 将纯文本写回剪贴板
-                            clipboard.writeText(plainText);
-
-                            console.log('Clipboard content has been converted to plain text.');
-                        } catch (error) {
-                            console.error('Failed to clear clipboard formatting:', error);
-                        }
-                    }
+                }
+                if (e.statu) {
                     captureMouse()
                         .then((mousePosition) => {
                             console.log(mousePosition);
@@ -340,8 +332,8 @@ class MainWindow extends Window {
                             console.error(error);
                         });
                 }
-            }, 200);
-        }
+            }
+        }, 100);
     }
 
     getMathEvent(e) {

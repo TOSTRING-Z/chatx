@@ -60,38 +60,37 @@ class IconWindow extends Window {
     }
 
     destroy() {
-        if (this.window) {
-            this.window.close();
-            this.window = null;
-        }
         if (this.autoCloseTimer) {
             clearTimeout(this.autoCloseTimer);
             this.autoCloseTimer = null;
         }
+        if (this.window) {
+            this.window.close();
+            this.window = null;
+        }
     }
 
     setup() {
-
         ipcMain.on('concat-clicked', () => {
             global.concat = true;
-            this.window.destroy();
+            this.destroy();
         })
 
         ipcMain.on('translation-clicked', () => {
             global.concat = false;
             this.windowManager.mainWindow.send_query({ query: global.last_clipboard_content }, inner.model_name.plugin, utils.getConfig("default")["plugin"], null);
-            this.window.destroy();
+            this.destroy();
         })
 
         ipcMain.on('submit-clicked', () => {
             global.concat = false;
             this.windowManager.mainWindow.send_query({ query: global.last_clipboard_content }, global.model, global.version, global.stream);
-            this.window.destroy();
+            this.destroy();
         })
 
         ipcMain.on('clear-clicked', () => {
             global.concat = false;
-            this.window.destroy();
+            this.destroy();
             global.last_clipboard_content = "";
             clipboard.writeText(global.last_clipboard_content);
         })
