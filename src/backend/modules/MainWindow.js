@@ -143,15 +143,10 @@ class MainWindow extends Window {
                     }
                     data = { ...data, ...defaults, step: ++step };
 
-                    data.output_format = await this.tool_call.step(data);
+                    await this.tool_call.step(data);
                     
-                    if (this.tool_call.state == State.FINAL) {
-                        _event.sender.send('stream-data', { id: data.id, content: data.output_format, end: true });
-                    }
-                    else {
-                        let info = this.tool_call.get_info(data);
-                        _event.sender.send('info-data', { id: data.id, content: info });
-                    }
+                    let info = this.tool_call.get_info(data);
+                    _event.sender.send('info-data', { id: data.id, content: info });
                 }
                 
             }
@@ -165,7 +160,7 @@ class MainWindow extends Window {
                     }
                     data = { ...data, ...defaults, ...chain_calls[step], step: step };
 
-                    data.output_format = await this.chain_call.step(data)
+                    await this.chain_call.step(data);
                     if (this.chain_call.state == State.FINAL) {
                         if (this.chain_call.is_plugin)
                             _event.sender.send('stream-data', { id: data.id, content: data.output_format, end: true });

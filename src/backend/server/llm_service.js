@@ -125,7 +125,7 @@ async function chatBase(data) {
                 }
             ];
         }
-        message_user = { "role": data?.role||"user", "content": content, "id": data.id };
+        message_input = { "role": "user", "content": content, "id": data.id };
         if (!!data.system_prompt) {
             messages_list = [{ "role": "system", "content": data.system_prompt, "id": data.id }]
             messages_list = messages_list.concat(messages.slice(messages.length - data.memory_length * 2, messages.length))
@@ -133,8 +133,8 @@ async function chatBase(data) {
         else {
             messages_list = messages.slice(messages.length - data.memory_length * 2, messages.length)
         }
-        messages_list.push(message_user)
-        let message_system = { role: 'assistant', content: '', id: data.id }
+        messages_list.push(message_input)
+        let message_output = { role: 'assistant', content: '', id: data.id }
 
         let body = {
             model: data.version,
@@ -167,16 +167,16 @@ async function chatBase(data) {
                             content = delta.reasoning_content;
                         else if (delta.hasOwnProperty("content") && delta.content) {
                             content = delta.content;
-                            message_system.content += content;
+                            message_output.content += content;
                         }
                         // 发送数据块到渲染进程
                         data.event.sender.send('stream-data', { id: data.id, content: content, end: false });
                     }
                 }
 
-                messages.push(message_user);
-                messages.push(message_system);
-                console.log(message_system)
+                messages.push(message_input);
+                messages.push(message_output);
+                console.log(message_output)
                 data.event.sender.send('stream-data', { id: data.id, content: "", end: true });
                 return true;
             } catch (error) {
@@ -194,26 +194,23 @@ async function chatBase(data) {
                 body: JSON.stringify(body),
             });
             const respJson = await resp.json();
-            if (data?.push_message) {
-                data.output = respJson.choices[0].message.content;
-                message_system.content = data.output;
-                messages.push(message_user);
-                messages.push(message_system);
-                return respJson.choices[0].message.content;
-            }
+            data.output = respJson.choices[0].message.content;
+            message_output.content = data.output;
             if (data.end) {
-                data.output = respJson.choices[0].message.content;
-                message_system.content = data.output;
-                messages.push(message_user);
-                messages.push(message_system);
+                messages.push(message_input);
+                messages.push(message_output);
                 data.event.sender.send('stream-data', { id: data.id, content: data.output_template.format(data), end: true });
                 return true;
             } else {
-                return respJson.choices[0].message.content;
+                if (data?.push_message) {
+                    messages.push(message_input);
+                    messages.push(message_output);
+                }
             }
+            return respJson.choices[0].message.content;
         }
     } catch (error) {
-        data.event.sender.send('info-data', { id: data.id, content: `### chatBase 发生错误！\n\n` });
+        data.event.sender.send('info-data', { id: data.id, content: error.message });
         return null;
     }
 }
