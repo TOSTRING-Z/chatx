@@ -1,7 +1,10 @@
 const { Window } = require("./Window")
 const { store, global, inner, utils } = require('./globals')
-const { chatBase, clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds } = require('../server/llm_service');
+const { clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds } = require('../server/llm_service');
 const { captureMouse } = require('../mouse/capture_mouse');
+const { State } = require("../server/re_act_agent.js")
+const { ToolCall } = require('../server/tool_call');
+const { ChainCall } = require('../server/chain_call');
 
 const { BrowserWindow, Menu, shell, ipcMain, clipboard, dialog } = require('electron');
 const jsdom = require("jsdom");
@@ -10,33 +13,11 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-function format(template, params) {
-    const keys = Object.keys(params);
-    const values = Object.values(params);
-    return new Function(...keys, `return \`$${template}\`;`)(...values);
-}
-
-String.prototype.format = function (data) {
-    if (!!this) {
-        let format_text = this.replaceAll("{{", "@bracket_left").replaceAll("}}", "@bracket_right");
-        format_text = format_text.replace(/(\{.*?\})/g, (match, cmd) => {
-            try {
-                return format(cmd, data);
-            } catch (e) {
-                console.log(e);
-                return match;
-            }
-        });
-        format_text = format_text.replaceAll("@bracket_left", "{").replaceAll("@bracket_right", "}")
-        return format_text;
-    } else {
-        return this
-    }
-}
-
 class MainWindow extends Window {
     constructor(windowManager) {
         super(windowManager);
+        this.tool_call = new ToolCall();
+        this.chain_call = new ChainCall();
         this.funcItems = {
             clip: {
                 statu: true,
@@ -132,7 +113,7 @@ class MainWindow extends Window {
             } else {
                 this.window.focus();
             }
-            // chain_calls中默认值
+            // 默认值
             let defaults = {
                 prompt: this.funcItems.text.event(data.prompt),
                 query: this.funcItems.text.event(data.query),
@@ -152,36 +133,51 @@ class MainWindow extends Window {
                 let content = await this.pluginCall(data);
                 _event.sender.send('stream-data', { id: data.id, content: content, end: true });
             }
+            else if (global.re_act) {
+                // ReAct
+                let step = 0;
+                this.tool_call.state = State.IDLE;
+                while(this.tool_call.state != State.FINAL) {
+                    if (getStopIds().includes(data.id)) {
+                        break;
+                    }
+                    data = { ...data, ...defaults, step: ++step };
+
+                    data.output_format = await this.tool_call.step(data);
+                    
+                    if (this.tool_call.state == State.FINAL) {
+                        _event.sender.send('stream-data', { id: data.id, content: data.output_format, end: true });
+                    }
+                    else {
+                        let info = this.tool_call.get_info(data);
+                        _event.sender.send('info-data', { id: data.id, content: info });
+                    }
+                }
+                
+            }
             else {
                 // 链式调用
+                this.chain_call.state = State.IDLE;
                 let chain_calls = utils.getConfig("chain_call");
                 for (const step in chain_calls) {
                     if (getStopIds().includes(data.id)) {
                         break;
                     }
-
                     data = { ...data, ...defaults, ...chain_calls[step], step: step };
-                    let statu;
-                    if (utils.getIsPlugin(data.model)) {
-                        statu = await this.pluginCall(data);
-                        if (data.end) {
+
+                    data.output_format = await this.chain_call.step(data)
+                    if (this.chain_call.state == State.FINAL) {
+                        if (this.chain_call.is_plugin)
                             _event.sender.send('stream-data', { id: data.id, content: data.output_format, end: true });
-                            break;
-                        }
+                        break;
                     }
-                    else {
-                        statu = await this.llmCall(data);
-                        if (data.end) {
-                            break;
-                        }
-                    }
-                    if (!statu) {
+                    if (this.chain_call.state == State.ERROR) {
                         _event.sender.send('stream-data', { id: data.id, content: "发生错误！", end: true });
                         break;
                     }
-                    let content = utils.getConfig("info_template").format(data);
-                    console.log(content);
-                    _event.sender.send('info-data', { id: data.id, content: content });
+
+                    let info = this.chain_call.get_info(data);
+                    _event.sender.send('info-data', { id: data.id, content: info });
                 }
             }
         })
@@ -211,89 +207,6 @@ class MainWindow extends Window {
     send_query(data, model, version) {
         data = { ...data, model, version, is_plugin: utils.getIsPlugin(model), id: ++global.id }
         this.window.webContents.send('query', data);
-    }
-
-    async retry(func, data) {
-        if (data.hasOwnProperty("output_format")) {
-            data.input = data.output_format;
-        } else {
-            data.input = data.query;
-        }
-        if (data.hasOwnProperty("prompt_format")) {
-            data.system_prompt = data.prompt_format;
-        } else {
-            data.system_prompt = data.prompt;
-        }
-        if (data.input_template) {
-            data.input = data.input_template.format(data);
-        }
-        let retry_time = utils.getConfig("retry_time");
-        let count = 0;
-        while (count < retry_time) {
-            if (getStopIds().includes(data.id)) {
-                return null;
-            }
-            try {
-                let output = await func(data);
-                if (!!output) {
-                    return output;
-                }
-                else {
-                    count++;
-                    continue;
-                }
-            } catch (_error) {
-                count++;
-            }
-        }
-        return null;
-    }
-
-    async llmCall(data) {
-        data.api_url = utils.getConfig("models")[data.model].api_url;
-        data.api_key = utils.getConfig("models")[data.model].api_key;
-        data.params = utils.getConfig("models")[data.model].versions.find(version => {
-            return typeof version !== "string" && version.version === data.version;
-        });
-        if (data.params?.hasOwnProperty("llm_parmas"))
-            data.llm_parmas = data.params.llm_parmas;
-        else
-            data.llm_parmas = utils.getConfig("llm_parmas");
-        data.memory_length = utils.getConfig("memory_length");
-        if (data.prompt_template) {
-            data.prompt_format = data.prompt_template.format(data);
-        } else {
-            data.prompt_format = data.prompt
-        }
-        data.output = await this.retry(chatBase, data);
-        if (!data.output) {
-            return null;
-        }
-        data.outputs.push(utils.copy(data.output));
-        if (data.output_template) {
-            data.output_format = data.output_template.format(data);
-        } else {
-            data.output_format = data.output;
-        }
-        data.output_formats.push(utils.copy(data.output_format));
-        return data.output_format;
-    }
-
-    async pluginCall(data) {
-        data.prompt_format = "";
-        let func = inner.model_obj[data.model][data.version].func
-        data.output = await this.retry(func, data);
-        if (!data.output) {
-            return null;
-        }
-        data.outputs.push(utils.copy(data.output));
-        if (data.output_template) {
-            data.output_format = data.output_template.format(data);
-        } else {
-            data.output_format = data.output;
-        }
-        data.output_formats.push(utils.copy(data.output_format));
-        return data.output_format;
     }
 
     getClipEvent(e) {
@@ -460,6 +373,14 @@ class MainWindow extends Window {
                             this.loadChain();
                         }
                     },
+                    {
+                        label: 'ReAct',
+                        click: async () => {
+                            global.re_act = !global.re_act;
+                        },
+                        type: 'checkbox',
+                        checked: global.re_act,
+                    },
                 ]
             },
             {
@@ -474,8 +395,8 @@ class MainWindow extends Window {
                     {
                         label: '控制台',
                         click: () => {
-                            // if (this.windowManager.iconWindow) this.windowManager.iconWindow.webContents.openDevTools();
-                            if (this.windowManager.configsWindow) this.windowManager.configsWindow.webContents.openDevTools();
+                            // if (this.windowManager?.iconWindow) this.windowManager.iconWindow.window.webContents.openDevTools();
+                            if (this.windowManager?.configsWindow) this.windowManager.configsWindow.window?.webContents.openDevTools();
                             if (this.window) this.window.webContents.openDevTools();
                         }
                     },

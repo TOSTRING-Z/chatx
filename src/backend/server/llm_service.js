@@ -125,7 +125,7 @@ async function chatBase(data) {
                 }
             ];
         }
-        message_user = { "role": "user", "content": content, "id": data.id };
+        message_user = { "role": data?.role||"user", "content": content, "id": data.id };
         if (!!data.system_prompt) {
             messages_list = [{ "role": "system", "content": data.system_prompt, "id": data.id }]
             messages_list = messages_list.concat(messages.slice(messages.length - data.memory_length * 2, messages.length))
@@ -194,6 +194,13 @@ async function chatBase(data) {
                 body: JSON.stringify(body),
             });
             const respJson = await resp.json();
+            if (data?.push_message) {
+                data.output = respJson.choices[0].message.content;
+                message_system.content = data.output;
+                messages.push(message_user);
+                messages.push(message_system);
+                return respJson.choices[0].message.content;
+            }
             if (data.end) {
                 data.output = respJson.choices[0].message.content;
                 message_system.content = data.output;
