@@ -159,7 +159,7 @@ BaiduSearch：执行网络信息检索。`
     async final(data) {
         data.end = true;
         data.prompt = this.prompt;
-        data.output_format = `请忽略工具调用信息，仅关注工具执行结果，并回答用户最初的输入：`;
+        data.output_format = `请忽略工具调用信息，仅关注工具执行结果，并回答用户最初的输入，不需要输出除结果外的其它信息：`;
         let content = await this.llmCall(data);
         return content;
     }
