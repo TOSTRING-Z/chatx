@@ -81,7 +81,7 @@ async function parseBaiduPage(url, rankStart, num_results, text_max_len, jina) {
                     rankStart++;
                 }
             }
-            
+
             if (rankStart >= num_results) {
                 break;
             }
@@ -108,7 +108,24 @@ async function getText(url, jina) {
         })
 
         const $ = cheerio.load(response.data)
-        const text = $('body').text();
+        let text;
+        if (!!jina) {
+            text = $('body').text();
+        } else {
+            // 在获取文本前先清理页面
+            $('script, style, noscript, iframe').remove(); // 移除无用标签
+            // 扩展选择器以包含常见内容容器
+            const contentElements = $('p, div.article-content, section.main-text');
+            text = contentElements
+                .map((i, el) => {
+                    // 移除不需要的子元素（如按钮、广告等）
+                    $(el).find('button, .ad').remove();
+                    return $(el).text().trim();
+                })
+                .get()
+                .filter(t => t.length > 0) // 过滤空段落
+                .join('\n');
+        }
         return text;
     } catch (error) {
         console.error('getText error!')

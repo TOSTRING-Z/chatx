@@ -1,18 +1,22 @@
 const { ReActAgent, State } = require("./re_act_agent.js")
-const { utils } = require('../modules/globals')
-const { messages } = require('../server/llm_service');
+const { utils, inner } = require('../modules/globals')
+const { pushMessage } = require('../server/llm_service');
 
 class ToolCall extends ReActAgent {
     constructor() {
         super();
         this.tools = {
-            "python_execute": ({code}) => {
+            "python_execute": async ({ code }) => {
                 console.log(code);
-                return "print('hello world!')\nimport numpy as np\nnp.array([1,2,3])";
+                const func = inner.model_obj.plugin["python执行"].func
+                return await func({ input: code })
+                // return "print('hello world!')\nimport numpy as np\nnp.array([1,2,3])";
             },
-            "baidu_search": ({content}) => {
+            "baidu_search": async ({ content }) => {
                 console.log(content);
-                return "衡阳温度：16摄氏度。";
+                const func = inner.model_obj.plugin["百度搜索"].func
+                return await func({ input: content, params: { jina: "" } })
+                // return "衡阳温度：16摄氏度。";
             },
             "terminate": () => {
                 this.state = State.FINAL;
@@ -21,35 +25,29 @@ class ToolCall extends ReActAgent {
 
         this.prompt = null;
 
-        this.system_prompt = `你是OpenManus，一个全能的人工智能助手，旨在解决用户提出的任何任务。您可以使用各种工具来高效地完成复杂的请求。
+        this.system_prompt = `你是ChatX，一个全能的人工智能助手，旨在解决用户提出的任何任务。您可以使用各种工具来高效地完成复杂的请求。
 您可以使用PythonExecute与计算机交互，使用GoogleSearch检索信息。
 PythonExecute: 执行Python代码与计算机系统、数据处理、自动化任务等进行交互。
 BaiduSearch: 执行网络信息检索。
-Terminate: 如果人工智能助手认为所有任务已经完成，请使用“terminate”工具/函数调用。`
+Terminate: 停止或暂停任务。`
 
-        this.task_prompt = `# 你当前的任务是：
+        this.task_prompt = `# 你当前扮演非结构化输出的任务安排助手，你的任务是：
 
-- 在使用每个工具后，清楚地解释执行结果。
-
+- 在使用每个工具后，清楚地解释执行结果，不要编造或者假设虚构的结果，若没有得到输出，请直接回答工具没有返回有效信息。
 - 根据用户初始要求，判断是否需要进行下一步。
-
 - 若判断需要下一步，则给出下一步的具体任务要求。
-
-- 若判断下一步需要进行文件修改，系统指令执行等高风险任务，需要立刻给出停止任务的要求，并在得到用户同意后才能继续执行后续任务。
-
+- 若判断下一步需要系统指令执行等高风险任务，需要立刻给出暂停任务的要求。
 - 若判断任务已经全部完成，则给出立即停止任务的要求。
-
-
-
 
 # 输出要求
 
 - 输出非结构化格式。
 - 输出MarkDown格式。`
-        
-        this.tool_prompt = `# 你当前的任务是：
 
-- 判断是否需要调用工具。
+        this.tool_prompt = `# 你当前扮演结构化输出的功能调用助手，你的任务是：
+
+- 自动判断需要调用工具。
+- 若得到任务停止或暂停的要求，则立即调用Terminate工具。
 
 # 你的输出应该严格遵守如下json格式：
 
@@ -114,17 +112,13 @@ Terminate: 如果人工智能助手认为所有任务已经完成，请使用“
 - 仅输出json字符串。
 - 不输出任何解释。
 - 不输出MarkDown格式。
-- 输出不使用\`\`\`json xxxx \`\`\`格式`
+- 不输出\`\`\`json xxxx \`\`\`格式`
     }
 
-    push_message(role, content) {
-        let message = {role: role, content: content};
-        messages.push(message);
-    }
 
     async step(data) {
         if (this.state == State.IDLE) {
-            this.push_message("user", data.query);
+            pushMessage("user", data.query, data.id);
             this.state = State.RUNNING;
             this.prompt = utils.copy(data.prompt)
         }
@@ -132,15 +126,15 @@ Terminate: 如果人工智能助手认为所有任务已经完成，请使用“
         const tool_info = await this.tool(data);
         if (tool_info?.tool) {
             // 调用工具
-            await this.act(tool_info);
+            data.output_format = await this.act(tool_info);
+            data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
+            pushMessage("user", data.output_format, data.id);
             if (this.state == State.FINAL) {
                 return this.final(data);
             }
         }
-        data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
         // 下一步任务
         data.output_format = await this.task(data);
-        data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
         return data.output_format;
     }
 
@@ -148,16 +142,18 @@ Terminate: 如果人工智能助手认为所有任务已经完成，请使用“
         data.push_message = true
         data.prompt = this.system_prompt;
         data.output_format = this.tool_prompt;
-        let content = await this.llmCall(data);
-        return this.get_tool(content);
+        data.output_format = await this.llmCall(data);
+        data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
+        return this.get_tool(data.output_format, data.id);
     }
 
     async task(data) {
         data.push_message = true
         data.prompt = this.system_prompt;
         data.output_format = this.task_prompt;
-        let content = await this.llmCall(data);
-        return content;
+        data.output_format = await this.llmCall(data);
+        data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
+        return data.output_format;
     }
 
     async final(data) {
@@ -167,24 +163,24 @@ Terminate: 如果人工智能助手认为所有任务已经完成，请使用“
         let content = await this.llmCall(data);
         return content;
     }
-    
-    async act({tool, params}) {
+
+    async act({ tool, params }) {
         try {
             const will_tool = this.tools[tool];
-            const output = will_tool(params);
+            const output = await will_tool(params);
             const observation = `工具 ${tool} 已经被执行，输出结果如下：
             {
                 "observation": "${JSON.stringify(output)}"
             }`;
-            this.push_message("user", observation);
+            return observation;
         } catch (error) {
             console.log(error);
             const observation = `工具 ${tool} 已经被执行，出现报错：${error.message}`;
-            this.push_message("user", observation);
+            return observation;
         }
     }
 
-    get_tool(content) {
+    get_tool(content, id) {
         try {
             const tool_info = JSON.parse(content);
             if (!!tool_info?.tool) {
@@ -193,7 +189,7 @@ Terminate: 如果人工智能助手认为所有任务已经完成，请使用“
         } catch (error) {
             console.log(error);
             const observation = `JONS.parse 反序列化发生错误：${error.message}`;
-            this.push_message("user", observation);
+            pushMessage("user", observation, id);
         }
     }
 }

@@ -11,10 +11,10 @@ const inner = {
         plugin: "plugin"
     },
     model: {
-        "plugin": { "versions": [] }
+        plugin: { versions: [] }
     },
     model_obj: {
-        "plugin": {}
+        plugin: {}
     }
 };
 

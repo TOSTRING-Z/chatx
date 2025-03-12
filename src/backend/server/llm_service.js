@@ -8,9 +8,14 @@ function getStopIds() {
     return stop_ids;
 }
 
+function pushMessage(role, content, id) {
+    let message = { role: role, content: content, id: id };
+    messages.push(message);
+}
+
 function clearMessages() {
-    messages = [];
-    stop_ids = [];
+    messages.length = 0;
+    stop_ids.length = 0;
 }
 
 function saveMessages(filePath) {
@@ -216,5 +221,5 @@ async function chatBase(data) {
 }
 
 module.exports = {
-    chatBase, clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds, messages
+    chatBase, clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds, pushMessage
 };

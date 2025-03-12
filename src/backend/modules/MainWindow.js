@@ -130,7 +130,7 @@ class MainWindow extends Window {
             data.outputs = []
             data.output_formats = []
             if (data.is_plugin) {
-                let content = await this.pluginCall(data);
+                let content = await this.chain_call.pluginCall(data);
                 _event.sender.send('stream-data', { id: data.id, content: content, end: true });
             }
             else if (global.re_act) {
@@ -139,7 +139,7 @@ class MainWindow extends Window {
                 this.tool_call.state = State.IDLE;
                 while(this.tool_call.state != State.FINAL) {
                     if (getStopIds().includes(data.id)) {
-                        break;
+                        this.tool_call.state = State.FINAL
                     }
                     data = { ...data, ...defaults, step: ++step };
 

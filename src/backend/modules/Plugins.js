@@ -15,7 +15,9 @@ class Plugins {
             const plugin = require(pluginPath);
             return { func: plugin.main, extre: plugin?.extre };
         } catch (error) {
-            return () => `插件: ${name}, 路径: ${pluginPath}, 加载插件发生错误, 请检查路径和依赖！`
+            return {
+                func: () => `插件: ${name}, 路径: ${pluginPath}, 加载插件发生错误: ${error.message}`
+            }
         }
     }
     init() {

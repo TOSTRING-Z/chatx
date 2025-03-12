@@ -9,7 +9,7 @@ class ChainCall extends ReActAgent {
 
     async pluginCall(data) {
         data.prompt_format = "";
-        let func = inner.model_obj[data.model][data.version].func
+        let func = inner.model_obj[data.model][data.version]?.func
         data.output = await this.retry(func, data);
         if (!data.output) {
             return null;
