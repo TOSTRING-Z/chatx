@@ -181,7 +181,7 @@ async function chatBase(data) {
                 return true;
             } catch (error) {
                 console.log(error);
-                data.event.sender.send('info-data', { id: data.id, content: `### chatBase 发生错误！\n\n` });
+                data.event.sender.send('info-data', { id: data.id, content: error.message });
             }
         } else {
             body.stream = false;
@@ -216,5 +216,5 @@ async function chatBase(data) {
 }
 
 module.exports = {
-    chatBase, clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds
+    chatBase, clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds, messages
 };

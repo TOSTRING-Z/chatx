@@ -144,9 +144,6 @@ class MainWindow extends Window {
                     data = { ...data, ...defaults, step: ++step };
 
                     await this.tool_call.step(data);
-                    
-                    let info = this.tool_call.get_info(data);
-                    _event.sender.send('info-data', { id: data.id, content: info });
                 }
                 
             }

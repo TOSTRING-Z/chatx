@@ -27,6 +27,7 @@ String.prototype.format = function (data) {
 
 const State = {
     IDLE: 'idle',
+    RUNNING: 'running',
     FINAL: 'final',
     ERROR: 'error',
 };
