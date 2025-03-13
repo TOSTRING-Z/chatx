@@ -10,10 +10,16 @@ class Plugins {
     // 配置插件接口
     loadPlugin(name) {
         const pluginPath = utils.getConfig("plugins")[name].path.format(process);
+        const pluginParams = utils.getConfig("plugins")[name]?.parmas;
         try {
             console.log(`loading plugin: ${name}`);
             const plugin = require(pluginPath);
-            return { func: plugin.main, extre: plugin?.extre };
+            if (pluginParams) {
+                return { func: plugin.main(pluginParams), extre: plugin?.extre };
+            }
+            else {
+                return { func: plugin.main, extre: plugin?.extre };
+            }
         } catch (error) {
             return {
                 func: () => `插件: ${name}, 路径: ${pluginPath}, 加载插件发生错误: ${error.message}`

@@ -133,6 +133,12 @@
     },
     "文件读取": {
       "path": "{resourcesPath}/resource/plugins/script/file_reader.js"
+    },
+    "python执行": {
+      "path": "{resourcesPath}/resource/plugins/script/python_execute.js",
+      "parmas": {
+        "python_bin": "python"
+      }
     }
   },
   "chain_call": [
