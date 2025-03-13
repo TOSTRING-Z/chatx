@@ -16,6 +16,13 @@
   },
   "short_cut": "CommandOrControl+Shift+Space",
   "models": {
+    "aliyuncs": {
+      "api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
+      "api_key": "",
+      "versions": [
+        "qwen-plus"
+      ]
+    },
     "qianfan": {
       "api_url": "https://qianfan.baidubce.com/v2/chat/completions",
       "api_key": "",
@@ -133,6 +140,9 @@
     },
     "文件读取": {
       "path": "{resourcesPath}/resource/plugins/script/file_reader.js"
+    },
+    "文件保存": {
+      "path": "{resourcesPath}/resource/plugins/script/file_save.js"
     },
     "python执行": {
       "path": "{resourcesPath}/resource/plugins/script/python_execute.js",

@@ -18,7 +18,7 @@ function getFileExtension(filename) {
 async function main({ file_path }) {
     let dataBuffer = fs.readFileSync(file_path);
     switch (getFileExtension(file_path)) {
-        case "docx" || "doc" || "pdf" | "odt" | "odp" | "ods" | "pptx" | "xlsx":
+        case "docx" | "doc" | "pdf" | "odt" | "odp" | "ods" | "pptx" | "xlsx":
             return new Promise((resolve, rejects) => {
                 officeParser.parseOfficeAsync(dataBuffer).then(function (data) {
                     resolve(data);

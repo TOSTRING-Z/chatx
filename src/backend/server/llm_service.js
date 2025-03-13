@@ -178,10 +178,11 @@ async function chatBase(data) {
                         data.event.sender.send('stream-data', { id: data.id, content: content, end: false });
                     }
                 }
-
-                messages.push(message_input);
-                messages.push(message_output);
-                console.log(message_output)
+                if (data?.stream_push != false) {
+                    messages.push(message_input);
+                    messages.push(message_output);
+                    console.log(message_output)
+                }
                 data.event.sender.send('stream-data', { id: data.id, content: "", end: true });
                 return true;
             } catch (error) {
@@ -215,7 +216,7 @@ async function chatBase(data) {
             return respJson.choices[0].message.content;
         }
     } catch (error) {
-        data.event.sender.send('info-data', { id: data.id, content: error.message });
+        data.event.sender.send('info-data', { id: data.id, content: `响应错误: ${error.message}\n` });
         return null;
     }
 }

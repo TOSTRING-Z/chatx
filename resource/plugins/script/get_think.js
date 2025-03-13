@@ -1,11 +1,16 @@
 async function main({ input }) {
-    const rule = /^<think>([\s\S]*?)<\/think>/;
-    const match = rule.exec(input);
+    try {
+        const rule = /^<think>([\s\S]*?)<\/think>/;
+        const match = rule.exec(input);
 
-    if (match) {
-        return match[1]
+        if (match) {
+            return match[1]
+        }
+        return null;
+    } catch (error) {
+        console.error(error.message);
+        return null;
     }
-    return null;
 }
 
 module.exports = {
