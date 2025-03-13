@@ -8,6 +8,7 @@ function main(parmas) {
         // 创建临时文件
         const tempFile = path.join(tmpdir(), `temp_${Date.now()}.py`)
         writeFileSync(tempFile, input)
+        console.log(tempFile)
 
         return new Promise((resolve, reject) => {
             const command = `${parmas.python_bin} ${tempFile}`

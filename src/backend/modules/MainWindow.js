@@ -137,13 +137,17 @@ class MainWindow extends Window {
                 // ReAct
                 let step = 0;
                 this.tool_call.state = State.IDLE;
-                while(this.tool_call.state != State.FINAL) {
+                while(this.tool_call.state != State.FINAL && this.tool_call.state!=State.PAUSE) {
                     if (getStopIds().includes(data.id)) {
                         this.tool_call.state = State.FINAL
                     }
                     data = { ...data, ...defaults, step: ++step };
-
-                    await this.tool_call.step(data);
+                    
+                    let content = await this.tool_call.step(data);
+                    if (this.tool_call.state == State.PAUSE) {
+                        _event.sender.send('stream-data', { id: data.id, content: content, end: true });
+                        this.window.webContents.send("extre_load", [{ "type": "pause" }]);
+                    }
                 }
                 
             }

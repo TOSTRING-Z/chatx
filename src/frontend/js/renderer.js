@@ -27,6 +27,9 @@ const messages = document.getElementById("messages");
 const top_div = document.getElementById("top_div");
 const bottom_div = document.getElementById("bottom_div");
 const file_reader = document.getElementById("file_reader");
+const pause = document.getElementById("pause");
+const pause_allow = document.getElementById("pause_allow");
+const pause_refuse = document.getElementById("pause_refuse");
 
 const formData = {
   query: null,
@@ -427,6 +430,7 @@ window.electronAPI.handleQuery(async (data) => {
 window.electronAPI.handleExtreLoad((data) => {
   system_prompt.style.display = "none";
   file_reader.style.display = "none";
+  pause.style.display = "none";
   data.forEach(item => {
     switch (item.type) {
       case "system-prompt":
@@ -434,6 +438,9 @@ window.electronAPI.handleExtreLoad((data) => {
         break;
       case "file-reader":
         file_reader.style.display = "block";
+        break;
+      case "pause":
+        pause.style.display = "flex";
         break;
     }
   })
@@ -484,4 +491,18 @@ submit.addEventListener("click", () => {
   formData.query = input.value;
   formData.prompt = system_prompt.value;
   window.electronAPI.clickSubmit(formData);
+})
+
+pause_allow.addEventListener("click",async function(e){
+  formData.query = "Allow to execute";
+  formData.prompt = system_prompt.value;
+  window.electronAPI.clickSubmit(formData);
+  pause.style.display = "none";
+})
+
+pause_refuse.addEventListener("click",async function(e){
+  formData.query = "Refuse to execute";
+  formData.prompt = system_prompt.value;
+  window.electronAPI.clickSubmit(formData);
+  pause.style.display = "none";
 })

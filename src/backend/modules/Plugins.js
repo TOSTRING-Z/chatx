@@ -10,7 +10,7 @@ class Plugins {
     // 配置插件接口
     loadPlugin(name) {
         const pluginPath = utils.getConfig("plugins")[name].path.format(process);
-        const pluginParams = utils.getConfig("plugins")[name]?.parmas;
+        const pluginParams = utils.getConfig("plugins")[name]?.params;
         try {
             console.log(`loading plugin: ${name}`);
             const plugin = require(pluginPath);

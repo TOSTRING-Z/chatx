@@ -28,6 +28,7 @@ String.prototype.format = function (data) {
 const State = {
     IDLE: 'idle',
     RUNNING: 'running',
+    PAUSE: 'pause',
     FINAL: 'final',
     ERROR: 'error',
 };
@@ -104,7 +105,10 @@ class ReActAgent {
     }
     
     get_info(data) {
+        const output_format = utils.copy(data.output_format);
+        data.output_format = data.output_format.replaceAll("\`","'").replaceAll("`","'");
         let info = utils.getConfig("info_template").format(data);
+        data.output_format = output_format;
         console.log(info);
         return info;
     }

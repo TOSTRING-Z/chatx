@@ -136,7 +136,7 @@
     },
     "python执行": {
       "path": "{resourcesPath}/resource/plugins/script/python_execute.js",
-      "parmas": {
+      "params": {
         "python_bin": "python"
       }
     }

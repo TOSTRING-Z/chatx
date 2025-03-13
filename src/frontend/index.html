@@ -480,6 +480,13 @@
         transform: scale(1.5);
       }
     }
+
+    /* 暂停 */
+    #pause {
+      margin-left: 52px;
+      display: flex;
+      margin-bottom: 2rem;
+    }
   </style>
 </head>
 
@@ -491,6 +498,10 @@
       <!-- Chat messages -->
       <div class="overflow-y-auto" id="top_div">
         <div class="p-4 flex flex-col space-y-4" id="messages"></div>
+        <div class="space-x-2 items-start" id="pause">
+          <div class="btn" id="pause_allow">允许</div>
+          <div class="btn" id="pause_refuse">拒绝</div>
+        </div>
       </div>
       <!-- Input area -->
       <div class="p-4 fixed bottom-0 left-0 right-0" id="bottom_div">
