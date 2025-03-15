@@ -3,7 +3,7 @@
   "retry_time": 10,
   "icon_time": 5,
   "prompt": "",
-  "info_template": "**阶段:** {step}\n\n**调用:** {model}\n\n**版本:** {version}\n\n**系统提示:** {prompt_format}\n\n**模板输出:** \n\n```\n{output_format}\n```\n\n",
+  "info_template": "阶段: {step}, 调用: {model}, 版本: {version}, 输出: \n\n```\n{output_format}\n```\n\n",
   "default": {
     "model": "gptgod",
     "version": "gpt-4o-mini",
@@ -13,6 +13,13 @@
     "max_tokens": 4000,
     "temperature": 1.5,
     "stream": true
+  },
+  "func_status": {
+    "clip": true,
+    "react": true,
+    "markdown": false,
+    "math": false,
+    "text": false
   },
   "short_cut": "CommandOrControl+Shift+Space",
   "models": {
@@ -142,7 +149,13 @@
       "path": "{resourcesPath}/resource/plugins/script/file_reader.js"
     },
     "文件保存": {
-      "path": "{resourcesPath}/resource/plugins/script/file_save.js"
+      "path": "{resourcesPath}/resource/plugins/script/write_to_file.js"
+    },
+    "读取路径": {
+      "path": "{resourcesPath}/resource/plugins/script/list_files.js"
+    },
+    "文件替换": {
+      "path": "{resourcesPath}/resource/plugins/script/replace_in_file.js"
     },
     "python执行": {
       "path": "{resourcesPath}/resource/plugins/script/python_execute.js",

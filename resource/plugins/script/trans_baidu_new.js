@@ -5,6 +5,12 @@ const he = require("he");
 
 const TRANSLATION_API_URL = "https://fanyi.baidu.com/transapi";
 
+function decodeHtmlEntities(str) {
+  return str.replace(/&#x([0-9A-F]+);/gi, function(match, hex) {
+      return String.fromCharCode(parseInt(hex, 16));
+  });
+}
+
 // 判断翻译方式
 function mode(text) {
   return text.match("[\u4e00-\u9fa5]") ? ["zh", "en"] : ["en", "zh"];
@@ -97,7 +103,7 @@ async function main({input}) {
       }
     );
 
-    return format(response.data);
+    return decodeHtmlEntities(format(response.data));
   } catch (error) {
     console.log(error);
     return null;

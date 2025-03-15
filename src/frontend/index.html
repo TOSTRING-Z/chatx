@@ -487,6 +487,27 @@
       display: flex;
       margin-bottom: 2rem;
     }
+
+    /* plan/act */
+    #act {
+      padding: 3px 7px;
+      border-radius: 5px 0 0 5px;
+      border: 1px solid #00000021;
+      border-right: none;
+    }
+
+    #plan {
+      padding: 3px 7px;
+      border-radius: 0 5px 5px 0;
+      border: 1px solid #00000021;
+      border-left: none;
+    }
+
+
+    .active {
+      background: #129124;
+      color: white;
+    }
   </style>
 </head>
 
@@ -498,17 +519,18 @@
       <!-- Chat messages -->
       <div class="overflow-y-auto" id="top_div">
         <div class="p-4 flex flex-col space-y-4" id="messages"></div>
-        <div class="space-x-2 items-start" id="pause">
-          <div class="btn" id="pause_allow">允许</div>
-          <div class="btn" id="pause_refuse">拒绝</div>
-        </div>
+        <div class="space-x-2 items-start" id="pause"></div>
       </div>
       <!-- Input area -->
       <div class="p-4 fixed bottom-0 left-0 right-0" id="bottom_div">
         <div class="bg-gradient"></div>
         <div class="flex mb-2 flex-col items-start">
-          <div class="btn ellipsis-div" id="file_reader">选择文件</div>
-          <textarea class="w-full p-2 rounded-md mb-2" rows="1" placeholder="系统提示" id="system_prompt"></textarea>
+          <div class="flex-row items-start" id="act_plan" hidden>
+            <div class="btn active" id="act">行动模式</div>
+            <div class="btn" id="plan">规划模式</div>
+          </div>
+          <div class="btn ellipsis-div" id="file_reader" hidden>选择文件</div>
+          <textarea class="w-full p-2 rounded-md mb-2" rows="1" placeholder="系统提示" id="system_prompt" hidden></textarea>
         </div>
         <div class="flex relative">
           <textarea class="flex-grow p-2 rounded-l-lg" rows="1" placeholder="用户提示/文字" id="input"></textarea>

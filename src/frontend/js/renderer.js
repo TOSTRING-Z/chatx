@@ -1,10 +1,4 @@
 document.addEventListener("click", (event) => {
-  // 添加链接点击事件监听，用于打开默认浏览器
-  if (event.target.tagName === "A") {
-    event.preventDefault();
-    window.electronAPI.openExternal(event.target.href)
-  }
-
   // 使用Clipboard API进行复制
   if (event.target.classList.contains("copy-btn")) {
     const codeToCopy = decodeURIComponent(event.target.getAttribute('data-code'));
@@ -20,16 +14,18 @@ document.addEventListener("click", (event) => {
 });
 
 const system_prompt = document.getElementById("system_prompt");
+const file_reader = document.getElementById("file_reader");
+const act_plan = document.getElementById("act_plan");
+const act = document.getElementById("act");
+const plan = document.getElementById("plan");
+const pause = document.getElementById("pause");
+
 const content = document.getElementById("content");
 const input = document.getElementById("input");
 const submit = document.getElementById("submit");
 const messages = document.getElementById("messages");
 const top_div = document.getElementById("top_div");
 const bottom_div = document.getElementById("bottom_div");
-const file_reader = document.getElementById("file_reader");
-const pause = document.getElementById("pause");
-const pause_allow = document.getElementById("pause_allow");
-const pause_refuse = document.getElementById("pause_refuse");
 
 const formData = {
   query: null,
@@ -38,11 +34,25 @@ const formData = {
   img_url: null
 }
 
+global = { math_statu: true, markdown_statu: true };
+
 function getFileName(path) {
   return path.split('/').pop().split('\\').pop();
 }
 
-file_reader.addEventListener("click",async function(e){
+act.addEventListener("click", async function (e) {
+  window.electronAPI.planActMode("act");
+  act.classList.add("active")
+  plan.classList.remove("active")
+})
+
+plan.addEventListener("click", async function (e) {
+  window.electronAPI.planActMode("plan");
+  plan.classList.add("active")
+  act.classList.remove("active")
+})
+
+file_reader.addEventListener("click", async function (e) {
   formData.file_path = await window.electronAPI.getFilePath();
   if (!!formData.file_path) {
     e.target.innerText = getFileName(formData.file_path);
@@ -234,7 +244,10 @@ const marked = new Marked(
   markedHighlight({
     langPrefix: "hljs language-",
     highlight(code, lang) {
-      const language = hljs.getLanguage(lang) ? lang : 'plaintext';
+      let language = 'plaintext';
+      if (global.markdown_statu) {
+        language = hljs.getLanguage(lang) ? lang : 'plaintext';
+      }
       return hljs.highlight(code, { language }).value;
     }
   })
@@ -242,17 +255,17 @@ const marked = new Marked(
 
 const marked_input = new Marked({
   renderer: {
-    html({ type, raw }) {
-      return formatText(type, raw);
+    html({ raw }) {
+      return formatText("plaintext", raw);
     },
-    link({ type, raw }) {
-      return formatText(type, raw);
+    link({ raw }) {
+      return formatText("plaintext", raw);
     },
     text(token) {
       if (token.hasOwnProperty("tokens")) {
         return this.parser.parseInline(token.tokens);
       } else {
-        return token.raw;
+        return formatText("plaintext", token.raw);
       }
     },
   }
@@ -271,7 +284,7 @@ const formatCode = (type, text) => {
 }
 
 const formatText = (type, raw) => {
-  const language = hljs.getLanguage(type) ? type : "plaintext";
+  let language = hljs.getLanguage(type) ? type : "plaintext";
   const highlightResult = hljs.highlight(raw, { language }).value;
   return highlightResult;
 }
@@ -286,9 +299,6 @@ const renderer = {
   link({ type, raw }) {
     return formatText(type, raw);
   },
-  em({ raw }) {
-    return raw;
-  },
   text(token) {
     if (token.hasOwnProperty("tokens")) {
       return this.parser.parseInline(token.tokens);
@@ -296,7 +306,7 @@ const renderer = {
       const highlightResult = marked_input.parse(token.text);
       return `<div class="think">${highlightResult}</div>`;
     } else {
-      return token.raw;
+      return formatText("plaintext", token.raw);
     }
   },
 }
@@ -329,10 +339,15 @@ String.prototype.format = function (params, role) {
   let htmlString = this.replace(/@(\w+)/g, (match, key) => {
     let param;
     if (key === "message") {
-      if (role === "system") {
-        param = marked.parse(params[key].trim());
-      } else {
-        param = marked_input.parse(params[key].trim());
+      if (global.markdown_statu) {
+        if (role === "system") {
+          param = marked.parse(params[key].trim());
+        } else {
+          param = marked_input.parse(params[key].trim());
+        }
+      }
+      else {
+        param = formatText("plaintext", params[key].trim());
       }
     } else {
       param = params[key];
@@ -348,8 +363,13 @@ String.prototype.format = function (params, role) {
   return newElement;
 };
 
+window.electronAPI.handleMarkDownFormat((markdown_statu) => {
+  global.markdown_statu = markdown_statu;
+})
+
 window.electronAPI.handleMathFormat((math_statu) => {
-  if (math_statu) {
+  global.math_statu = math_statu;
+  if (global.math_statu) {
     typesetMath = function () {
       MathJax.typesetPromise().catch((err) => console.log(err));
     }
@@ -381,7 +401,6 @@ function response_success(id) {
 function getIcon(is_plugin) {
   return is_plugin ? "api" : "ai";
 }
-
 
 window.electronAPI.streamData((chunk) => {
   streamMessageAdd(chunk);
@@ -430,8 +449,8 @@ window.electronAPI.handleQuery(async (data) => {
 window.electronAPI.handleExtreLoad((data) => {
   system_prompt.style.display = "none";
   file_reader.style.display = "none";
-  pause.style.display = "none";
-  data.forEach(item => {
+  act_plan.style.display = "none";
+  data?.forEach(item => {
     switch (item.type) {
       case "system-prompt":
         system_prompt.style.display = "block";
@@ -439,12 +458,29 @@ window.electronAPI.handleExtreLoad((data) => {
       case "file-reader":
         file_reader.style.display = "block";
         break;
-      case "pause":
-        pause.style.display = "flex";
+      case "act-plan":
+        act_plan.style.display = "flex";
         break;
     }
   })
   init_size();
+})
+
+let option_template = `<div class="btn">@value</div>`
+
+window.electronAPI.handleOptions((options) => {
+  pause.style.display = "flex";
+  options.forEach(value => {
+    const option = option_template.format({ value });
+    option.addEventListener("click", async function (e) {
+      formData.query = value;
+      formData.prompt = "";
+      window.electronAPI.clickSubmit(formData);
+      pause.style.display = "none";
+      pause.innerHTML = "";
+    })
+    pause.appendChild(option);
+  })
 })
 
 window.electronAPI.handlePrompt((prompt) => {
@@ -491,18 +527,6 @@ submit.addEventListener("click", () => {
   formData.query = input.value;
   formData.prompt = system_prompt.value;
   window.electronAPI.clickSubmit(formData);
-})
-
-pause_allow.addEventListener("click",async function(e){
-  formData.query = "Allow to execute";
-  formData.prompt = system_prompt.value;
-  window.electronAPI.clickSubmit(formData);
   pause.style.display = "none";
-})
-
-pause_refuse.addEventListener("click",async function(e){
-  formData.query = "Refuse to execute";
-  formData.prompt = system_prompt.value;
-  window.electronAPI.clickSubmit(formData);
-  pause.style.display = "none";
+  pause.innerHTML = "";
 })

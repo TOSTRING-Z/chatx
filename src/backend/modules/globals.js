@@ -24,7 +24,6 @@ const global = {
     model: utils.getConfig("default")["model"],
     version: utils.getConfig("default")["version"],
     is_plugin: utils.getIsPlugin(this.model),
-    re_act: true,
     last_clipboard_content: null,
     concat: false,
     id: 0

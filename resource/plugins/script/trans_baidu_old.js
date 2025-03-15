@@ -5,6 +5,13 @@ const he = require('he');
 
 const TRANSLATION_API_URL = 'https://fanyi.baidu.com/v2transapi'
 
+function decodeHtmlEntities(str) {
+    return str.replace(/&#x([0-9A-F]+);/gi, function (match, hex) {
+        return String.fromCharCode(parseInt(hex, 16));
+    });
+}
+
+
 function hash(r) {
     function a(r) {
         if (Array.isArray(r)) {
@@ -76,7 +83,7 @@ function format(result) {
     }
 }
 
-async function main({input}) {
+async function main({ input }) {
     try {
         let query_text = encodeURIComponent(input);
         let mode = getMode(input)
@@ -121,8 +128,8 @@ async function main({input}) {
                 return queryString;
             }]
         });
-        
-        return format(response.data)
+
+        return decodeHtmlEntities(format(response.data));
     } catch (error) {
         console.log(error);
         return null;

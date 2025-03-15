@@ -1,5 +1,5 @@
 const { inner, utils } = require('../modules/globals')
-const { ReActAgent, State } = require("./re_act_agent.js")
+const { ReActAgent, State } = require("./agent.js")
 
 class ChainCall extends ReActAgent {
     constructor() {

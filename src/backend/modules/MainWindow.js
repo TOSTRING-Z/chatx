@@ -2,7 +2,7 @@ const { Window } = require("./Window")
 const { store, global, inner, utils } = require('./globals')
 const { clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds } = require('../server/llm_service');
 const { captureMouse } = require('../mouse/capture_mouse');
-const { State } = require("../server/re_act_agent.js")
+const { State } = require("../server/agent.js")
 const { ToolCall } = require('../server/tool_call');
 const { ChainCall } = require('../server/chain_call');
 
@@ -20,25 +20,41 @@ class MainWindow extends Window {
         this.chain_call = new ChainCall();
         this.funcItems = {
             clip: {
-                statu: true,
-                event: null,
+                statu: utils.getConfig("func_status").clip,
+                event: () => {},
                 click: () => {
                     this.funcItems.clip.statu = !this.funcItems.clip.statu;
                 }
             },
+            markdown: {
+                statu: utils.getConfig("func_status").markdown,
+                event: () => {},
+                click: () => {
+                    this.funcItems.markdown.statu = !this.funcItems.markdown.statu;
+                    this.funcItems.markdown.event();
+                }
+            },
             math: {
-                statu: true,
-                event: null,
+                statu: utils.getConfig("func_status").math,
+                event: () => {},
                 click: () => {
                     this.funcItems.math.statu = !this.funcItems.math.statu;
                     this.funcItems.math.event();
                 }
             },
             text: {
-                statu: false,
-                event: null,
+                statu: utils.getConfig("func_status").text,
+                event: () => {},
                 click: () => {
-                    this.funcItems.text.statu = !this.funcItems.text.statu
+                    this.funcItems.text.statu = !this.funcItems.text.statu;
+                }
+            },
+            react: {
+                statu: utils.getConfig("func_status").react,
+                event: () => {},
+                click: () => {
+                    this.funcItems.react.statu = !this.funcItems.react.statu;
+                    this.funcItems.react.event();
                 }
             },
         };
@@ -68,7 +84,28 @@ class MainWindow extends Window {
         this.window.webContents.on('did-finish-load', () => {
             this.setPrompt(utils.getConfig("prompt"));
             this.initFuncItems();
-            this.window.webContents.send("extre_load", utils.getConfig("extre"))
+        });
+
+        // 拦截页面跳转
+        this.window.webContents.on('will-navigate', (event, url) => {
+            function isValidUrl(url) {
+                try {
+                    new URL(url); // 如果 URL 无效，会抛出错误
+                    return true;
+                } catch {
+                    return false;
+                }
+            }
+            // 阻止跳转
+            event.preventDefault();
+            console.log(`试图跳转到: ${url}，已被阻止`);
+            if (isValidUrl(url)) {
+                shell.openExternal(url).catch((error) => {
+                    console.error('打开链接失败:', error.message);
+                });
+            } else {
+                console.error('无效的 URL:', url);
+            }
         });
 
         // 绑定窗口关闭事件
@@ -133,23 +170,22 @@ class MainWindow extends Window {
                 let content = await this.chain_call.pluginCall(data);
                 _event.sender.send('stream-data', { id: data.id, content: content, end: true });
             }
-            else if (global.re_act) {
+            else if (this.funcItems.react.statu) {
                 // ReAct
                 let step = 0;
                 this.tool_call.state = State.IDLE;
-                while(this.tool_call.state != State.FINAL && this.tool_call.state!=State.PAUSE) {
+                while (this.tool_call.state != State.FINAL && this.tool_call.state != State.PAUSE) {
                     if (getStopIds().includes(data.id)) {
                         this.tool_call.state = State.FINAL
                     }
                     data = { ...data, ...defaults, step: ++step };
-                    
-                    let content = await this.tool_call.step(data);
+
+                    let options = await this.tool_call.step(data);
                     if (this.tool_call.state == State.PAUSE) {
-                        _event.sender.send('stream-data', { id: data.id, content: content, end: true });
-                        this.window.webContents.send("extre_load", [{ "type": "pause" }]);
+                        this.window.webContents.send("options", options);
                     }
                 }
-                
+
             }
             else {
                 // 链式调用
@@ -192,6 +228,13 @@ class MainWindow extends Window {
 
         ipcMain.on('submit', (_event, formData) => {
             this.send_query(formData, global.model, global.version)
+        })
+
+        ipcMain.on('plan-act-mode', (_event, mode) => {
+            this.tool_call.plan_act_mode({
+                "plan": this.tool_call.modes.PLAN,
+                "act": this.tool_call.modes.ACT,
+            }[mode])
         })
 
         ipcMain.on('open-external', (_event, href) => {
@@ -245,6 +288,14 @@ class MainWindow extends Window {
         }, 100);
     }
 
+    getMarkDownEvent(e) {
+        const markdownFormat = () => {
+            this.window.webContents.send('markdown-format', e.statu);
+        }
+        markdownFormat();
+        return markdownFormat;
+    }
+
     getMathEvent(e) {
         const mathFormat = () => {
             this.window.webContents.send('math-format', e.statu);
@@ -265,10 +316,25 @@ class MainWindow extends Window {
         return textFormat;
     }
 
+    getReactEvent(e) {
+        const mathReact = () => {
+            if (global.is_plugin) {
+                this.window.webContents.send("extre_load", e.statu && inner.model_obj[global.model][global.version].extre)
+            }
+            else {
+                this.window.webContents.send("extre_load", e.statu?[{"type": "act-plan"}]:utils.getConfig("extre"));
+            }
+        }
+        mathReact();
+        return mathReact;
+    }
+
     initFuncItems() {
         this.funcItems.clip.event = this.getClipEvent(this.funcItems.clip);
+        this.funcItems.markdown.event = this.getMarkDownEvent(this.funcItems.markdown);
         this.funcItems.math.event = this.getMathEvent(this.funcItems.math);
         this.funcItems.text.event = this.getTextEvent(this.funcItems.text);
+        this.funcItems.react.event = this.getReactEvent(this.funcItems.react);
     }
 
     updateVersionsSubmenu() {
@@ -296,12 +362,11 @@ class MainWindow extends Window {
         let versions;
         if (global.is_plugin) {
             versions = inner.model[inner.model_name.plugin]["versions"];
-            this.window.webContents.send("extre_load", inner.model_obj[global.model][versions[0]].extre)
         }
         else {
             versions = utils.getConfig("models")[global.model]["versions"];
-            this.window.webContents.send("extre_load", utils.getConfig("extre"))
         }
+        this.funcItems.react.event();
         console.log(versions);
         return versions.map((_version) => {
             if (typeof _version !== "string") {
@@ -341,6 +406,12 @@ class MainWindow extends Window {
                         checked: this.funcItems.clip.statu,
                     },
                     {
+                        click: this.funcItems.markdown.click,
+                        label: 'MarkDown',
+                        type: 'checkbox',
+                        checked: this.funcItems.markdown.statu,
+                    },
+                    {
                         click: this.funcItems.math.click,
                         label: '公式格式化',
                         type: 'checkbox',
@@ -370,12 +441,10 @@ class MainWindow extends Window {
                         }
                     },
                     {
+                        click: this.funcItems.react.click,
                         label: 'ReAct',
-                        click: async () => {
-                            global.re_act = !global.re_act;
-                        },
                         type: 'checkbox',
-                        checked: global.re_act,
+                        checked: this.funcItems.react.statu,
                     },
                 ]
             },
