@@ -26,6 +26,10 @@ ChatX 是一款功能强大的跨平台翻译应用程序，支持 Windows 和 U
 
 ### Agent
 - 我们进一步集成了ReAct，这使得我们的软件拥有了Cline和OpenManus的能力，帮助用户自动完成文件分析，代码修改，网络搜索等等，这能够让我们的软件拥有自动化翻译文件的功能。
+- 如下是Agent自动编写，大模型使用deepseek-coder，并按照用户提供的报错信息完成的ToDoList项目，其代办事项使用sqlite实现了持久化：
+
+![todolist](img/todolist.png)
+![categories](img/categories.png)
 
 ## 系统要求
 - **Windows**：Windows 10 或更高版本。
