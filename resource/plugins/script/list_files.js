@@ -16,14 +16,12 @@ const EXCLUDE_PATTERNS = [
   /\/venv\//i,
   // Logs
   /\.log(\.\d+)?$/i,
-  // Archives
-  /\.(zip|tar\.gz)$/i,
   // Media
-  /\.(jpg|jpeg|png|gif|mp4|mov|avi)$/i,
+  /\.(gif|mp4|mov|avi)$/i,
   // Binaries
   /\.(exe|dll|so|a)$/i,
   // Documents
-  /\.(pdf|docx?|xlsx?|pptx?)$/i,
+  /\.(pptx?)$/i,
   // Hidden files and directories
   /\/\.[^\/]+\//i,
   /\/\.\w+$/i,

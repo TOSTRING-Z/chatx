@@ -11,6 +11,10 @@ class ToolCall extends ReActAgent {
                 const func = inner.model_obj.plugin["python执行"].func
                 return await func({ input: code })
             },
+            "llm_ocr": async ({ img_path, prompt }) => {
+                const func = inner.model_obj.plugin["llm_ocr"].func
+                return await func({ input: img_path, prompt })
+            },
             "write_to_file": async ({ file_path, context }) => {
                 const func = inner.model_obj.plugin["文件保存"].func
                 return await func({ file_path, input: context })
@@ -113,6 +117,23 @@ class ToolCall extends ReActAgent {
     "params": {{
         {{
             "code": "[value]"
+        }}
+    }}
+}}
+
+## llm_ocr
+描述: 当需要读取图片内容时调用该工具,该工具通过使用视觉大模型来识别图片内容,因此你需要提供具体的提示词让大模型理解你的意图.
+参数:
+img_path: 图片路径(本地路径,在线或者base64格式的输入前应先调用python_execute将图片保存在本地)
+prompt: 提示词
+使用:
+{{
+    "content": "[思考过程]"
+    "tool": "llm_ocr",
+    "params": {{
+        {{
+            "img_path": "[value]",
+            "prompt": "[value]",
         }}
     }}
 }}
@@ -229,7 +250,7 @@ file_pattern: 用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 
 使用:
 {{
     "content": "[思考过程]"
-    "tool": "file_load",
+    "tool": "replace_in_file",
     "params": {{
         {{
             "file_path": "[value]",
@@ -247,7 +268,7 @@ file_pattern: 用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 
 使用:
 {{
     "content": "[思考过程]"
-    "tool": "pause",
+    "tool": "ask_followup_question",
     "params": {{
         {{
             "question": "[value]",
@@ -268,7 +289,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 使用:
 {{
     "content": "[思考过程]"
-    "tool": "pause",
+    "tool": "plan_mode_response",
     "params": {{
         {{
             "response": "[value]",
@@ -396,7 +417,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 
 # 规则
 
-- 在每条用户消息的末尾,您将自动收到"环境详细信息".这些信息并非由用户自己编写,而是自动生成的,以提供可能相关的项目结构和环境上下文.虽然这些信息对于理解项目上下文可能很有价值,但不要将其视为用户请求或响应的直接部分.使用这些信息来指导您的行动和决策,但不要假设用户明确要求或提及这些信息,除非他们在消息中明确这样做.在使用"环境详细信息"时,请清楚地解释您的操作,以确保用户理解,因为他们可能不知道这些细节.
+- 在每条用户消息的末尾,您将自动收到"环境详细信息",以提供当前所处的模式和其它信息.
 - 使用replace_in_file工具时,必须在SEARCH块中包含完整的行,而不是部分行.系统需要精确的行匹配,无法匹配部分行.例如,如果要匹配包含"const x = 5;"的行,您的SEARCH块必须包含整行,而不仅仅是"x = 5"或其他片段.
 - 使用replace_in_file工具时,如果使用多个 SEARCH/REPLACE 块,请按它们在文件中出现的顺序列出它们.例如,如果需要对第10行和第50行进行更改,首先包括第10行的 SEARCH/REPLACE 块,然后是第50行的 SEARCH/REPLACE 块.
 - 每次使用工具后,等待用户的响应以确认工具使用的成功至关重要.例如,如果要求创建一个待办事项应用程序,您将创建一个文件,等待用户确认其成功创建,然后根据需要创建另一个文件,等待用户确认其成功创建,依此类推.
@@ -442,7 +463,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 
     environment_update(data) {
         this.environment_details.time = utils.formatDate();
-        pushMessage("user", this.environment_details, data.id);
+        pushMessage("user", this.env.format(this.environment_details), data.id);
     }
 
     plan_act_mode(mode) {
@@ -450,16 +471,19 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     }
 
     async step(data) {
+        data.push_message = false
         if (this.state == State.IDLE) {
             pushMessage("user", data.query, data.id);
+            this.environment_update(data);
             this.state = State.RUNNING;
         }
-        this.environment_update(data);
         const tool_info = await this.task(data);
         // 判断是否调用工具
         if (tool_info?.tool) {
             const { observation, output } = await this.act(tool_info);
             data.output_format = observation;
+            pushMessage("user", data.output_format, data.id);
+            this.environment_update(data);
             if (this.state == State.PAUSE) {
                 const { question, options } = output;
                 data.event.sender.send('stream-data', { id: data.id, content: question, end: true });
@@ -468,14 +492,12 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
             if (this.state == State.FINAL) {
                 data.event.sender.send('stream-data', { id: data.id, content: output, end: true });
             } else {
-                pushMessage("user", data.output_format, data.id);
                 data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
             }
         }
     }
 
     async task(data) {
-        data.push_message = true
         data.prompt = this.task_prompt;
         data.output_format = await this.llmCall(data);
         data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
@@ -504,6 +526,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     }
 
     get_tool(content, data) {
+        pushMessage("assistant", content, data.id);
         try {
             const tool_info = JSON.parse(content);
             if (!!tool_info?.content) {
@@ -520,6 +543,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     "error": "JSON.parse反序列化发生错误,${error.message}"
 }`;
             pushMessage("user", data.output_format, data.id);
+            this.environment_update(data);
             data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
         }
     }
