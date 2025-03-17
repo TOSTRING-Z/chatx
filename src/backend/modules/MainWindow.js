@@ -21,14 +21,14 @@ class MainWindow extends Window {
         this.funcItems = {
             clip: {
                 statu: utils.getConfig("func_status").clip,
-                event: () => {},
+                event: () => { },
                 click: () => {
                     this.funcItems.clip.statu = !this.funcItems.clip.statu;
                 }
             },
             markdown: {
                 statu: utils.getConfig("func_status").markdown,
-                event: () => {},
+                event: () => { },
                 click: () => {
                     this.funcItems.markdown.statu = !this.funcItems.markdown.statu;
                     this.funcItems.markdown.event();
@@ -36,7 +36,7 @@ class MainWindow extends Window {
             },
             math: {
                 statu: utils.getConfig("func_status").math,
-                event: () => {},
+                event: () => { },
                 click: () => {
                     this.funcItems.math.statu = !this.funcItems.math.statu;
                     this.funcItems.math.event();
@@ -44,14 +44,14 @@ class MainWindow extends Window {
             },
             text: {
                 statu: utils.getConfig("func_status").text,
-                event: () => {},
+                event: () => { },
                 click: () => {
                     this.funcItems.text.statu = !this.funcItems.text.statu;
                 }
             },
             react: {
                 statu: utils.getConfig("func_status").react,
-                event: () => {},
+                event: () => { },
                 click: () => {
                     this.funcItems.react.statu = !this.funcItems.react.statu;
                     this.funcItems.react.event();
@@ -182,7 +182,7 @@ class MainWindow extends Window {
 
                     let options = await this.tool_call.step(data);
                     if (this.tool_call.state == State.PAUSE) {
-                        this.window.webContents.send("options", options);
+                        this.window.webContents.send("options", { options, id: data.id });
                     }
                 }
 
@@ -232,6 +232,7 @@ class MainWindow extends Window {
 
         ipcMain.on('plan-act-mode', (_event, mode) => {
             this.tool_call.plan_act_mode({
+                "auto": this.tool_call.modes.AUTO,
                 "plan": this.tool_call.modes.PLAN,
                 "act": this.tool_call.modes.ACT,
             }[mode])
@@ -322,7 +323,7 @@ class MainWindow extends Window {
                 this.window.webContents.send("extre_load", e.statu && inner.model_obj[global.model][global.version].extre)
             }
             else {
-                this.window.webContents.send("extre_load", e.statu?[{"type": "act-plan"}]:utils.getConfig("extre"));
+                this.window.webContents.send("extre_load", e.statu ? [{ "type": "act-plan" }] : utils.getConfig("extre"));
             }
         }
         mathReact();

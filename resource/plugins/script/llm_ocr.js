@@ -2,7 +2,7 @@
 const fs = require('fs')
 const path = require('path')
 
-function main(parmas) {
+function main(params) {
     return async ({ input, prompt = null }) => {
 
         return new Promise(async (resolve, reject) => {
@@ -34,16 +34,16 @@ function main(parmas) {
                 ];
 
                 let body = {
-                    model: parmas.version,
+                    model: params.version,
                     messages: messages,
                     stream: false
                 }
 
-                let response = await fetch(new URL(parmas.api_url), {
+                let response = await fetch(new URL(params.api_url), {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "Authorization": `Bearer ${parmas.api_key}`,
+                        "Authorization": `Bearer ${params.api_key}`,
                     },
                     body: JSON.stringify(body),
                 });

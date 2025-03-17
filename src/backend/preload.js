@@ -3,7 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron')
 contextBridge.exposeInMainWorld('electronAPI', {
   handleQuery: (callback) => ipcRenderer.on('query', (_event, data) => callback(data)),
   handleExtreLoad: (callback) => ipcRenderer.on('extre_load', (_event, data) => callback(data)),
-  handleOptions: (callback) => ipcRenderer.on('options', (_event, options) => callback(options)),
+  handleOptions: (callback) => ipcRenderer.on('options', (_event, data) => callback(data)),
   handleClear: (callback) => ipcRenderer.on('clear', (_event, value) => callback(value)),
   handleLoad: (callback) => ipcRenderer.on('load', (_event, value) => callback(value)),
   handlePrompt: (callback) => ipcRenderer.on('prompt', (_event, prompt) => callback(prompt)),

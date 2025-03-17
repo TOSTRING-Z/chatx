@@ -489,11 +489,20 @@
     }
 
     /* plan/act */
-    #act {
+    #auto {
       padding: 3px 7px;
       border-radius: 5px 0 0 5px;
       border: 1px solid #00000021;
       border-right: none;
+
+    }
+
+    #act {
+      border-radius: 0;
+      padding: 3px 7px;
+      border: 1px solid #00000021;
+      border-left: 1px solid #f1f1f1;
+      border-right: 1px solid #f1f1f1;
     }
 
     #plan {
@@ -504,7 +513,7 @@
     }
 
 
-    #act_plan > .active {
+    #act_plan>.active {
       background: #129124;
       color: white;
     }
@@ -526,7 +535,8 @@
         <div class="bg-gradient"></div>
         <div class="flex mb-2 flex-col items-start">
           <div class="flex-row items-start" id="act_plan" hidden>
-            <div class="btn active" id="act">行动模式</div>
+            <div class="btn" id="auto">自动模式</div>
+            <div class="btn active" id="act">执行模式</div>
             <div class="btn" id="plan">规划模式</div>
           </div>
           <div class="btn ellipsis-div" id="file_reader" hidden>选择文件</div>

@@ -61,6 +61,9 @@ npm run make
 - linux: /home/[用户]/.chatx/config.json
 - windown: C:\Users\\[用户]\\.chatx\config.json
 
+## 安装完成后需安装插件依赖
+
+[插件页面: resource/plugins](resource/plugins)
 
 ## 具体咨询请联系：
 

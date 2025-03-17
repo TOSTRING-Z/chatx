@@ -16,6 +16,7 @@ document.addEventListener("click", (event) => {
 const system_prompt = document.getElementById("system_prompt");
 const file_reader = document.getElementById("file_reader");
 const act_plan = document.getElementById("act_plan");
+const auto = document.getElementById("auto");
 const act = document.getElementById("act");
 const plan = document.getElementById("plan");
 const pause = document.getElementById("pause");
@@ -40,16 +41,34 @@ function getFileName(path) {
   return path.split('/').pop().split('\\').pop();
 }
 
-act.addEventListener("click", async function (e) {
-  window.electronAPI.planActMode("act");
-  act.classList.add("active")
+function toggleMode(mode) {
+  window.electronAPI.planActMode(mode);
+  auto.classList.remove("active")
+  act.classList.remove("active")
   plan.classList.remove("active")
+  switch (mode) {
+    case "auto":
+      auto.classList.add("active");
+      break;
+    case "act":
+      act.classList.add("active");
+      break;
+    case "plan":
+      plan.classList.add("active");
+      break;
+  }
+}
+
+auto.addEventListener("click", async function (e) {
+  toggleMode("auto");
+})
+
+act.addEventListener("click", async function (e) {
+  toggleMode("act");
 })
 
 plan.addEventListener("click", async function (e) {
-  window.electronAPI.planActMode("plan");
-  plan.classList.add("active")
-  act.classList.remove("active")
+  toggleMode("plan");
 })
 
 file_reader.addEventListener("click", async function (e) {
@@ -466,9 +485,9 @@ window.electronAPI.handleExtreLoad((data) => {
   init_size();
 })
 
-let option_template = `<div class="btn">@value</div>`
+let option_template = `<div class="btn" data-id="@id">@value</div>`
 
-window.electronAPI.handleOptions((options) => {
+window.electronAPI.handleOptions(({ options, id }) => {
   pause.style.display = "flex";
   options.forEach(value => {
     const option = option_template.format({ value });
@@ -489,6 +508,8 @@ window.electronAPI.handlePrompt((prompt) => {
 
 window.electronAPI.handleClear(() => {
   messages.innerHTML = null;
+  pause.style.display = "none";
+  pause.innerHTML = "";
 })
 
 

@@ -152,13 +152,22 @@
       "path": "{resourcesPath}/resource/plugins/script/json_parse.js"
     },
     "文件读取": {
-      "path": "{resourcesPath}/resource/plugins/script/file_reader.js"
+      "path": "{resourcesPath}/resource/plugins/script/file_reader.js",
+      "params": {
+        "threshold": 10000
+      }
     },
     "文件保存": {
       "path": "{resourcesPath}/resource/plugins/script/write_to_file.js"
+},
+    "文件搜索": {
+      "path": "{resourcesPath}/resource/plugins/script/search_files.js"
     },
     "读取路径": {
-      "path": "{resourcesPath}/resource/plugins/script/list_files.js"
+      "path": "{resourcesPath}/resource/plugins/script/list_files.js",
+      "params": {
+        "threshold": 50
+      }
     },
     "文件替换": {
       "path": "{resourcesPath}/resource/plugins/script/replace_in_file.js"
@@ -166,7 +175,8 @@
     "python执行": {
       "path": "{resourcesPath}/resource/plugins/script/python_execute.js",
       "params": {
-        "python_bin": "python"
+        "python_bin": "python",
+        "threshold": 10000
       }
     },
     "llm_ocr": {

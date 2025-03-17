@@ -36,31 +36,36 @@ const EXCLUDE_PATTERNS = [
 
 
 function shouldExclude(path) {
-  return EXCLUDE_PATTERNS.some(pattern => pattern.test(path.replaceAll("\\","/")));
+  return EXCLUDE_PATTERNS.some(pattern => pattern.test(path.replaceAll("\\", "/")));
 }
 
-function main({ input, recursive = false }) {
-  try {
-    const items = fs.readdirSync(input);
-    const result = [];
 
-    items.forEach(item => {
-      const fullPath = path.join(input, item);
-      if (shouldExclude(fullPath)) return;
+function main(params) {
+  return async ({ input, recursive = false }) => {
+    try {
+      const items = fs.readdirSync(input);
+      const result = [];
 
-      const stat = fs.statSync(fullPath);
+      items.forEach(item => {
+        const fullPath = path.join(input, item);
+        if (shouldExclude(fullPath)) return;
 
-      if (stat.isDirectory() && recursive) {
-        result.push(...main({ input: fullPath, recursive }));
-      } else {
-        result.push(fullPath);
+        const stat = fs.statSync(fullPath);
+
+        if (stat.isDirectory() && recursive) {
+          result.push(...main({ input: fullPath, recursive }));
+        } else {
+          result.push(fullPath);
+        }
+      });
+      if (result.length > params.threshold) {
+        return '返回内容过多,请尝试其它方案!';
       }
-    });
-
-    return result;
-  } catch (error) {
-    console.error(`Error listing files in ${input}:`, error);
-    return [];
+      return result;
+    } catch (error) {
+      console.error(`Error listing files in ${input}:`, error);
+      return error.message;
+    }
   }
 }
 
