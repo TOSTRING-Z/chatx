@@ -31,6 +31,10 @@ ChatX 是一款功能强大的跨平台翻译应用程序，支持 Windows 和 U
 ![todolist](img/todolist.png)
 ![categories](img/categories.png)
 
+- 下面是Agent实现PDF文件文字自动化提取，通过调用视觉大模型来实现OCR。
+
+![todolist](img/pdf_ocr.png)
+
 ## 系统要求
 - **Windows**：Windows 10 或更高版本。
 - **Ubuntu**：Ubuntu 18.04 或更高版本。
