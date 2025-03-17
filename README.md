@@ -52,7 +52,7 @@ npm run make
 
 *- 由于版本快速迭代，建议自己编译以体验最新功能. -*
 
-## 配置文件
+## 若安装失败请手动复制配置文件(resource/config.json)到如下地址:
 
 - linux: /home/[用户]/.chatx/config.json
 - windown: C:\Users\\[用户]\\.chatx\config.json
@@ -60,4 +60,5 @@ npm run make
 
 ## 具体咨询请联系：
 
-qq: 1084337496@qq.com
+qq: 1084337496
+邮箱: 1084337496@qq.com
