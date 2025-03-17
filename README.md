@@ -128,7 +128,7 @@ config.json
 
 *- 可用配置字段如下: -*
 - step: 当前阶段号
-- model: 当前使用模型(大模型/插件)
+- model: 当前使用模型(model/plugin)
 - version: 当前使用模型版本
 - query: 初始输入
 - input: 当前阶段格式化输入
