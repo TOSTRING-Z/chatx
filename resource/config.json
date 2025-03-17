@@ -159,7 +159,7 @@
     },
     "文件保存": {
       "path": "{resourcesPath}/resource/plugins/script/write_to_file.js"
-},
+    },
     "文件搜索": {
       "path": "{resourcesPath}/resource/plugins/script/search_files.js"
     },
@@ -194,8 +194,8 @@
     }
   ],
   "extre": [
-      {
-          "type": "system-prompt"
-      }
+    {
+      "type": "system-prompt"
+    }
   ]
 }
