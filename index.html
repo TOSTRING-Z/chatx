@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Terminal</title>
+    <link rel="stylesheet" href="node_modules/xterm/css/xterm.css" />
+    <script src="node_modules/xterm/lib/xterm.js"></script>
+    <style>
+        .xterm {
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.2;
+        }
+
+        .xterm .xterm-viewport {
+            background-color: #2d2d2d;
+            color: #ffffff;
+            overflow-y: auto;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+
+        .xterm .xterm-screen {
+            width: 100% !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="terminal"></div>
+    <script>
+        const { ipcRenderer } = require('electron');
+        const term = new Terminal({
+            cursorBlink: true,
+            fontSize: 14,
+            theme: {
+                background: '#2d2d2d',
+                foreground: '#ffffff'
+            }
+        });
+        term.open(document.getElementById('terminal'));
+
+        // Enable copy on select
+        term.onSelectionChange(() => {
+            const selection = term.getSelection();
+            if (selection) {
+                navigator.clipboard.writeText(selection);
+            }
+        });
+
+        // Right-click menu
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            const selection = term.getSelection();
+            if (selection) {
+                navigator.clipboard.writeText(selection);
+            }
+        });
+
+        ipcRenderer.on('terminal-data', (event, data) => {
+            console.log(data)
+            data.split("\n").forEach(row => {
+                term.write('\r');
+                term.write(row);
+            })
+        });
+
+        ipcRenderer.on('terminal-close', (event, code) => {
+            term.write(`\nProcess exited with code ${code}`);
+        });
+
+        let inputBuffer = '';
+
+        term.onData((data) => {
+            console.log(data)
+            if (data === '\r') { // Enter key
+                if (inputBuffer.trim() !== '') {
+                    ipcRenderer.send('terminal-input', { command: inputBuffer, path: process.cwd() });
+                } else {
+                    term.write('\r');
+                }
+                inputBuffer = '';
+            } else if (data === '\x7f') { // Backspace key
+                if (inputBuffer.length > 0) {
+                    inputBuffer = inputBuffer.slice(0, -1);
+                    term.write('\b \b');
+                }
+            } else {
+                inputBuffer += data;
+                term.write(data);
+            }
+        });
+    </script>
+</body>
+
+</html>
