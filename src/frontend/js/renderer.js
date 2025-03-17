@@ -490,7 +490,7 @@ let option_template = `<div class="btn" data-id="@id">@value</div>`
 window.electronAPI.handleOptions(({ options, id }) => {
   pause.style.display = "flex";
   options.forEach(value => {
-    const option = option_template.format({ value });
+    const option = option_template.format({ value, id });
     option.addEventListener("click", async function (e) {
       formData.query = value;
       formData.prompt = "";
