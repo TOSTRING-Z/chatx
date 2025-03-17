@@ -8,7 +8,7 @@ class ToolCall extends ReActAgent {
         super();
         this.tools = {
             "python_execute": async ({ code }) => {
-                const func = inner.model_obj.plugin["python执行"].func
+                const func = inner.model_obj.plugin["python_execute"].func
                 return await func({ input: code })
             },
             "llm_ocr": async ({ img_path, prompt }) => {
@@ -16,29 +16,28 @@ class ToolCall extends ReActAgent {
                 return await func({ input: img_path, prompt })
             },
             "write_to_file": async ({ file_path, context }) => {
-                const func = inner.model_obj.plugin["文件保存"].func
-                return await func({ file_path, input: context })
+                const func = inner.model_obj.plugin["write_to_file"].func
+                return await func({ input: context, file_path })
             },
             "file_load": async ({ file_path }) => {
-                const func = inner.model_obj.plugin["文件读取"].func
+                const func = inner.model_obj.plugin["file_load"].func
                 return await func({ file_path })
             },
             "list_files": async ({ path, recursive }) => {
-                const func = inner.model_obj.plugin["读取路径"].func
-                const files = await func({ input: path, recursive: recursive })
-                return files;
+                const func = inner.model_obj.plugin["list_files"].func
+                return await func({ input: path, recursive: recursive })
             },
             "search_files": async ({ path, regex, file_pattern }) => {
-                const func = inner.model_obj.plugin["文件搜索"].func
+                const func = inner.model_obj.plugin["search_files"].func
                 return await func({ input: path, regex, file_pattern })
             },
             "replace_in_file": async ({ file_path, diff }) => {
-                const func = inner.model_obj.plugin["文件替换"].func
-                return await func({ file_path, input: diff })
+                const func = inner.model_obj.plugin["replace_in_file"].func
+                return await func({ input: diff, file_path })
             },
             "baidu_search": async ({ context }) => {
-                const func = inner.model_obj.plugin["百度搜索"].func
-                return await func({ input: context, params: { jina: "" } })
+                const func = inner.model_obj.plugin["baidu_search"].func
+                return await func({ input: context })
             },
             "ask_followup_question": async ({ question, options }) => {
                 this.state = State.PAUSE;
@@ -48,13 +47,13 @@ class ToolCall extends ReActAgent {
                 this.state = State.PAUSE;
                 return { question: "任务暂停,等待用户反馈...", options: ["允许", "拒绝"] }
             },
-            "terminate": ({ final_answer }) => {
-                this.state = State.FINAL;
-                return final_answer;
-            },
             "plan_mode_response": async ({ response, options }) => {
                 this.state = State.PAUSE;
                 return { question: response, options }
+            },
+            "terminate": ({ final_answer }) => {
+                this.state = State.FINAL;
+                return final_answer;
             },
         }
 
@@ -261,7 +260,7 @@ file_pattern: 用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 
 
 
 ## ask_followup_question
-描述: 向用户提问以收集完成任务所需的额外信息.在遇到歧义,需要澄清或需要更多细节以有效进行时,应使用此工具.它通过允许与用户的直接沟通,实现互动式问题解决.明智地使用此工具,以在收集必要信息和避免过多来回交流之间保持平衡
+描述: 向用户提问以收集完成任务所需的额外信息.在遇到歧义,需要澄清或需要更多细节以有效进行时,应使用此工具.它通过允许与用户的直接沟通,实现互动式问题解决.明智地使用此工具,以在收集必要信息和避免过多来回交流之间保持平衡.
 参数:
 - question: 要问用户的问题.这应该是一个针对您需要的信息的明确和具体的问题.
 - options: (可选)为用户提供选择的2-5个选项.每个选项应为描述可能答案的字符串.您并非总是需要提供选项,但在许多情况下,这可以帮助用户避免手动输入回复.
@@ -281,11 +280,20 @@ file_pattern: 用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 
     }}
 }}
 
+## waiting_feedback
+描述: 当需要执行文件操作,系统指令时调用该任务等待用户允许或拒绝
+使用示例:
+{{
+    "content": "[思考过程]"
+    "tool": "waiting_feedback",
+    "params": {{}}
+}}
+
 ## plan_mode_response
-描述: 响应用户的询问,以规划解决用户任务的方案.当您需要回应用户关于如何完成任务的问题或陈述时,应使用此工具.此工具仅在"规划模式"下可用.环境详细信息将指定当前模式,如果不是"规划模式",则不应使用此工具.根据用户的消息,您可能会提出问题以澄清用户的请求,设计任务的解决方案,并与用户一起进行头脑风暴.例如,如果用户的任务是创建一个网站,您可以从提出一些澄清问题开始,然后根据上下文提出详细的计划,说明您将如何完成任务,并可能进行来回讨论以在用户将您切换到"执行模式"以实施解决方案之前最终确定细节.
+描述: 响应用户的询问,以规划解决用户任务的方案.当您需要回应用户关于如何完成任务的问题或陈述时,应使用此工具.此工具仅在"规划模式"下可用.环境详细信息将指定当前模式,如果不是"规划模式",则不应使用此工具.根据用户的消息,您可能会提出问题以澄清用户的请求,设计任务的解决方案,并与用户一起进行头脑风暴.例如,如果用户的任务是创建一个网站,您可以从提出一些澄清问题开始,然后根据上下文提出详细的计划,说明您将如何完成任务,并可能进行来回讨论直到用户将您切换模式以实施解决方案之前最终确定细节.
 参数:
-response: 提供给用户的响应.
-options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项应描述一个可能的选择或规划过程中的前进路径.这可以帮助引导讨论,并让用户更容易提供关键决策的输入.您可能并不总是需要提供选项,但在许多情况下,这可以节省用户手动输入响应的时间.不要提供切换到执行模式的选项,因为这需要您手动引导用户自行操作
+response: 在思考过程之后提供给用户的响应.
+options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项应描述一个可能的选择或规划过程中的前进路径.这可以帮助引导讨论,并让用户更容易提供关键决策的输入.您可能并不总是需要提供选项,但在许多情况下,这可以节省用户手动输入响应的时间.不要提供切换模式的选项,因为不需要您引导用户操作.
 使用:
 {{
     "content": "[思考过程]"
@@ -300,15 +308,6 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
             ]
         }}
     }}
-}}
-
-## waiting_feedback
-描述: 当需要执行文件操作,系统指令时调用该任务等待用户允许或拒绝
-使用示例:
-{{
-    "content": "[思考过程]"
-    "tool": "waiting_feedback",
-    "params": {{}}
 }}
 
 ## terminate
@@ -397,22 +396,23 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 
 环境详细信息将指定当前模式.有三种模式: 
 
-**自动模式**: 在此模式下,您可以访问除 plan_mode_response, waiting_feedback 和 ask_followup_question 工具之外的所有工具.
+**自动模式**: 在此模式下,您不能使用 plan_mode_response, waiting_feedback 和 ask_followup_question 工具.
 
-- 在执行模式中,您使用工具来完成用户的任务.一旦完成任务,您使用 terminate 工具向用户展示任务结果.
+- 在自动模式中,您使用可以使用除 plan_mode_response, waiting_feedback 和 ask_followup_question 以外的工具来完成用户的任务,后续流程不需要询问用户问题直到模式改变.
+- 您所处环境从其它模式变为自动模式后应当意识到后续流程中不需要询问用户问题直到模式改变.
+- 一旦完成任务,您使用 terminate 工具向用户展示任务结果.
 
-**执行模式**: 在此模式下,您可以访问除 plan_mode_response 工具之外的所有工具.
+**执行模式**: 在此模式下,您不能使用 plan_mode_response 工具.
 
-- 在执行模式中,您使用工具来完成用户的任务.一旦完成任务,您使用 terminate 工具向用户展示任务结果.
+- 在执行模式中,您可以使用除 plan_mode_response 以外的工具来完成用户的任务.
+- 一旦完成任务,您使用 terminate 工具向用户展示任务结果.
 
-**规划模式**: 在此特殊模式下,您只能访问 plan_mode_response 工具.
+**规划模式**: 在此特殊模式下,您只能使用 plan_mode_response 工具.
 
-- 在规划模式中,目标是收集信息并获取上下文,以创建详细的计划来完成用户的任务.用户将审查并批准该计划,然后切换到执行模式以实施解决方案.
-- 在规划模式中,当您需要与用户交流或呈现计划时,应直接使用 plan_mode_response 工具来传递您的响应,而不是使用 <thinking> 标签来分析何时响应.不要讨论使用 plan_mode_response,而是直接使用它来分享您的想法并提供有用的答案.
-
-## 什么是规划模式?
-- 虽然您通常处于执行模式或自动模式,但当前模式可能会切换到规划模式,以便用户与您进行来回讨论,规划如何最好地完成任务.
-- 在规划模式下,根据用户的请求,您可能需要进行一些信息收集,例如使用 read_file 或 search_files 来获取更多关于任务的上下文.您还可以向用户提出澄清问题,以更好地理解任务.
+- 在规划模式中,目标是收集信息并获取上下文,以创建详细的计划来完成用户的任务.用户将审查并批准该计划,然后切换到执行模式或者自动模式以实施解决方案.
+- 在规划模式中,当您需要与用户交流或呈现计划时,应直接使用 plan_mode_response 工具来传递您的响应.
+- 当前模式如果切换到规划模式,您应该停止任何待定任务,并于用户进行来回讨论,规划如何最好地继续完成任务.
+- 在规划模式下,根据用户的请求,您可能需要进行一些信息收集,例如使用 file_load, list_files 和 search_files 等工具来获取更多关于任务的上下文.您还可以向用户提出澄清问题,以更好地理解任务.
 - 一旦您对用户的请求有了更多的上下文,您应该制定一个详细的计划来完成该任务.
 - 然后,您可以询问用户是否对该计划满意,或者是否希望进行任何更改.将此视为一个头脑风暴会议,您可以讨论任务并规划最佳完成方式.
 - 最后,一旦您认为已经制定了一个好的计划,请要求将当前模式切换回执行模式以实施解决方案.
@@ -422,10 +422,10 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 # 规则
 
 - 在每条用户消息的末尾,您将自动收到"环境详细信息",以提供当前所处的模式和其它信息.
-- 使用replace_in_file工具时,必须在SEARCH块中包含完整的行,而不是部分行.系统需要精确的行匹配,无法匹配部分行.例如,如果要匹配包含"const x = 5;"的行,您的SEARCH块必须包含整行,而不仅仅是"x = 5"或其他片段.
-- 使用replace_in_file工具时,如果使用多个 SEARCH/REPLACE 块,请按它们在文件中出现的顺序列出它们.例如,如果需要对第10行和第50行进行更改,首先包括第10行的 SEARCH/REPLACE 块,然后是第50行的 SEARCH/REPLACE 块.
+- 使用 replace_in_file 工具时,必须在SEARCH块中包含完整的行,而不是部分行.系统需要精确的行匹配,无法匹配部分行.例如,如果要匹配包含"const x = 5;"的行,您的SEARCH块必须包含整行,而不仅仅是"x = 5"或其他片段.
+- 使用 replace_in_file 工具时,如果使用多个 SEARCH/REPLACE 块,请按它们在文件中出现的顺序列出它们.例如,如果需要对第10行和第50行进行更改,首先包括第10行的 SEARCH/REPLACE 块,然后是第50行的 SEARCH/REPLACE 块.
 - 每次使用工具后,等待用户的响应以确认工具使用的成功至关重要.例如,如果要求创建一个待办事项应用程序,您将创建一个文件,等待用户确认其成功创建,然后根据需要创建另一个文件,等待用户确认其成功创建,依此类推.
-- 思考过程应使用规范的markdown格式.
+- [思考过程]应使用规范的markdown格式.
 ====
 
 # 目标
@@ -434,7 +434,9 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 
 1. 分析用户的任务,并设定明确、可实现的目标以完成任务.按逻辑顺序优先处理这些目标.
 2. 按顺序完成这些目标,必要时逐一使用可用工具.每个目标应对应于您问题解决过程中的一个明确步骤.您将在过程中了解已完成的工作和剩余的工作.
-3. 请记住,您拥有广泛的能力,可以访问各种工具,这些工具可以根据需要以强大和巧妙的方式使用.在调用工具之前,请在<thinking></thinking>标签内进行分析.首先,分析"环境详细信息"中提供的当前模式,从而选择使用工具的范围.接下来,逐一检查相关工具的每个必需参数,并确定用户是否直接提供了足够的信息来推断值.在决定是否可以推断参数时,请仔细考虑所有上下文,以查看其是否支持特定值.如果所有必需的参数都存在或可以合理推断,请关闭thinking标签并继续使用工具.但是,如果缺少某个必需参数的值,请不要调用工具(即使使用占位符填充缺失的参数),而是使用 ask_followup_question 工具要求用户提供缺失的参数.如果未提供可选参数的信息,请不要要求更多信息.
+3. 请记住,您拥有广泛的能力,可以访问各种工具,这些工具可以根据需要以强大和巧妙的方式使用.在调用工具之前,请在[思考过程]内进行分析.首先,分析"环境详细信息"中提供的当前模式,从而选择使用工具的范围.
+4. 接下来,当您处于"执行模式"时,请逐一检查相关工具的每个必需参数,并确定用户是否直接提供了足够的信息来推断值.在决定是否可以推断参数时,请仔细考虑所有上下文,以查看其是否支持特定值.如果所有必需的参数都存在或可以合理推断,请继续使用工具.但是,如果缺少某个必需参数的值,请不要调用工具(即使使用占位符填充缺失的参数),而是使用 ask_followup_question 工具要求用户提供缺失的参数.如果未提供可选参数的信息,请不要要求更多信息.
+5. 当您处于"自动模式"时,也应当逐一检查相关工具的每个必需参数,如果缺少某个必需参数的值,请自动规划解决方案并执行,请记住,在此模式下严禁调用与用户交互的工具.
 4. 一旦完成用户的任务,您必须使用 terminate 工具向用户展示任务结果.
 
 ====
@@ -447,7 +449,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 
 ===
 
-# 环境信息解释
+# 环境详细信息部分解释
 
 - 临时文件夹: 所有执行过程中的临时文件存放位置
 - 当前时间: 当前系统时间

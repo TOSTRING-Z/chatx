@@ -5,9 +5,9 @@
   "prompt": "",
   "info_template": "阶段: {step}, 调用: {model}, 版本: {version}, 输出: \n\n```\n{output_format}\n```\n\n",
   "default": {
-    "model": "gptgod",
-    "version": "gpt-4o-mini",
-    "plugin": "百度翻译[新]"
+    "model": "deepseek",
+    "version": "deepseek-coder",
+    "plugin": "百度翻译[旧]"
   },
   "llm_parmas": {
     "max_tokens": 4000,
@@ -131,48 +131,57 @@
   },
   "plugins": {
     "百度翻译[新]": {
-      "path": "{resourcesPath}/resource/plugins/script/trans_baidu_new.js"
+      "path": "{resourcesPath}/resource/plugins/script/trans_baidu_new.js",
+      "show": true
     },
     "百度翻译[旧]": {
-      "path": "{resourcesPath}/resource/plugins/script/trans_baidu_old.js"
+      "path": "{resourcesPath}/resource/plugins/script/trans_baidu_old.js",
+      "show": true
     },
     "谷歌翻译": {
-      "path": "{resourcesPath}/resource/plugins/script/trans_google.js"
+      "path": "{resourcesPath}/resource/plugins/script/trans_google.js",
+      "show": true
     },
     "影响因子查询": {
-      "path": "{resourcesPath}/resource/plugins/script/if_pmid.js"
+      "path": "{resourcesPath}/resource/plugins/script/if_pmid.js",
+      "show": true
     },
-    "百度搜索": {
-      "path": "{resourcesPath}/resource/plugins/script/baidu_search.js"
+    "baidu_search": {
+      "path": "{resourcesPath}/resource/plugins/script/baidu_search.js",
+      "params": {
+        "jina": "",
+        "num_results": 5,
+        "text_max_len": 1000
+      }
     },
-    "提取思维链": {
+    "get_think": {
       "path": "{resourcesPath}/resource/plugins/script/get_think.js"
     },
-    "JSON解析": {
+    "json_parse": {
       "path": "{resourcesPath}/resource/plugins/script/json_parse.js"
     },
-    "文件读取": {
-      "path": "{resourcesPath}/resource/plugins/script/file_reader.js",
+    "file_load": {
+      "path": "{resourcesPath}/resource/plugins/script/file_load.js",
       "params": {
         "threshold": 10000
       }
     },
-    "文件保存": {
-      "path": "{resourcesPath}/resource/plugins/script/write_to_file.js"
-    },
-    "文件搜索": {
+    "search_files": {
       "path": "{resourcesPath}/resource/plugins/script/search_files.js"
     },
-    "读取路径": {
+    "list_files": {
       "path": "{resourcesPath}/resource/plugins/script/list_files.js",
       "params": {
         "threshold": 50
       }
     },
-    "文件替换": {
+    "write_to_file": {
+      "path": "{resourcesPath}/resource/plugins/script/write_to_file.js"
+    },
+    "replace_in_file": {
       "path": "{resourcesPath}/resource/plugins/script/replace_in_file.js"
     },
-    "python执行": {
+    "python_execute": {
       "path": "{resourcesPath}/resource/plugins/script/python_execute.js",
       "params": {
         "python_bin": "python",

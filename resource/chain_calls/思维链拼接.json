@@ -7,7 +7,7 @@
         },
         {
             "model": "plugin",
-            "version": "提取思维链",
+            "version": "get_think",
             "output_template": "<think>{output}</think>\n- query:{query}\n- answer:"
         },
         {

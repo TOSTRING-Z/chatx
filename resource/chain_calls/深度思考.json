@@ -8,7 +8,7 @@
         },
         {
             "model": "plugin",
-            "version": "JSON解析",
+            "version": "json_parse",
             "output_template": "{outputs[1].stage1}"
         },
         {

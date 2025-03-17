@@ -2,32 +2,34 @@ const axios = require('axios')
 const cheerio = require('cheerio')
 const S = require('string');
 
-async function main({ input, params = null }) {
-    let num_results = 2;
-    let text_max_len = 500;
-    let jina = "https://r.jina.ai/";
-    if (params) {
-        num_results = params.num_results;
-        text_max_len = params.text_max_len;
-        jina = params.jina;
+function main(params) {
+    return async ({ input }) => {
+        let num_results = 5;
+        let text_max_len = 1000;
+        let jina = "https://r.jina.ai/";
+        if (params) {
+            num_results = params.num_results;
+            text_max_len = params.text_max_len;
+            jina = params.jina;
+        }
+
+        const searchResults = []
+        let page = 1
+        let nextUrl = `https://www.baidu.com/s?ie=utf-8&tn=baidu&wd=${encodeURIComponent(input)}`
+
+        while (searchResults.length < num_results) {
+            const { results, nextPageUrl } = await parseBaiduPage(nextUrl, searchResults.length, num_results, text_max_len, jina)
+            searchResults.push(...results)
+            if (!nextPageUrl) break
+            nextUrl = nextPageUrl
+            page++
+        }
+
+        if (searchResults.length > 0)
+            return searchResults.slice(0, num_results);
+        else
+            return null;
     }
-
-    const searchResults = []
-    let page = 1
-    let nextUrl = `https://www.baidu.com/s?ie=utf-8&tn=baidu&wd=${encodeURIComponent(input)}`
-
-    while (searchResults.length < num_results) {
-        const { results, nextPageUrl } = await parseBaiduPage(nextUrl, searchResults.length, num_results, text_max_len, jina)
-        searchResults.push(...results)
-        if (!nextPageUrl) break
-        nextUrl = nextPageUrl
-        page++
-    }
-
-    if (searchResults.length > 0)
-        return searchResults.slice(0, num_results);
-    else
-        return null;
 }
 
 async function parseBaiduPage(url, rankStart, num_results, text_max_len, jina) {
