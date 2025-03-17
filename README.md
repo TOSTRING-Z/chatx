@@ -202,6 +202,7 @@ config.json
   "version": "gpt-4o-mini",
   "plugin": "百度翻译[新]"
 }
+```
 
 > 配置链式调用示例
 
