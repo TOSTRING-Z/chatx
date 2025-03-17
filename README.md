@@ -208,7 +208,7 @@ config.json
 
 config.json
 
-*- 基础对话 -*
+- 基础对话
 
 ```json
 "chain_call": [
