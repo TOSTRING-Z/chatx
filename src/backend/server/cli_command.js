@@ -1,6 +1,8 @@
 const { spawn } = require('child_process');
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
+const express = require("express");
+const expressWs = require("express-ws");
 
 let mainWindow;
 
@@ -9,15 +11,11 @@ function cliCommand(command, path) {
 
     process.stdout.on('data', (data) => {
         const formattedData = data.toString()
-            .replace(/\r\n/g, '\n')  // Normalize Windows line endings
-            .replace(/\t/g, '    ');  // Replace tabs with spaces
         mainWindow.webContents.send('terminal-data', formattedData);
     });
 
     process.stderr.on('data', (data) => {
         const formattedData = data.toString()
-            .replace(/\r\n/g, '\n')  // Normalize Windows line endings
-            .replace(/\t/g, '    ');  // Replace tabs with spaces
         mainWindow.webContents.send('terminal-data', formattedData);
     });
 
@@ -46,6 +44,7 @@ function createWindow() {
     ipcMain.on('terminal-input', (event, input) => {
         cliCommand(input.command, input.path);
     });
+
 }
 
 app.whenReady().then(createWindow);

@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.7.0",
     "axios": "^1.7.9",
     "axios-cookiejar-support": "^5.0.5",
     "cheerio": "^1.0.0",
@@ -16,5 +17,9 @@
     "jsdom": "^26.0.0",
     "officeparser": "^5.1.1",
     "string": "^3.3.3"
+  },
+  "devDependencies": {
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
   }
 }

@@ -35,7 +35,14 @@ const formData = {
   img_url: null
 }
 
-global = { math_statu: true, markdown_statu: true };
+global = { 
+  math_statu: true, 
+  markdown_statu: true, 
+  scroll_top: {
+    info: true,
+    data: true,
+  }
+};
 
 function getFileName(path) {
   return path.split('/').pop().split('\\').pop();
@@ -263,10 +270,7 @@ const marked = new Marked(
   markedHighlight({
     langPrefix: "hljs language-",
     highlight(code, lang) {
-      let language = 'plaintext';
-      if (global.markdown_statu) {
-        language = hljs.getLanguage(lang) ? lang : 'plaintext';
-      }
+      language = hljs.getLanguage(lang) ? lang : 'plaintext';
       return hljs.highlight(code, { language }).value;
     }
   })
@@ -274,49 +278,63 @@ const marked = new Marked(
 
 const marked_input = new Marked({
   renderer: {
-    html({ raw }) {
-      return formatText("plaintext", raw);
+    html(token) {
+      token.type = "plaintext";
+      return formatText(token);
     },
-    link({ raw }) {
-      return formatText("plaintext", raw);
+    link(token) {
+      token.type = "plaintext";
+      return formatText(token);
     },
     text(token) {
       if (token.hasOwnProperty("tokens")) {
         return this.parser.parseInline(token.tokens);
       } else {
-        return formatText("plaintext", token.raw);
+        token.type = "plaintext";
+        return formatText(token);
       }
     },
   }
 });
 
-const formatCode = (type, text) => {
-  const encodeCode = encodeURIComponent(text);
+const formatCode = (token) => {
+  let encodeCode;
+  // 定义正则表达式来匹配 ```<language>\n<code>\n``` 块
+  const codeBlockRegex = /```\w*\n([\s\S]*?)```/;
+  // 执行匹配
+  const match = token.raw.match(codeBlockRegex);
+  if (match) {
+    // 提取代码块内容（去除语言标识部分）
+    const codeContent = match[1].trim();
+    encodeCode = encodeURIComponent(codeContent);
+  } else {
+    encodeCode = encodeURIComponent(token.raw);
+  }
   return `<div class="code-header">
-            <span class="language-tag">${type}</span>
+            <span class="language-tag">${token.type}</span>
             <button
             class="copy-btn"
             data-code="${encodeCode}"
             title="复制代码">复制</button>
           </div>
-          <pre class="hljs"><code>${text}</code></pre>`;
+          <pre class="hljs"><code>${token.text}</code></pre>`;
 }
 
-const formatText = (type, raw) => {
-  let language = hljs.getLanguage(type) ? type : "plaintext";
-  const highlightResult = hljs.highlight(raw, { language }).value;
+const formatText = (token) => {
+  let language = hljs.getLanguage(token.type) ? token.type : "plaintext";
+  const highlightResult = hljs.highlight(token.raw, { language }).value;
   return highlightResult;
 }
 
 const renderer = {
-  code({ lang, text }) {
-    return formatCode(lang, text);
+  code(token) {
+    return formatCode(token);
   },
-  html({ type, raw }) {
-    return formatText(type, raw);
+  html(token) {
+    return formatText(token);
   },
-  link({ type, raw }) {
-    return formatText(type, raw);
+  link(token) {
+    return formatText(token);
   },
   text(token) {
     if (token.hasOwnProperty("tokens")) {
@@ -325,7 +343,8 @@ const renderer = {
       const highlightResult = marked_input.parse(token.text);
       return `<div class="think">${highlightResult}</div>`;
     } else {
-      return formatText("plaintext", token.raw);
+      token.type = "plaintext";
+      return formatText(token);
     }
   },
 }
@@ -366,7 +385,12 @@ String.prototype.format = function (params, role) {
         }
       }
       else {
-        param = formatText("plaintext", params[key].trim());
+        token = {
+          type: "plaintext",
+          raw: params[key],
+          text: params[key].trim(),
+        }
+        param = formatText(token);
       }
     } else {
       param = params[key];
