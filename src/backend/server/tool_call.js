@@ -1,9 +1,45 @@
 const { ReActAgent, State } = require("./agent.js")
 const { utils, inner } = require('../modules/globals')
 const { pushMessage } = require('../server/llm_service');
+const { client, transport } = require('./mcp_client.js')
 const os = require('os');
 
 class ToolCall extends ReActAgent {
+
+    async init_mcp() {
+        console.log('Connecting to transport...');
+        await client.connect(transport);
+        console.log('Successfully connected to transport');
+
+        // List prompts
+        const prompts = await client.listPrompts();
+        const name = prompts.prompts[0].name;
+        const description = prompts.prompts[0].description;
+
+        // Get a prompt
+
+        console.log('Listing tools...');
+        const tools = await client.listTools();
+        console.log('Tools:', tools);
+
+        const mcp_prompt = tools.tools.map(tool => {
+            const mcp_name = tool.name;
+            const mcp_description = tool.description;
+            const properties = tool.inputSchema.properties;
+            const required = tool.inputSchema.required;
+            const arg_keys = Object.keys(properties);
+            const mcp_args = arg_keys.map(key => {
+                const values = properties[key];
+                const req = required.includes(key);
+                return `- ${key}: ${req ? "(required) " : ""}${values.description} (type: ${values.type})`;
+            }).join("\n");
+
+            const mcp_prompt = `MCP name: ${mcp_name}\nMCP description: ${mcp_description}\nMCP args:\n${mcp_args}`;
+            return mcp_prompt;
+        }).join("\n\n---\n\n")
+        return `##MCP server: ${name}\n${description} ##Use ${mcp_prompt}`;
+    }
+
     constructor() {
         super();
         this.tools = {
@@ -39,6 +75,15 @@ class ToolCall extends ReActAgent {
                 const func = inner.model_obj.plugin["baidu_search"].func
                 return await func({ input: context })
             },
+            "mcp_server": async ({ name, args }) => {
+                console.log('Calling fetch tool...');
+                const result = await client.callTool({
+                    name: name,
+                    arguments: JSON.parse(args)
+                });
+                console.log('Fetch result:', result);
+                return result;
+            },
             "ask_followup_question": async ({ question, options }) => {
                 this.state = State.PAUSE;
                 return { question, options }
@@ -56,6 +101,8 @@ class ToolCall extends ReActAgent {
                 return final_answer;
             },
         }
+
+        this.mcp_prompt = this.init_mcp();
 
         this.task_prompt = `你是ChatX,一个全能的人工智能助手,旨在解决用户提出的任何任务.你可以使用各种工具来高效地完成复杂的请求.
 
@@ -258,6 +305,24 @@ file_pattern: 用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 
     }}
 }}
 
+## mcp_server
+描述: 请求MCP(模型上下文协议)服务.
+参数:
+- name: 请求MCP服务名.
+- args: 请求MCP服务参数.
+使用:
+{{
+    "content": "[思考过程]"
+    "tool": "mcp_server",
+    "params": {{
+        "name": "[value]",
+        "args": {
+            "[parameter1_name]": [value1],
+            "[parameter2_name]": [value2],
+            ...
+        }
+    }}
+}}
 
 ## ask_followup_question
 描述: 向用户提问以收集完成任务所需的额外信息.在遇到歧义,需要澄清或需要更多细节以有效进行时,应使用此工具.它通过允许与用户的直接沟通,实现互动式问题解决.明智地使用此工具,以在收集必要信息和避免过多来回交流之间保持平衡.
@@ -313,7 +378,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 ## terminate
 描述: 停止任务(当判断任务完成时调用)
 参数:
-- content: 总结并给出最终回答(MarkDown格式)
+- final_answer: 总结并给出最终回答(MarkDown格式)
 使用:
 {{
     "content": "[思考过程]"
@@ -322,6 +387,12 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
         "final_answer": "[value]"
     }}
 }}
+
+====
+
+# 可用MCP服务
+
+{mcp_prompt}
 
 ====
 
@@ -459,6 +530,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
             type: os.type(),
             platform: os.platform(),
             arch: os.arch(),
+            mcp_prompt: this.mcp_prompt
         })
 
         this.env = `环境详细信息:
@@ -548,7 +620,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
         try {
             const tool_info = JSON.parse(content);
             if (!!tool_info?.content) {
-                data.event.sender.send('stream-data', { id: data.id, content: `${tool_info.content}\n\n` });
+                data.event.sender.send('stream-data', { id: data.id, content: `${tool_info.content}\n\n---\n\n` });
             }
             if (!!tool_info?.tool) {
                 return tool_info;
