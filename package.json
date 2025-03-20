@@ -2,7 +2,7 @@
   "name": "chatx",
   "version": "1.3.4",
   "description": "chatx",
-  "main": "cli_command.js",
+  "main": "src/backend/main.js",
   "homepage": ".",
   "author": "TOSTRING_Z",
   "private": true,
