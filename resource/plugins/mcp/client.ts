@@ -3,7 +3,7 @@ import { StdioClientTransport } from "@modelcontextprotocol/sdk/client/stdio.js"
 
 const transport = new StdioClientTransport({
   command: "uv",
-  args: ["run","mcp-server-fetch"]
+  args: ["run","mcp-server-git"]
 });
 
 const client = new Client(
@@ -41,21 +41,21 @@ const result = await client.callTool({
 
 console.log(result)
 
-const mcp_prompt = tools.tools.map(tool=>{
-  const mcp_name = tool.name;
-  const mcp_description = tool.description;
-  const properties = tool.inputSchema.properties;
-  const required = tool.inputSchema.required;
-  const arg_keys = Object.keys(properties);
-  const mcp_args = arg_keys.map(key=>{
-    const values = properties[key];
-    const req = required.includes(key);
-    return `- ${key}: ${req?"(required) ":""}${values.description} (type: ${values.type})`;
-  }).join("\n");
+// const mcp_prompt = tools.tools.map(tool=>{
+//   const mcp_name = tool.name;
+//   const mcp_description = tool.description;
+//   const properties = tool.inputSchema.properties;
+//   const required = tool.inputSchema.required;
+//   const arg_keys = Object.keys(properties);
+//   const mcp_args = arg_keys.map(key=>{
+//     const values = properties[key];
+//     const req = required.includes(key);
+//     return `- ${key}: ${req?"(required) ":""}${values.description} (type: ${values.type})`;
+//   }).join("\n");
 
-  const mcp_prompt = `MCP name: ${mcp_name}
-MCP description: ${mcp_description}
-MCP args:
-${mcp_args}`;
-  return mcp_prompt;
-}).join("\n\n---\n\n")
+//   const mcp_prompt = `MCP name: ${mcp_name}
+// MCP description: ${mcp_description}
+// MCP args:
+// ${mcp_args}`;
+//   return mcp_prompt;
+// }).join("\n\n---\n\n")

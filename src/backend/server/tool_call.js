@@ -7,37 +7,50 @@ const os = require('os');
 class ToolCall extends ReActAgent {
 
     async init_mcp() {
-        console.log('Connecting to transport...');
-        await client.connect(transport);
-        console.log('Successfully connected to transport');
+        try {
+            console.log('Connecting to transport...');
+            await client.connect(transport);
+            console.log('Successfully connected to transport');
 
-        // List prompts
-        const prompts = await client.listPrompts();
-        const name = prompts.prompts[0].name;
-        const description = prompts.prompts[0].description;
+            const caps = client.getServerCapabilities();
+            // List prompts
+            let name = "";
+            let description = "";
+            if (caps.hasOwnProperty("prompts")) {
+                const prompts = await client.listPrompts();
+                name = prompts.prompts[0].name;
+                description = prompts.prompts[0].description;
+            }
 
-        // Get a prompt
+            // Get a prompt
+            let tools;
+            if (caps.hasOwnProperty("tools")) {
+                console.log('Listing tools...');
+                tools = await client.listTools();
+                console.log('Tools:', tools);
+            }
+            if (!tools) {
+                return "MCP server不可用!"
+            }
+            const mcp_prompt = tools.tools.map(tool => {
+                const mcp_name = tool.name;
+                const mcp_description = tool.description;
+                const properties = tool.inputSchema.properties;
+                const required = tool.inputSchema.required;
+                const arg_keys = Object.keys(properties);
+                const mcp_args = arg_keys.map(key => {
+                    const values = properties[key];
+                    const req = required.includes(key);
+                    return `- ${key}: ${req ? "(required) " : ""}${values.description} (type: ${values.type})`;
+                }).join("\n");
 
-        console.log('Listing tools...');
-        const tools = await client.listTools();
-        console.log('Tools:', tools);
-
-        const mcp_prompt = tools.tools.map(tool => {
-            const mcp_name = tool.name;
-            const mcp_description = tool.description;
-            const properties = tool.inputSchema.properties;
-            const required = tool.inputSchema.required;
-            const arg_keys = Object.keys(properties);
-            const mcp_args = arg_keys.map(key => {
-                const values = properties[key];
-                const req = required.includes(key);
-                return `- ${key}: ${req ? "(required) " : ""}${values.description} (type: ${values.type})`;
-            }).join("\n");
-
-            const mcp_prompt = `MCP name: ${mcp_name}\nMCP description: ${mcp_description}\nMCP args:\n${mcp_args}`;
-            return mcp_prompt;
-        }).join("\n\n---\n\n")
-        return `##MCP server: ${name}\n${description} ##Use ${mcp_prompt}`;
+                const mcp_prompt = `MCP name: ${mcp_name}\nMCP args:\n${mcp_args}\nMCP description:\n${mcp_description}`;
+                return mcp_prompt;
+            }).join("\n\n---\n\n")
+            return `## MCP server: ${name}\n\n${description}\n\n## Use\n\n${mcp_prompt}`;
+        } catch (error) {
+            return "MCP server不可用!"
+        }
     }
 
     constructor() {
@@ -76,12 +89,10 @@ class ToolCall extends ReActAgent {
                 return await func({ input: context })
             },
             "mcp_server": async ({ name, args }) => {
-                console.log('Calling fetch tool...');
                 const result = await client.callTool({
                     name: name,
-                    arguments: JSON.parse(args)
+                    arguments: args
                 });
-                console.log('Fetch result:', result);
                 return result;
             },
             "ask_followup_question": async ({ question, options }) => {
@@ -101,8 +112,6 @@ class ToolCall extends ReActAgent {
                 return final_answer;
             },
         }
-
-        this.mcp_prompt = this.init_mcp();
 
         this.task_prompt = `你是ChatX,一个全能的人工智能助手,旨在解决用户提出的任何任务.你可以使用各种工具来高效地完成复杂的请求.
 
@@ -525,13 +534,10 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 - 临时文件夹: 所有执行过程中的临时文件存放位置
 - 当前时间: 当前系统时间
 - 当前模式: 当前所处模式(自动模式 / 执行模式 / 规划模式)
+`
 
-`.format({
-            type: os.type(),
-            platform: os.platform(),
-            arch: os.arch(),
-            mcp_prompt: this.mcp_prompt
-        })
+        this.system_prompt;
+        this.mcp_prompt;
 
         this.env = `环境详细信息:
 - 临时文件夹: {tmpdir}
@@ -561,6 +567,15 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     }
 
     async step(data) {
+        if (!this.mcp_prompt) {
+            this.mcp_prompt = await this.init_mcp();
+            this.system_prompt = this.task_prompt.format({
+                type: os.type(),
+                platform: os.platform(),
+                arch: os.arch(),
+                mcp_prompt: this.mcp_prompt
+            })
+        }
         data.push_message = false
         if (this.state == State.IDLE) {
             pushMessage("user", data.query, data.id);
@@ -588,7 +603,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     }
 
     async task(data) {
-        data.prompt = this.task_prompt;
+        data.prompt = this.system_prompt;
         data.output_format = await this.llmCall(data);
         data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
         return this.get_tool(data.output_format, data);

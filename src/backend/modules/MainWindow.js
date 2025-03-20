@@ -177,6 +177,7 @@ class MainWindow extends Window {
                 while (this.tool_call.state != State.FINAL && this.tool_call.state != State.PAUSE) {
                     if (getStopIds().includes(data.id)) {
                         this.tool_call.state = State.FINAL
+                        break;
                     }
                     data = { ...data, ...defaults, step: ++step };
 

@@ -3,7 +3,7 @@ const { StdioClientTransport } = require("@modelcontextprotocol/sdk/client/stdio
 
 const transport = new StdioClientTransport({
   command: "uvx",
-  args: ["mcp-server-fetch"]
+  args: ["mcp-server-git"]
 });
 
 const client = new Client(
@@ -20,6 +20,6 @@ const client = new Client(
   }
 );
 
-export {
+module.exports = {
     transport, client
 }
