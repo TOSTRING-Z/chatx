@@ -8,13 +8,13 @@ const store = new Store();
 // 插件配置参数
 const inner = {
     model_name: {
-        plugin: "plugin"
+        plugins: "plugins"
     },
     model: {
-        plugin: { versions: [] }
+        plugins: { versions: [] }
     },
     model_obj: {
-        plugin: {}
+        plugins: {}
     }
 };
 

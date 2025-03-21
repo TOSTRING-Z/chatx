@@ -8,29 +8,31 @@ class Plugins {
         return Plugins.instance;
     }
     // 配置插件接口
-    loadPlugin(name) {
-        const pluginPath = utils.getConfig("plugins")[name].path.format(process);
-        const pluginParams = utils.getConfig("plugins")[name]?.params;
+    loadPlugin(params) {
+        const pluginPath = utils.getConfig("plugins")[params.version].path.format(process);
+        const pluginParams = utils.getConfig("plugins")[params.version]?.params;
         try {
-            console.log(`loading plugin: ${name}`);
+            console.log(`loading plugin: ${params.version}`);
             const plugin = require(pluginPath);
             if (pluginParams) {
-                return { func: plugin.main(pluginParams), extre: plugin?.extre };
+                return { func: plugin.main(pluginParams), extre: params?.extre };
             }
             else {
-                return { func: plugin.main, extre: plugin?.extre };
+                return { func: plugin.main, extre: params?.extre };
             }
         } catch (error) {
             return {
-                func: () => `插件: ${name}, 路径: ${pluginPath}, 加载插件发生错误: ${error.message}`
+                func: () => `插件: ${params.version}, 路径: ${pluginPath}, 加载插件发生错误: ${error.message}`
             }
         }
     }
     init() {
         // 加载插件
-        Object.keys(utils.getConfig("plugins")).forEach((_version) => {
-            inner.model[inner.model_name.plugin]["versions"].push(_version);
-            inner.model_obj[inner.model_name.plugin][_version] = this.loadPlugin(_version)
+        const plugins = utils.getConfig("plugins");
+        Object.keys(plugins).forEach((version) => {
+            const params = {version, ...plugins[version]}
+            inner.model[inner.model_name.plugins].versions.push(params);
+            inner.model_obj[inner.model_name.plugins][version] = this.loadPlugin(params)
         })
     }
 }

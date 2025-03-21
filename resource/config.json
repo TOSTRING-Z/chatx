@@ -197,6 +197,13 @@
       }
     }
   },
+  "mcp_server": {
+    "git": {
+      "command": "uvx",
+      "args": ["mcp-server-git"],
+      "enabled": true
+    }
+  },
   "chain_call": [
     {
       "end": true

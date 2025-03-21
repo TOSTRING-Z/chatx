@@ -48,8 +48,6 @@ if (require.main === module) {
     });
 }
 
-const extre = [{ type: 'file-reader' }];
-
 module.exports = {
-    main, extre
+    main
 };

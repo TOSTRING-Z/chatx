@@ -321,7 +321,9 @@ class MainWindow extends Window {
     getReactEvent(e) {
         const mathReact = () => {
             if (global.is_plugin) {
-                this.window.webContents.send("extre_load", e.statu && inner.model_obj[global.model][global.version].extre)
+                console.log(inner.model_obj)
+                console.log(global)
+                this.window.webContents.send("extre_load", e.statu && inner.model_obj[global.model][global.version.version].extre)
             }
             else {
                 this.window.webContents.send("extre_load", e.statu ? [{ "type": "act-plan" }] : utils.getConfig("extre"));
@@ -363,24 +365,25 @@ class MainWindow extends Window {
     getVersionsSubmenu() {
         let versions;
         if (global.is_plugin) {
-            versions = inner.model[inner.model_name.plugin]["versions"];
+            versions = inner.model[inner.model_name.plugins]["versions"];
+            console.log(versions)
+            versions = versions.filter(version=>version?.show);
+            console.log(versions)
         }
         else {
             versions = utils.getConfig("models")[global.model]["versions"];
         }
         this.funcItems.react.event();
         console.log(versions);
-        return versions.map((_version) => {
-            if (typeof _version !== "string") {
-                _version = _version.version
-            }
+        return versions.map((version) => {
+            const _version = version?.version||version;
             return {
                 type: 'radio',
                 checked: global.version == _version,
                 click: () => {
                     global.version = _version
                     if (global.is_plugin) {
-                        this.window.webContents.send("extre_load", inner.model_obj[global.model][_version].extre)
+                        this.window.webContents.send("extre_load", version?.extre)
                     }
                 },
                 label: _version

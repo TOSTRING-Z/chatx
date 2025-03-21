@@ -1,53 +1,21 @@
 const { ReActAgent, State } = require("./agent.js")
 const { utils, inner } = require('../modules/globals')
 const { pushMessage } = require('../server/llm_service');
-const { client, transport } = require('./mcp_client.js')
+const { MCPClient } = require('./mcp_client.js')
 const os = require('os');
 
 class ToolCall extends ReActAgent {
 
     async init_mcp() {
         try {
-            console.log('Connecting to transport...');
-            await client.connect(transport);
-            console.log('Successfully connected to transport');
+            const configs = utils.getConfig("mcp_server");
+            Object.keys(configs).forEach(name => {
+                const config = configs[name];
+                this.mcp_client.setTransport({ name, config });
 
-            const caps = client.getServerCapabilities();
-            // List prompts
-            let name = "";
-            let description = "";
-            if (caps.hasOwnProperty("prompts")) {
-                const prompts = await client.listPrompts();
-                name = prompts.prompts[0].name;
-                description = prompts.prompts[0].description;
-            }
-
-            // Get a prompt
-            let tools;
-            if (caps.hasOwnProperty("tools")) {
-                console.log('Listing tools...');
-                tools = await client.listTools();
-                console.log('Tools:', tools);
-            }
-            if (!tools) {
-                return "MCP server不可用!"
-            }
-            const mcp_prompt = tools.tools.map(tool => {
-                const mcp_name = tool.name;
-                const mcp_description = tool.description;
-                const properties = tool.inputSchema.properties;
-                const required = tool.inputSchema.required;
-                const arg_keys = Object.keys(properties);
-                const mcp_args = arg_keys.map(key => {
-                    const values = properties[key];
-                    const req = required.includes(key);
-                    return `- ${key}: ${req ? "(required) " : ""}${values.description} (type: ${values.type})`;
-                }).join("\n");
-
-                const mcp_prompt = `MCP name: ${mcp_name}\nMCP args:\n${mcp_args}\nMCP description:\n${mcp_description}`;
-                return mcp_prompt;
-            }).join("\n\n---\n\n")
-            return `## MCP server: ${name}\n\n${description}\n\n## Use\n\n${mcp_prompt}`;
+            });
+            await this.mcp_client.connectMCP();
+            return this.mcp_client.mcp_prompt;
         } catch (error) {
             return "MCP server不可用!"
         }
@@ -55,41 +23,42 @@ class ToolCall extends ReActAgent {
 
     constructor() {
         super();
+        this.mcp_client = new MCPClient();
         this.tools = {
             "python_execute": async ({ code }) => {
-                const func = inner.model_obj.plugin["python_execute"].func
+                const func = inner.model_obj.plugins["python_execute"].func
                 return await func({ input: code })
             },
             "llm_ocr": async ({ img_path, prompt }) => {
-                const func = inner.model_obj.plugin["llm_ocr"].func
+                const func = inner.model_obj.plugins["llm_ocr"].func
                 return await func({ input: img_path, prompt })
             },
             "write_to_file": async ({ file_path, context }) => {
-                const func = inner.model_obj.plugin["write_to_file"].func
+                const func = inner.model_obj.plugins["write_to_file"].func
                 return await func({ input: context, file_path })
             },
             "file_load": async ({ file_path }) => {
-                const func = inner.model_obj.plugin["file_load"].func
+                const func = inner.model_obj.plugins["file_load"].func
                 return await func({ file_path })
             },
             "list_files": async ({ path, recursive }) => {
-                const func = inner.model_obj.plugin["list_files"].func
+                const func = inner.model_obj.plugins["list_files"].func
                 return await func({ input: path, recursive: recursive })
             },
             "search_files": async ({ path, regex, file_pattern }) => {
-                const func = inner.model_obj.plugin["search_files"].func
+                const func = inner.model_obj.plugins["search_files"].func
                 return await func({ input: path, regex, file_pattern })
             },
             "replace_in_file": async ({ file_path, diff }) => {
-                const func = inner.model_obj.plugin["replace_in_file"].func
+                const func = inner.model_obj.plugins["replace_in_file"].func
                 return await func({ input: diff, file_path })
             },
             "baidu_search": async ({ context }) => {
-                const func = inner.model_obj.plugin["baidu_search"].func
+                const func = inner.model_obj.plugins["baidu_search"].func
                 return await func({ input: context })
             },
             "mcp_server": async ({ name, args }) => {
-                const result = await client.callTool({
+                const result = await this.mcp_client.client.callTool({
                     name: name,
                     arguments: args
                 });

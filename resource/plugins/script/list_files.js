@@ -8,30 +8,12 @@ const EXCLUDE_PATTERNS = [
   // Cache
   /\/\.cache\//i,
   /\/\.npm\//i,
-  // Test
-  /\/__tests__\//i,
-  /\/coverage\//i,
-  // library
-  /\/node_modules\//i,
-  /\/venv\//i,
-  // Logs
-  /\.log(\.\d+)?$/i,
   // Media
   /\.(gif|mp4|mov|avi)$/i,
   // Binaries
   /\.(exe|dll|so|a)$/i,
   // Documents
   /\.(pptx?)$/i,
-  // Hidden files and directories
-  /\/\.[^\/]+\//i,
-  /\/\.\w+$/i,
-  // Build directories
-  /\/(dist|build|__pycache__)\//i,
-  // Dependency management
-  /\/bower_components\//i,
-  /\/\.git\//i,
-  // Temporary files and directories
-  /\/(\.tmp|temp)\//i
 ];
 
 

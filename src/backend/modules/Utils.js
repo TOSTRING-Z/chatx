@@ -18,7 +18,19 @@ class Utils {
         if (key === null) {
             return config;
         }
-        config["models"][this.inner.model_name.plugin] = this.inner.model[this.inner.model_name.plugin]
+        if (key == "models") {
+            const models = config["models"];
+            for (const key in models) {
+                if (Object.hasOwnProperty.call(models, key)) {
+                    const versions = models[key].versions;
+                    versions.forEach((version,i) => {
+                        version = typeof version == "string"? {version: version}: version;
+                        config["models"][key].versions[i] = version;
+                    });
+                }
+            }
+        }
+        config["models"][this.inner.model_name.plugins] = this.inner.model[this.inner.model_name.plugins]
         return config[key]
     }
 
