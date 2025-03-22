@@ -35,9 +35,9 @@ const formData = {
   img_url: null
 }
 
-global = { 
-  math_statu: true, 
-  markdown_statu: true, 
+global = {
+  math_statu: true,
+  markdown_statu: true,
   scroll_top: {
     info: true,
     data: true,
@@ -374,35 +374,20 @@ var typesetMath = function () { };
 
 // 扩展 String 原型
 String.prototype.format = function (params, role) {
-  let htmlString = this.replace(/@(\w+)/g, (match, key) => {
-    let param;
-    if (key === "message") {
-      if (global.markdown_statu) {
-        if (role === "system") {
-          param = marked.parse(params[key].trim());
-        } else {
-          param = marked_input.parse(params[key].trim());
-        }
-      }
-      else {
-        token = {
-          type: "plaintext",
-          raw: params[key],
-          text: params[key].trim(),
-        }
-        param = formatText(token);
-      }
-    } else {
-      param = params[key];
-    }
-    return typeof params[key] !== 'undefined' ? param : match;
-  });
-  // 创建一个新的DOMParser实例
   const parser = new DOMParser();
-  // 使用DOMParser将HTML字符串解析为DOM文档
-  const doc = parser.parseFromString(htmlString, 'text/html');
-  // 获取解析后的元素
+  const doc = parser.parseFromString(this, 'text/html');
   const newElement = doc.body.firstChild;
+  let message = newElement.getElementsByClassName("message")[0]
+  if(params.hasOwnProperty("icon")) {
+    let menu = newElement.getElementsByClassName("menu")[0]
+    menu.src = menu.src.replace("@icon",params["icon"])
+  }
+  if(role === "system") {
+    message.innerHTML = marked.parse(params["message"])
+  } else {
+    message.innerText = params["message"]
+  }
+  newElement.dataset.id = params["id"]
   return newElement;
 };
 
