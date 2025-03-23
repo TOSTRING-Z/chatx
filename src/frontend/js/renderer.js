@@ -44,6 +44,16 @@ global = {
   }
 };
 
+messages.addEventListener('mouseenter', () => {
+  global.scroll_top.info = false;
+  global.scroll_top.data = false;
+});
+
+messages.addEventListener('mouseleave', () => {
+  global.scroll_top.info = true;
+  global.scroll_top.data = true;
+});
+
 function getFileName(path) {
   return path.split('/').pop().split('\\').pop();
 }
@@ -208,7 +218,8 @@ function InfoAdd(info) {
   if (info.content) {
     info_content.dataset.content += info.content;
     info_content.innerHTML = marked.parse(info_content.dataset.content);
-    info_content.scrollTop = info_content.scrollHeight;
+    if (global.scroll_top.info)
+      info_content.scrollTop = info_content.scrollHeight;
   }
 }
 
@@ -218,6 +229,8 @@ function streamMessageAdd(chunk) {
   if (chunk.content) {
     message_content.dataset.content += chunk.content;
     message_content.innerHTML = marked.parse(message_content.dataset.content);
+    if (global.scroll_top.data)
+      top_div.scrollTop = top_div.scrollHeight;
   }
   if (chunk.end) {
     message_content.innerHTML = marked.parse(message_content.dataset.content);
@@ -225,6 +238,8 @@ function streamMessageAdd(chunk) {
     thinking.remove();
     typesetMath();
     menuEvent(chunk.id, message_content.dataset.content);
+    if (global.scroll_top.data)
+      top_div.scrollTop = top_div.scrollHeight;
   }
 }
 
@@ -397,7 +412,7 @@ String.prototype.formatMessage = function (params, role) {
       message.appendChild(img);
     }
     let text = createElement(`<div class="text"></div>`);
-    text.innerText = params["message"]||"";
+    text.innerText = params["message"] || "";
     message.appendChild(text);
   }
   newElement.dataset.id = params["id"]
