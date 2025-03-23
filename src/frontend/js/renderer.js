@@ -394,14 +394,11 @@ String.prototype.formatMessage = function (params, role) {
   } else {
     if (!!params.image_url) {
       let img = createElement(`<img class="size-48 shadow-xl rounded-md mb-1" src="${params.image_url}">`);
-      let text = createElement(`<div></div>`);
-      text.innerText = params["message"]||"";
       message.appendChild(img);
-      message.appendChild(text);
     }
-    else {
-      message.innerText = params["message"]||""
-    }
+    let text = createElement(`<div class="text"></div>`);
+    text.innerText = params["message"]||"";
+    message.appendChild(text);
   }
   newElement.dataset.id = params["id"]
   return newElement;

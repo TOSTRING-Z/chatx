@@ -77,14 +77,20 @@
       overflow-x: hidden;
       overflow-y: auto;
       word-wrap: break-word;
-      word-break: break-word;
+      word-break: break-all;
       display: flex;
       flex-direction: column;
       gap: 0.4rem;
       position: relative;
       top: 9px;
-      /* text-align: justify; */
       max-width: calc(100%);
+    }
+
+    .text {
+      white-space: pre-wrap;
+      background-color: #eff6ff;
+      padding: 1rem;
+      border-radius: 10px;
     }
 
     [data-role="user"] .message {
