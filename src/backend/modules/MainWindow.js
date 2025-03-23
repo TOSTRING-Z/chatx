@@ -161,6 +161,7 @@ class MainWindow extends Window {
                 input_template: null,
                 prompt_template: null,
                 params: null,
+                push_message: true,
                 end: null,
                 event: _event
             }
@@ -319,7 +320,7 @@ class MainWindow extends Window {
     }
 
     getReactEvent(e) {
-        const mathReact = () => {
+        const extreReact = () => {
             if (global.is_plugin) {
                 console.log(inner.model_obj)
                 console.log(global)
@@ -329,8 +330,8 @@ class MainWindow extends Window {
                 this.window.webContents.send("extre_load", e.statu ? [{ "type": "act-plan" }] : utils.getConfig("extre"));
             }
         }
-        mathReact();
-        return mathReact;
+        extreReact();
+        return extreReact;
     }
 
     initFuncItems() {
@@ -570,7 +571,7 @@ class MainWindow extends Window {
         config.chain_call = JSON.parse(chain).chain_call;
         config.extre = JSON.parse(chain).extre;
         this.window.webContents.send("extre_load", config.extre);
-        this.funcItems.react.statu = !this.funcItems.react.statu;
+        this.funcItems.react.statu = false;
         this.funcItems.react.event();
         this.updateVersionsSubmenu();
         utils.setConfig(config);

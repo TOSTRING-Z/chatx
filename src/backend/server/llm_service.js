@@ -148,7 +148,6 @@ async function chatBase(data) {
                 }
             ];
         }
-        message_input = { "role": "user", "content": content, "id": data.id };
         if (!!data.system_prompt) {
             messages_list = [{ "role": "system", "content": data.system_prompt, "id": data.id }]
             messages_list = messages_list.concat(messages.slice(messages.length - data.memory_length * 2, messages.length))
@@ -156,7 +155,10 @@ async function chatBase(data) {
         else {
             messages_list = messages.slice(messages.length - data.memory_length * 2, messages.length)
         }
-        messages_list.push(message_input)
+        if (data?.push_message) {
+            message_input = { "role": "user", "content": content, "id": data.id };
+            messages_list.push(message_input)
+        }
         let message_output = { role: 'assistant', content: '', id: data.id }
 
         let body = {

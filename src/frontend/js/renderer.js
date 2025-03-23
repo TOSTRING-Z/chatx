@@ -331,10 +331,10 @@ const renderer = {
     return formatCode(token);
   },
   html(token) {
-    return formatText(token);
+    return formatCode(token);
   },
   link(token) {
-    return formatText(token);
+    return formatCode(token);
   },
   text(token) {
     if (token.hasOwnProperty("tokens")) {
@@ -343,8 +343,7 @@ const renderer = {
       const highlightResult = marked_input.parse(token.text);
       return `<div class="think">${highlightResult}</div>`;
     } else {
-      token.type = "plaintext";
-      return formatText(token);
+      return token.raw;
     }
   },
 }
@@ -354,8 +353,11 @@ const think = {
   level: 'block',
   start(src) { return src.match(/<think>/)?.index; },
   tokenizer(src, tokens) {
-    const rule = /^<think>([\s\S]*?)<\/think>/;
-    const match = rule.exec(src);
+    const rule0 = /^<think>([\s\S]*?)<\/think>/;
+    const match0 = rule0.exec(src);
+    const rule1 = /^<think>([\s\S]*)/;
+    const match1 = rule1.exec(src);
+    const match = match0 || match1
     if (match) {
       const token = {
         type: "text",
@@ -406,7 +408,7 @@ String.prototype.formatMessage = function (params, role) {
 };
 
 String.prototype.format = function (params) {
-  const formattedText = text.replace(/@(\w+)/g, (match, key) => {
+  const formattedText = this.replace(/@(\w+)/g, (match, key) => {
     if (params.hasOwnProperty(key)) {
       return params[key];
     } else {
@@ -446,7 +448,6 @@ async function delete_message(id) {
 }
 
 function response_success(id) {
-  // 获取所有类名为 "system" 的元素
   var elements = document.querySelectorAll(`[data-id="${id}"]`);
   elements.forEach(function (element) {
     if (element.getAttribute('data-role') === 'system') {
