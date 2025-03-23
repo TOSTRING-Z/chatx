@@ -65,10 +65,11 @@ class ReActAgent {
                 }
                 else {
                     count++;
-                    continue;
+                    await utils.delay(2);
                 }
             } catch (_error) {
                 count++;
+                await utils.delay(2);
             }
         }
         return null;
@@ -85,11 +86,11 @@ class ReActAgent {
         else
             data.llm_parmas = utils.getConfig("llm_parmas");
         data.memory_length = utils.getConfig("memory_length");
-        if (data.prompt_template) {
+        if (data.prompt_template)
             data.prompt_format = data.prompt_template.format(data);
-        } else {
+        else
             data.prompt_format = data.prompt
-        }
+        
         data.output = await this.retry(chatBase, data);
         if (!data.output) {
             return null;

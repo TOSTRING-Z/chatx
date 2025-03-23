@@ -10,6 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.7.0",
+    "@modelcontextprotocol/server-puppeteer": "^0.6.2",
+    "@modelcontextprotocol/server-sequential-thinking": "^0.6.2",
     "axios": "^1.7.9",
     "axios-cookiejar-support": "^5.0.5",
     "cheerio": "^1.0.0",

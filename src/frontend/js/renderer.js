@@ -131,19 +131,19 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-user_message = `<div class="relative space-y-2 space-x-2" data-role="user" data-id="@id">
+user_message = `<div class="relative space-y-2 space-x-2" data-role="user" data-id="">
   <div class="flex flex-row-reverse w-full">
     <div class="menu-container">
       <img class="menu user" src="img/user.svg" alt="User Avatar">
     </div>
-    <div class="message">@message</div>
+    <div class="message"></div>
   </div>
 </div>`;
 
-system_message = `<div class="relative space-y-2 space-x-2" data-role="system" data-id="@id">
+system_message = `<div class="relative space-y-2 space-x-2" data-role="system" data-id="">
   <div class="absolute">
     <div class="menu-container">
-      <img class="menu system" src="img/@icon.svg" alt="System Avatar">
+      <img class="menu system" src="" alt="System Avatar">
       <div class="menu-item">
         <svg viewBox="0 0 1024 1024">
             <path fill="#ffffff"
@@ -176,7 +176,7 @@ system_message = `<div class="relative space-y-2 space-x-2" data-role="system" d
     <div class="dot"></div>
     <button class="btn">停止生成</button>
   </div>
-  <div class="message" data-content="">@message</div>
+  <div class="message" data-content=""></div>
 </div>`
 
 function showLog(log) {
@@ -372,22 +372,51 @@ marked.use({ renderer, extensions: [think] });
 
 var typesetMath = function () { };
 
-// 扩展 String 原型
-String.prototype.format = function (params, role) {
+function createElement(html) {
   const parser = new DOMParser();
-  const doc = parser.parseFromString(this, 'text/html');
+  const doc = parser.parseFromString(html, 'text/html');
   const newElement = doc.body.firstChild;
+  return newElement;
+}
+
+// 扩展 String 原型
+String.prototype.formatMessage = function (params, role) {
+  const newElement = createElement(this);
   let message = newElement.getElementsByClassName("message")[0]
-  if(params.hasOwnProperty("icon")) {
+  if (params.hasOwnProperty("icon")) {
     let menu = newElement.getElementsByClassName("menu")[0]
-    menu.src = menu.src.replace("@icon",params["icon"])
+    menu.src = `img/${params["icon"]}.svg`;
   }
-  if(role === "system") {
+  if (role === "system") {
     message.innerHTML = marked.parse(params["message"])
   } else {
-    message.innerText = params["message"]
+    if (!!params.image_url) {
+      let img = createElement(`<img class="size-48 shadow-xl rounded-md mb-1" src="${params.image_url}">`);
+      let text = createElement(`<div></div>`);
+      text.innerText = params["message"]||"";
+      message.appendChild(img);
+      message.appendChild(text);
+    }
+    else {
+      message.innerText = params["message"]||""
+    }
   }
   newElement.dataset.id = params["id"]
+  return newElement;
+};
+
+String.prototype.format = function (params) {
+  const formattedText = text.replace(/@(\w+)/g, (match, key) => {
+    if (params.hasOwnProperty(key)) {
+      return params[key];
+    } else {
+      console.warn(`Key "${key}" not found in params`);
+      return match;
+    }
+  });
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(formattedText, 'text/html');
+  const newElement = doc.body.firstChild;
   return newElement;
 };
 
@@ -455,15 +484,15 @@ window.electronAPI.handleQuery(async (data) => {
   data.prompt = system_prompt.value;
   if (data.img_url) {
     data.query = input.value;
-    user_content = `![user](${data.img_url})\n${data.query}`;
   } else {
     user_content = data.query;
   }
-  messages.appendChild(user_message.format({
+  messages.appendChild(user_message.formatMessage({
     "id": data.id,
-    "message": user_content
+    "message": user_content,
+    "image_url": data.img_url,
   }, "user"));
-  let system_message_cursor = system_message.format({
+  let system_message_cursor = system_message.formatMessage({
     "icon": getIcon(data.is_plugin),
     "id": data.id,
     "message": ""
@@ -526,20 +555,22 @@ window.electronAPI.handleLoad((data) => {
   messages.innerHTML = null;
   for (i in data) {
     let text;
+    let image_url;
     if (data[i].role == "user") {
       if (typeof data[i].content !== 'string') {
         text = data[i].content.find(c => c.type == "text").text;
-        text = `![user](${data[i].content.find(c => c.type == "image_url").image_url.url})${text}`;
+        image_url = data[i].content.find(c => c.type == "image_url").image_url.url;
       } else {
         text = data[i].content;
       }
-      messages.appendChild(user_message.format({
+      messages.appendChild(user_message.formatMessage({
         "id": data[i].id,
-        "message": text
+        "message": text,
+        "image_url": image_url,
       }, "user"));
     } else {
       text = data[i].content;
-      const messageSystem = system_message.format({
+      const messageSystem = system_message.formatMessage({
         "icon": getIcon(false),
         "id": data[i].id,
         "message": text

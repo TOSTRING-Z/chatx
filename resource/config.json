@@ -23,6 +23,19 @@
   },
   "short_cut": "CommandOrControl+Shift+Space",
   "models": {
+    "ollama": {
+      "api_url": "http://localhost:11434/api/chat",
+      "versions": [
+        "llama3.2",
+        {
+          "version": "gemma3:12b",
+          "vision": [
+            "image"
+          ],
+          "ollama": true
+        }
+      ]
+    },
     "aliyuncs": {
       "api_url": "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions",
       "api_key": "",
