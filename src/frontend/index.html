@@ -76,8 +76,6 @@
       background: #f9f9f9;
       overflow-x: hidden;
       overflow-y: auto;
-      word-wrap: break-word;
-      word-break: break-word;
       display: flex;
       flex-direction: column;
       gap: 0.4rem;
@@ -85,6 +83,9 @@
       top: 9px;
       /* text-align: justify; */
       max-width: calc(100%);
+      word-wrap: break-word;
+      word-break: break-all;
+      white-space: pre-wrap;
     }
 
     [data-role="user"] .message {
