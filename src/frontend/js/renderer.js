@@ -44,6 +44,16 @@ global = {
   }
 };
 
+messages.addEventListener('mouseenter', () => {
+  global.scroll_top.info = false;
+  global.scroll_top.data = false;
+});
+
+messages.addEventListener('mouseleave', () => {
+  global.scroll_top.info = true;
+  global.scroll_top.data = true;
+});
+
 function getFileName(path) {
   return path.split('/').pop().split('\\').pop();
 }
@@ -131,19 +141,19 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 
-user_message = `<div class="relative space-y-2 space-x-2" data-role="user" data-id="@id">
+user_message = `<div class="relative space-y-2 space-x-2" data-role="user" data-id="">
   <div class="flex flex-row-reverse w-full">
     <div class="menu-container">
       <img class="menu user" src="img/user.svg" alt="User Avatar">
     </div>
-    <div class="message">@message</div>
+    <div class="message"></div>
   </div>
 </div>`;
 
-system_message = `<div class="relative space-y-2 space-x-2" data-role="system" data-id="@id">
+system_message = `<div class="relative space-y-2 space-x-2" data-role="system" data-id="">
   <div class="absolute">
     <div class="menu-container">
-      <img class="menu system" src="img/@icon.svg" alt="System Avatar">
+      <img class="menu system" src="" alt="System Avatar">
       <div class="menu-item">
         <svg viewBox="0 0 1024 1024">
             <path fill="#ffffff"
@@ -176,7 +186,7 @@ system_message = `<div class="relative space-y-2 space-x-2" data-role="system" d
     <div class="dot"></div>
     <button class="btn">停止生成</button>
   </div>
-  <div class="message" data-content="">@message</div>
+  <div class="message" data-content=""></div>
 </div>`
 
 function showLog(log) {
@@ -208,7 +218,8 @@ function InfoAdd(info) {
   if (info.content) {
     info_content.dataset.content += info.content;
     info_content.innerHTML = marked.parse(info_content.dataset.content);
-    info_content.scrollTop = info_content.scrollHeight;
+    if (global.scroll_top.info)
+      info_content.scrollTop = info_content.scrollHeight;
   }
 }
 
@@ -218,6 +229,8 @@ function streamMessageAdd(chunk) {
   if (chunk.content) {
     message_content.dataset.content += chunk.content;
     message_content.innerHTML = marked.parse(message_content.dataset.content);
+    if (global.scroll_top.data)
+      top_div.scrollTop = top_div.scrollHeight;
   }
   if (chunk.end) {
     message_content.innerHTML = marked.parse(message_content.dataset.content);
@@ -225,6 +238,8 @@ function streamMessageAdd(chunk) {
     thinking.remove();
     typesetMath();
     menuEvent(chunk.id, message_content.dataset.content);
+    if (global.scroll_top.data)
+      top_div.scrollTop = top_div.scrollHeight;
   }
 }
 
@@ -331,10 +346,10 @@ const renderer = {
     return formatCode(token);
   },
   html(token) {
-    return formatText(token);
+    return formatCode(token);
   },
   link(token) {
-    return formatText(token);
+    return formatCode(token);
   },
   text(token) {
     if (token.hasOwnProperty("tokens")) {
@@ -343,8 +358,7 @@ const renderer = {
       const highlightResult = marked_input.parse(token.text);
       return `<div class="think">${highlightResult}</div>`;
     } else {
-      token.type = "plaintext";
-      return formatText(token);
+      return token.raw;
     }
   },
 }
@@ -354,8 +368,11 @@ const think = {
   level: 'block',
   start(src) { return src.match(/<think>/)?.index; },
   tokenizer(src, tokens) {
-    const rule = /^<think>([\s\S]*?)<\/think>/;
-    const match = rule.exec(src);
+    const rule0 = /^<think>([\s\S]*?)<\/think>/;
+    const match0 = rule0.exec(src);
+    const rule1 = /^<think>([\s\S]*)/;
+    const match1 = rule1.exec(src);
+    const match = match0 || match1
     if (match) {
       const token = {
         type: "text",
@@ -372,22 +389,48 @@ marked.use({ renderer, extensions: [think] });
 
 var typesetMath = function () { };
 
-// 扩展 String 原型
-String.prototype.format = function (params, role) {
+function createElement(html) {
   const parser = new DOMParser();
-  const doc = parser.parseFromString(this, 'text/html');
+  const doc = parser.parseFromString(html, 'text/html');
   const newElement = doc.body.firstChild;
+  return newElement;
+}
+
+// 扩展 String 原型
+String.prototype.formatMessage = function (params, role) {
+  const newElement = createElement(this);
   let message = newElement.getElementsByClassName("message")[0]
-  if(params.hasOwnProperty("icon")) {
+  if (params.hasOwnProperty("icon")) {
     let menu = newElement.getElementsByClassName("menu")[0]
-    menu.src = menu.src.replace("@icon",params["icon"])
+    menu.src = `img/${params["icon"]}.svg`;
   }
-  if(role === "system") {
+  if (role === "system") {
     message.innerHTML = marked.parse(params["message"])
   } else {
-    message.innerText = params["message"]
+    if (!!params.image_url) {
+      let img = createElement(`<img class="size-48 shadow-xl rounded-md mb-1" src="${params.image_url}">`);
+      message.appendChild(img);
+    }
+    let text = createElement(`<div class="text"></div>`);
+    text.innerText = params["message"] || "";
+    message.appendChild(text);
   }
   newElement.dataset.id = params["id"]
+  return newElement;
+};
+
+String.prototype.format = function (params) {
+  const formattedText = this.replace(/@(\w+)/g, (match, key) => {
+    if (params.hasOwnProperty(key)) {
+      return params[key];
+    } else {
+      console.warn(`Key "${key}" not found in params`);
+      return match;
+    }
+  });
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(formattedText, 'text/html');
+  const newElement = doc.body.firstChild;
   return newElement;
 };
 
@@ -417,7 +460,6 @@ async function delete_message(id) {
 }
 
 function response_success(id) {
-  // 获取所有类名为 "system" 的元素
   var elements = document.querySelectorAll(`[data-id="${id}"]`);
   elements.forEach(function (element) {
     if (element.getAttribute('data-role') === 'system') {
@@ -455,15 +497,15 @@ window.electronAPI.handleQuery(async (data) => {
   data.prompt = system_prompt.value;
   if (data.img_url) {
     data.query = input.value;
-    user_content = `![user](${data.img_url})\n${data.query}`;
   } else {
     user_content = data.query;
   }
-  messages.appendChild(user_message.format({
+  messages.appendChild(user_message.formatMessage({
     "id": data.id,
-    "message": user_content
+    "message": user_content,
+    "image_url": data.img_url,
   }, "user"));
-  let system_message_cursor = system_message.format({
+  let system_message_cursor = system_message.formatMessage({
     "icon": getIcon(data.is_plugin),
     "id": data.id,
     "message": ""
@@ -526,20 +568,22 @@ window.electronAPI.handleLoad((data) => {
   messages.innerHTML = null;
   for (i in data) {
     let text;
+    let image_url;
     if (data[i].role == "user") {
       if (typeof data[i].content !== 'string') {
         text = data[i].content.find(c => c.type == "text").text;
-        text = `![user](${data[i].content.find(c => c.type == "image_url").image_url.url})${text}`;
+        image_url = data[i].content.find(c => c.type == "image_url").image_url.url;
       } else {
         text = data[i].content;
       }
-      messages.appendChild(user_message.format({
+      messages.appendChild(user_message.formatMessage({
         "id": data[i].id,
-        "message": text
+        "message": text,
+        "image_url": image_url,
       }, "user"));
     } else {
       text = data[i].content;
-      const messageSystem = system_message.format({
+      const messageSystem = system_message.formatMessage({
         "icon": getIcon(false),
         "id": data[i].id,
         "message": text

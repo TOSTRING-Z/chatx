@@ -74,35 +74,48 @@ _- 由于版本快速迭代，建议自己编译以体验最新功能. -_
 
 [插件页面: resource/plugins](resource/plugins)
 
-> 配置大模型示例
+> 配置大模型示例 (`添加ollama支持`)
 
 config.json
 
 ```json
 "models": {
-    "deepseek": {
-      "api_url": "https://api.deepseek.com/chat/completions",
-      "api_key": "你的key",
-      "versions": [
-        "deepseek-coder",
-        "deepseek-chat",
-        "deepseek-reasoner"
-      ]
-    },
-    "chatglm": {
-      "api_url": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
-      "api_key": "你的key",
-      "versions": [
-        "glm-4-flash",
-        "glm-4-long",
-        {
-          "version": "glm-4v-flash",
-          "vision": [
-            "image"
-          ]
-        }
-      ]
-    },
+  "ollama": {
+    "api_url": "http://localhost:11434/api/chat",
+    "versions": [
+      "llama3.2",
+      {
+        "version": "gemma3:12b",
+        "vision": [
+          "image"
+        ],
+        "ollama": true
+      }
+    ]
+  },
+  "deepseek": {
+    "api_url": "https://api.deepseek.com/chat/completions",
+    "api_key": "你的key",
+    "versions": [
+      "deepseek-coder",
+      "deepseek-chat",
+      "deepseek-reasoner"
+    ]
+  },
+  "chatglm": {
+    "api_url": "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+    "api_key": "你的key",
+    "versions": [
+      "glm-4-flash",
+      "glm-4-long",
+      {
+        "version": "glm-4v-flash",
+        "vision": [
+          "image"
+        ]
+      }
+    ]
+  },
 }
 ```
 
@@ -122,17 +135,18 @@ config.json
 
 config.json
 
-```json
+````json
 "info_template": "阶段: {step}, 调用: {model}, 版本: {version}, 输出: \n\n```\n{output_format}\n```\n\n",
-```
+````
 
-*- 可用配置字段如下: -*
+_- 可用配置字段如下: -_
+
 - step: 当前阶段号
-- model: 当前使用模型(model/plugin)
+- model: 当前使用模型(model/plugins)
 - version: 当前使用模型版本
 - query: 初始输入
 - input: 当前阶段格式化输入
-- img_url: 初始图片base64输入
+- img_url: 初始图片 base64 输入
 - output: 当前阶段原始输出
 - outputs: 历史原始输出
 - output_format: 当前阶段格式化输出
@@ -140,11 +154,10 @@ config.json
 - prompt: 初始系统提示词
 - prompt_format: 当前阶段格式化系统提示词
 - llm_parmas: 大模型请求参数
-- api_url: 大模型请求URL
-- api_key: 大模型请求KEY
+- api_url: 大模型请求 URL
+- api_key: 大模型请求 KEY
 
-*- 格式化：细节见链式调用 -*
-
+_- 格式化：细节见链式调用 -_
 
 > 配置记忆长度示例
 
@@ -266,7 +279,7 @@ config.json
     "prompt": "请思考后回答"
   },
   {
-    "model": "plugin",
+    "model": "plugins",
     "version": "提取思维链",
     "output_template": "<think>{output}</think>\n- query:{query}\n- answer:"
   },
@@ -281,12 +294,12 @@ config.json
 ]
 ```
 
-- 文件对话 
+- 文件对话
 
 ```json
 "chain_call": [
   {
-    "model": "plugin",
+    "model": "plugins",
     "version": "文件读取"
   },
   {
@@ -304,7 +317,7 @@ config.json
 ]
 ```
 
-*- 可配置字段 -*
+_- 可配置字段 -_
 
 该配置参数默认为原始字段属性值(见配置信息框模版)
 
@@ -315,19 +328,18 @@ config.json
 - prompt_template: 系统提示格式化模版
 - end: 链式调用结束标志
 
-*- 可配置显示组件 -*
+_- 可配置显示组件 -_
 
 - system-prompt: 系统提示输入框
-  - 对应可用字段为: 
+  - 对应可用字段为:
     - prompt: 初始系统提示词
 - file-reader: 文件读取按钮
-  - 对应可用字段为: 
+  - 对应可用字段为:
     - file-reader: 读取文件的路径
 
-*- 更多案例见： -*
+_- 更多案例见： -_
 
 [resource/chain_calls](resource/chain_calls)
-
 
 ## 具体咨询请联系：
 

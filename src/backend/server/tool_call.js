@@ -614,7 +614,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
             data.output_format = `工具未被执行,输出结果如下:
 {
     "observation": "",
-    "error": "JSON.parse反序列化发生错误,${error.message}"
+    "error": "您的回复不是一个纯JSON文本,或者JSON格式存在问题: ${error.message}"
 }`;
             pushMessage("user", data.output_format, data.id);
             this.environment_update(data);

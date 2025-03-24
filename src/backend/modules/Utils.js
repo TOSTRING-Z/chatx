@@ -11,6 +11,10 @@ class Utils {
         return Utils.instance;
     }
 
+    delay(seconds) {
+        return new Promise(resolve => setTimeout(resolve, seconds * 1000));
+    }
+
     getConfig(key = null) {
         const configFilePath = path.join(os.homedir(), '.chatx', 'config.json');
         const data = fs.readFileSync(configFilePath, 'utf-8');
@@ -23,8 +27,8 @@ class Utils {
             for (const key in models) {
                 if (Object.hasOwnProperty.call(models, key)) {
                     const versions = models[key].versions;
-                    versions.forEach((version,i) => {
-                        version = typeof version == "string"? {version: version}: version;
+                    versions.forEach((version, i) => {
+                        version = typeof version == "string" ? { version: version } : version;
                         config["models"][key].versions[i] = version;
                     });
                 }

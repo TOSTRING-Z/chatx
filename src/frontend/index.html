@@ -76,16 +76,21 @@
       background: #f9f9f9;
       overflow-x: hidden;
       overflow-y: auto;
+      word-wrap: break-word;
+      word-break: break-all;
       display: flex;
       flex-direction: column;
       gap: 0.4rem;
       position: relative;
       top: 9px;
-      /* text-align: justify; */
       max-width: calc(100%);
-      word-wrap: break-word;
-      word-break: break-all;
+    }
+
+    .text {
       white-space: pre-wrap;
+      background-color: #eff6ff;
+      padding: 1rem;
+      border-radius: 10px;
     }
 
     [data-role="user"] .message {
@@ -264,7 +269,7 @@
       left: -0.1rem;
       width: 2.2rem;
       height: 2.2rem;
-      background: white;
+      background: #f9f9f9;
       border-radius: 100%;
       /* border: 1px solid red; */
       z-index: 2;

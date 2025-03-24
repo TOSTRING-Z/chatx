@@ -7,7 +7,7 @@
             "input_template": "请将用户的任务拆分为3个阶段\n - 输出json的键名必须为'stageN'\n - 输出仅保留我提供的键名\n - 输出必须为如下json格式:\n {{\"stage1\":\"阶段1需要...\",\"stage2\":\"阶段2需要...\",\"stage3\":\"阶段3需要...\"}}\n- 输出只保留json部分字符串,不输出任何解释和描述。\n{input}"
         },
         {
-            "model": "plugin",
+            "model": "plugins",
             "version": "json_parse",
             "output_template": "{outputs[1].stage1}"
         },

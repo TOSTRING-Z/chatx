@@ -52,7 +52,9 @@ class ConfigsWindow extends Window {
 
         // 保存配置
         ipcMain.handle('set-config', (_, config) => {
-            return utils.setConfig(config);
+            let state = utils.setConfig(config);
+            this.windowManager.mainWindow.updateVersionsSubmenu()
+            return state;
         });
     }
 

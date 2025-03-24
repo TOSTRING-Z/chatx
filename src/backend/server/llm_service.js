@@ -1,5 +1,5 @@
 const fs = require("fs");
-const { streamSse } = require("./stream.js")
+const { streamJSON, streamSse } = require("./stream.js")
 
 let messages = [];
 let stop_ids = [];
@@ -91,6 +91,24 @@ function format_messages(messages_list, params) {
         })
     }
 
+    // ollama
+    if (!!params?.ollama) {
+        messages_list = messages_list.map(message => {
+            if (typeof message.content !== "string") {
+                const image = message.content[1].image_url.url.split(",")[1];
+                const content = message.content[0].text;
+                const role = message.role;
+                return {
+                    role: role,
+                    content: content,
+                    images: [image]
+                }
+            } else {
+                return message;
+            }
+        })
+    }
+
     return messages_list;
 
 }
@@ -130,7 +148,6 @@ async function chatBase(data) {
                 }
             ];
         }
-        message_input = { "role": "user", "content": content, "id": data.id };
         if (!!data.system_prompt) {
             messages_list = [{ "role": "system", "content": data.system_prompt, "id": data.id }]
             messages_list = messages_list.concat(messages.slice(messages.length - data.memory_length * 2, messages.length))
@@ -138,7 +155,10 @@ async function chatBase(data) {
         else {
             messages_list = messages.slice(messages.length - data.memory_length * 2, messages.length)
         }
-        messages_list.push(message_input)
+        if (data?.push_message) {
+            message_input = { "role": "user", "content": content, "id": data.id };
+            messages_list.push(message_input)
+        }
         let message_output = { role: 'assistant', content: '', id: data.id }
 
         let body = {
@@ -147,36 +167,48 @@ async function chatBase(data) {
             ...data.llm_parmas
         }
 
+        let headers = {
+            "Content-Type": "application/json"
+        }
+        if (!!data?.api_key) {
+            headers["Authorization"] = `Bearer ${data.api_key}`;
+        }
+
         if (body?.stream && data.end) {
             try {
                 const resp = await fetch(new URL(data.api_url), {
                     method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "Authorization": `Bearer ${data.api_key}`,
-                    },
+                    headers: headers,
                     body: JSON.stringify(body),
                 });
-
-                const stream_res = streamSse(resp);
+                const contentType = resp.headers.get('content-type');
+                let stream_res;
+                if (contentType && contentType.includes('text/event-stream'))
+                    stream_res = streamSse(resp);
+                else
+                    stream_res = streamJSON(resp);
 
                 for await (const chunk of stream_res) {
                     if (stop_ids.includes(data.id)) {
                         break;
                     }
                     // 处理流式输出
-                    let delta = chunk.choices[0]?.delta;
                     content = "";
-                    if (chunk.choices.length > 0 && delta) {
-                        if (delta.hasOwnProperty("reasoning_content") && delta.reasoning_content)
-                            content = delta.reasoning_content;
-                        else if (delta.hasOwnProperty("content") && delta.content) {
-                            content = delta.content;
-                            message_output.content += content;
+                    if (chunk.hasOwnProperty("message")) {
+                        content = chunk.message.content;
+                        message_output.content += content;
+                    } else {
+                        let delta = chunk.choices[0]?.delta;
+                        if (chunk.choices.length > 0 && delta) {
+                            if (delta.hasOwnProperty("reasoning_content") && delta.reasoning_content)
+                                content = delta.reasoning_content;
+                            else if (delta.hasOwnProperty("content") && delta.content) {
+                                content = delta.content;
+                                message_output.content += content;
+                            }
                         }
-                        // 发送数据块到渲染进程
-                        data.event.sender.send('stream-data', { id: data.id, content: content, end: false });
                     }
+                    data.event.sender.send('stream-data', { id: data.id, content: content, end: false });
                 }
                 if (data?.stream_push != false) {
                     messages.push(message_input);
@@ -193,19 +225,20 @@ async function chatBase(data) {
             body.stream = false;
             const resp = await fetch(new URL(data.api_url), {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${data.api_key}`,
-                },
+                headers: headers,
                 body: JSON.stringify(body),
             });
             const respJson = await resp.json();
-            data.output = respJson.choices[0].message.content;
+            if (respJson.hasOwnProperty("message")) {
+                data.output = respJson.message.content;
+            } else {
+                data.output = respJson.choices[0].message.content;
+            }
             message_output.content = data.output;
             if (data.end) {
                 messages.push(message_input);
                 messages.push(message_output);
-                data.event.sender.send('stream-data', { id: data.id, content: data.output_template.format(data), end: true });
+                data.event.sender.send('stream-data', { id: data.id, content: data.output_template ? data.output_template.format(data) : data.output, end: true });
                 return true;
             } else {
                 if (data?.push_message) {
@@ -213,10 +246,10 @@ async function chatBase(data) {
                     messages.push(message_output);
                 }
             }
-            return respJson.choices[0].message.content;
+            return data.output;
         }
     } catch (error) {
-        data.event.sender.send('info-data', { id: data.id, content: `响应错误: ${error.message}\n` });
+        data.event.sender.send('info-data', { id: data.id, content: `响应错误: ${error.message}\n\n` });
         return null;
     }
 }

@@ -6,7 +6,7 @@
             "prompt": "请思考后回答"
         },
         {
-            "model": "plugin",
+            "model": "plugins",
             "version": "get_think",
             "output_template": "<think>{output}</think>\n- query:{query}\n- answer:"
         },
