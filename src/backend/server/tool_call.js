@@ -1,6 +1,6 @@
 const { ReActAgent, State } = require("./agent.js")
 const { utils, inner } = require('../modules/globals')
-const { pushMessage } = require('../server/llm_service');
+const { pushMessage, getMessages } = require('../server/llm_service');
 const { MCPClient } = require('./mcp_client.js')
 const os = require('os');
 
@@ -63,6 +63,11 @@ class ToolCall extends ReActAgent {
                     arguments: args
                 });
                 return result;
+            },
+            "memory_summary": async ({ context }) => {
+                this.environment_details.memory_len = 0;
+                console.log(`记忆总结: ${context}`);
+                return "记忆总结完成,当前记忆长度置零!"
             },
             "ask_followup_question": async ({ question, options }) => {
                 this.state = State.PAUSE;
@@ -302,6 +307,21 @@ file_pattern: 用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 
     }}
 }}
 
+## memory_summary
+描述: 由于你的记忆长度(过去的对话记录)是有限的,你需要在合适的时候对过去的记忆进行总结,防止后续对话中关键信息的遗漏.
+参数:
+- context: 总结过去对话的关键信息,需要尽可能的详细.
+使用:
+{{
+    "content": "[思考过程]"
+    "tool": "memory_summary",
+    "params": {{
+        {{
+            "context": "[value]"
+        }}
+    }}
+}}
+
 ## ask_followup_question
 描述: 向用户提问以收集完成任务所需的额外信息.在遇到歧义,需要澄清或需要更多细节以有效进行时,应使用此工具.它通过允许与用户的直接沟通,实现互动式问题解决.明智地使用此工具,以在收集必要信息和避免过多来回交流之间保持平衡.
 参数:
@@ -486,7 +506,8 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 3. 请记住,您拥有广泛的能力,可以访问各种工具,这些工具可以根据需要以强大和巧妙的方式使用.在调用工具之前,请在[思考过程]内进行分析.首先,分析"环境详细信息"中提供的当前模式,从而选择使用工具的范围.
 4. 接下来,当您处于"执行模式"时,请逐一检查相关工具的每个必需参数,并确定用户是否直接提供了足够的信息来推断值.在决定是否可以推断参数时,请仔细考虑所有上下文,以查看其是否支持特定值.如果所有必需的参数都存在或可以合理推断,请继续使用工具.但是,如果缺少某个必需参数的值,请不要调用工具(即使使用占位符填充缺失的参数),而是使用 ask_followup_question 工具要求用户提供缺失的参数.如果未提供可选参数的信息,请不要要求更多信息.
 5. 当您处于"自动模式"时,也应当逐一检查相关工具的每个必需参数,如果缺少某个必需参数的值,请自动规划解决方案并执行,请记住,在此模式下严禁调用与用户交互的工具.
-4. 一旦完成用户的任务,您必须使用 terminate 工具向用户展示任务结果.
+6. 一旦完成用户的任务,您必须使用 terminate 工具向用户展示任务结果.
+7. 你的记忆长度是有限的,请根据当前记忆的长度和最大记忆的长度判断是否需要对以往的记忆进行总结,这样可以防止后续任务中对重要记忆的遗忘.
 
 ====
 
@@ -500,6 +521,8 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 
 # 环境详细信息部分解释
 
+- 当前记忆长度: 当前记忆的长度
+- 最大记忆长度: 最大记忆的长度
 - 临时文件夹: 所有执行过程中的临时文件存放位置
 - 当前时间: 当前系统时间
 - 当前模式: 当前所处模式(自动模式 / 执行模式 / 规划模式)
@@ -509,6 +532,8 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
         this.mcp_prompt;
 
         this.env = `环境详细信息:
+- 当前记忆长度: {memory_len}
+- 最大记忆长度: {max_memory_len}
 - 临时文件夹: {tmpdir}
 - 当前时间: {time}
 - 当前模式: {mode}`
@@ -520,6 +545,8 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
         }
 
         this.environment_details = {
+            memory_len: 0,
+            max_memory_len: utils.getConfig("memory_length"),
             mode: this.modes.ACT,
             tmpdir: os.tmpdir(),
             time: utils.formatDate()
@@ -528,6 +555,8 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 
     environment_update(data) {
         this.environment_details.time = utils.formatDate();
+        this.environment_details.max_memory_len = utils.getConfig("memory_length");
+        this.environment_details.memory_len += 1;
         pushMessage("user", this.env.format(this.environment_details), data.id);
     }
 
@@ -547,6 +576,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
         }
         data.push_message = false
         if (this.state == State.IDLE) {
+            this.environment_details.memory_len += 1;
             pushMessage("user", data.query, data.id);
             this.environment_update(data);
             this.state = State.RUNNING;
@@ -556,6 +586,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
         if (tool_info?.tool) {
             const { observation, output } = await this.act(tool_info);
             data.output_format = observation;
+            this.environment_details.memory_len += 1;
             pushMessage("user", data.output_format, data.id);
             this.environment_update(data);
             if (this.state == State.PAUSE) {
@@ -580,6 +611,10 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 
     async act({ tool, params }) {
         try {
+            if (!this.tools.hasOwnProperty(tool)) {
+                const observation = `工具 ${tool} 不存在!请检查是否调用工具名出错或使用了错误的MCP服务调用格式.`;
+                return { observation, output: null };
+            }
             const will_tool = this.tools[tool];
             const output = await will_tool(params);
             const observation = `工具 ${tool} 已经被执行,输出结果如下:
@@ -600,6 +635,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     }
 
     get_tool(content, data) {
+        this.environment_details.memory_len += 1;
         pushMessage("assistant", content, data.id);
         try {
             const tool_info = JSON.parse(content);
@@ -616,6 +652,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     "observation": "",
     "error": "您的回复不是一个纯JSON文本,或者JSON格式存在问题: ${error.message}"
 }`;
+            this.environment_details.memory_len += 1;
             pushMessage("user", data.output_format, data.id);
             this.environment_update(data);
             data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });

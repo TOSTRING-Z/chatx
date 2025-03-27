@@ -8,6 +8,10 @@ function getStopIds() {
     return stop_ids;
 }
 
+function getMessages() {
+    return messages;
+}
+
 function pushMessage(role, content, id) {
     let message = { role: role, content: content, id: id };
     messages.push(message);
@@ -43,9 +47,9 @@ function deleteMessage(id) {
     // 使用 filter 方法删除 id 为 0 的对象
     try {
         messages = messages.filter(message => message.id !== id);
-        return true;
+        return messages.length;
     } catch (error) {
-        return false;
+        return 0;
     }
 }
 
@@ -255,5 +259,5 @@ async function chatBase(data) {
 }
 
 module.exports = {
-    chatBase, clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds, pushMessage
+    chatBase, clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds, pushMessage, getMessages
 };

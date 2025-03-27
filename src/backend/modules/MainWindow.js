@@ -218,9 +218,12 @@ class MainWindow extends Window {
 
 
         ipcMain.handle("delete-message", async (_event, id) => {
-            let statu = await deleteMessage(id);
-            console.log(`delect id: ${id}, statu: ${statu}`)
-            return statu;
+            let message_len = await deleteMessage(id);
+            if (message_len <= utils.getConfig("memory_length")) {
+                this.tool_call.environment_details.memory_len = 0;
+            }
+            console.log(`delect id: ${id}, length: ${message_len}`)
+            return message_len;
         })
 
         ipcMain.on("stream-message-stop", (_event, id) => {
@@ -475,6 +478,7 @@ class MainWindow extends Window {
                         label: '重置对话',
                         click: () => {
                             clearMessages();
+                            this.tool_call.environment_details.memory_len = 0;
                             this.window.webContents.send('clear')
                         }
                     },
