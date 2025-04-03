@@ -117,19 +117,37 @@ document.addEventListener("DOMContentLoaded", function () {
   autoResizeTextarea(input);
 
   // 监听输入事件，自动调整高度
-  [input, system_prompt].forEach(textarea => {
-    textarea.addEventListener("input", function () {
-      autoResizeTextarea(textarea);
-      if (this.value.trim() !== '') {
-        submit.classList.add('success');
-      } else {
-        submit.classList.remove('success');
-      }
-    });
-    textarea.addEventListener("click", function () {
-      autoResizeTextarea(textarea);
-    })
+  input.addEventListener("input", function () {
+    autoResizeTextarea(input);
+    if (this.value.trim() !== '') {
+      submit.classList.add('success');
+    } else {
+      submit.classList.remove('success');
+    }
   });
+  input.addEventListener("change", function () {
+    autoResizeTextarea(input);
+    if (this.value.trim() !== '') {
+      submit.classList.add('success');
+    } else {
+      submit.classList.remove('success');
+    }
+  });
+  input.addEventListener("click", function () {
+    autoResizeTextarea(input);
+    if (this.value.trim() !== '') {
+      submit.classList.add('success');
+    } else {
+      submit.classList.remove('success');
+    }
+  })
+
+  system_prompt.addEventListener("input", function () {
+    autoResizeTextarea(input);
+  });
+  system_prompt.addEventListener("click", function () {
+    autoResizeTextarea(input);
+  })
 
   top_div.addEventListener("click", function () {
     init_size();

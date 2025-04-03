@@ -83,9 +83,6 @@ class ReActAgent {
         });
         if (data.params?.hasOwnProperty("llm_parmas"))
             data.llm_parmas = data.params.llm_parmas;
-        else
-            data.llm_parmas = utils.getConfig("llm_parmas");
-        data.memory_length = utils.getConfig("memory_length");
         if (data.prompt_template)
             data.prompt_format = data.prompt_template.format(data);
         else
