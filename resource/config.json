@@ -6,7 +6,7 @@
   "info_template": "阶段: {step}, 调用: {model}, 版本: {version}, 输出: \n\n```\n{output_format}\n```\n\n",
   "default": {
     "model": "deepseek",
-    "version": "deepseek-coder",
+    "version": "deepseek-chat",
     "plugin": "百度翻译[旧]"
   },
   "llm_parmas": {
@@ -17,8 +17,8 @@
   "func_status": {
     "clip": true,
     "react": true,
-    "markdown": false,
-    "math": false,
+    "markdown": true,
+    "math": true,
     "text": false
   },
   "short_cut": "CommandOrControl+Shift+Space",

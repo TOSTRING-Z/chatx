@@ -162,7 +162,7 @@ class MainWindow extends Window {
                 prompt_template: null,
                 params: null,
                 llm_parmas: utils.getConfig("llm_parmas"),
-                memory_length: utils.getConfig("memory_length"),
+                memory_length: utils.getConfig("memory_length"),   
                 push_message: true,
                 end: null,
                 event: _event
@@ -481,8 +481,7 @@ class MainWindow extends Window {
                         label: '重置对话',
                         click: () => {
                             clearMessages();
-                            this.tool_call.environment_details.memory_len = 0;
-                            this.tool_call.environment_details.memory_list.length = 0;
+                            this.tool_call.clear_memory();
                             this.window.webContents.send('clear')
                         }
                     },

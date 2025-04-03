@@ -121,16 +121,6 @@
       border-radius: 15px 5px 5px 15px;
     }
 
-    #system_prompt {
-      width: -webkit-fill-available;
-      margin: 2px;
-      padding: 0.4rem;
-      border: none;
-      resize: none;
-      background-color: #eeeeee;
-      outline: none;
-    }
-
     #input {
       flex-grow: 1;
       margin: 2px;
@@ -252,90 +242,13 @@
       padding: 2px;
     }
 
-    /* delete-message */
-
     .menu-container {
       position: absolute;
       width: 2rem;
       height: 2rem;
       display: flex;
       align-items: start;
-    }
-
-    .menu-container::before {
-      content: '';
-      position: absolute;
-      top: 0.1rem;
-      left: -0.1rem;
-      width: 2.2rem;
-      height: 2.2rem;
-      background: #f9f9f9;
-      border-radius: 100%;
-      /* border: 1px solid red; */
-      z-index: 2;
-    }
-
-    .menu {
-      position: absolute;
-      width: 2rem;
-      height: 2rem;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      color: white;
-      font-size: 24px;
-      z-index: 2;
-      transition: transform 0.3s;
-      font-size: small;
-      top: 3px;
-    }
-
-    .menu.system {
-      background-color: transparent;
-    }
-
-    .menu.user {
-      background-color: transparent;
-    }
-
-    .menu-item {
-      width: 2rem;
-      height: 2rem;
-      border-radius: 0 100% 0 0;
-      background: #3a9ced;
-      position: absolute;
-      opacity: 0;
-      transition: opacity 0.3s;
-      pointer-events: none;
       z-index: 1;
-      align-items: center;
-      justify-content: center;
-      display: flex;
-      left: 1.25rem;
-      bottom: 1.25rem;
-    }
-
-    .menu-item>svg {
-      height: 10px;
-      transform:
-        rotate(-45deg) translate(-0.1rem) rotate(0deg);
-    }
-
-    .menu-container.active .menu-item {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    .menu-container .menu-item:nth-child(2) {
-      transform:
-        rotate(0deg) translate(0, 0.3rem) rotate(0deg)
-    }
-
-    .menu-container .menu-item:nth-child(3) {
-      transform:
-        rotate(0deg) translate(0, 2.5rem) rotate(90deg)
     }
 
     /* 调用信息 */
@@ -494,20 +407,12 @@
     }
 
     /* plan/act */
-    #auto {
+    #act {
       padding: 3px 7px;
       border-radius: 5px 0 0 5px;
       border: 1px solid #00000021;
       border-right: none;
 
-    }
-
-    #act {
-      border-radius: 0;
-      padding: 3px 7px;
-      border: 1px solid #00000021;
-      border-left: 1px solid #f1f1f1;
-      border-right: 1px solid #f1f1f1;
     }
 
     #plan {
@@ -516,7 +421,6 @@
       border: 1px solid #00000021;
       border-left: none;
     }
-
 
     #act_plan>.active {
       background: #129124;
@@ -538,14 +442,12 @@
       <!-- Input area -->
       <div class="p-4 fixed bottom-0 left-0 right-0" id="bottom_div">
         <div class="bg-gradient"></div>
-        <div class="flex mb-2 flex-col items-start">
-          <div class="flex-row items-start" id="act_plan" hidden>
-            <div class="btn" id="auto">自动模式</div>
+        <div class="flex mb-2 flex-row items-center justify-between">
+          <div class="flex flex-row" id="act_plan">
             <div class="btn active" id="act">执行模式</div>
             <div class="btn" id="plan">规划模式</div>
           </div>
-          <div class="btn ellipsis-div" id="file_reader" hidden>选择文件</div>
-          <textarea class="w-full p-2 rounded-md mb-2" rows="1" placeholder="系统提示" id="system_prompt" hidden></textarea>
+          <div class="btn ellipsis-div" id="file_reader">选择文件</div>
         </div>
         <div class="flex relative">
           <textarea class="flex-grow p-2 rounded-l-lg" rows="1" placeholder="用户提示/文字" id="input"></textarea>
