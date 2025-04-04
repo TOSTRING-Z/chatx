@@ -65,7 +65,7 @@ function loadPlugin(name) {
     try {
         console.log(`loading plugin: ${name}`);
         const plugin = require(pluginPath);
-        return {func: plugin.main, extre: plugin?.extre};
+        return {func: plugin.main, extra: plugin?.extra};
     } catch (error) {
         return () => `插件: ${name}, 路径: ${pluginPath}, 加载插件发生错误, 请检查路径和依赖！`
     }
@@ -310,11 +310,11 @@ function getVersionsSubmenu() {
     let versions;
     if (global.is_plugin) {
         versions = inner_model[inner_model_name.plugin]["versions"];
-        windowManager.mainWindow.webContents.send("extre_load", inner_model_obj[global.model][versions[0]].extre)
+        windowManager.mainWindow.webContents.send("extra_load", inner_model_obj[global.model][versions[0]].extra)
     }
     else {
         versions = getConfig("models")[global.model]["versions"];
-        windowManager.mainWindow.webContents.send("extre_load", getConfig("extre"))
+        windowManager.mainWindow.webContents.send("extra_load", getConfig("extra"))
     }
     console.log(versions);
     return versions.map((_version) => {
@@ -327,7 +327,7 @@ function getVersionsSubmenu() {
             click: () => {
                 global.version = _version
                 if (global.is_plugin) {
-                    windowManager.mainWindow.webContents.send("extre_load", inner_model_obj[global.model][_version].extre)
+                    windowManager.mainWindow.webContents.send("extra_load", inner_model_obj[global.model][_version].extra)
                 }
             },
             label: _version
@@ -368,8 +368,8 @@ function loadPrompt() {
 function setChain(chain) {
     let config = getConfig();
     config.chain_call = JSON.parse(chain).chain_call;
-    config.extre = JSON.parse(chain).extre;
-    windowManager.mainWindow.webContents.send("extre_load", config.extre);
+    config.extra = JSON.parse(chain).extra;
+    windowManager.mainWindow.webContents.send("extra_load", config.extra);
     setConfig(config);
 }
 
@@ -568,7 +568,7 @@ function createMainWindow() {
     windowManager.mainWindow.webContents.on('did-finish-load', () => {
         setPrompt(getConfig("prompt"));
         initFuncItems();
-        windowManager.mainWindow.webContents.send("extre_load", getConfig("extre"))
+        windowManager.mainWindow.webContents.send("extra_load", getConfig("extra"))
     });
 
     // 绑定窗口关闭事件

@@ -326,18 +326,18 @@ class MainWindow extends Window {
     }
 
     getReactEvent(e) {
-        const extreReact = () => {
+        const extraReact = () => {
             if (global.is_plugin) {
                 console.log(inner.model_obj)
                 console.log(global)
-                this.window.webContents.send("extre_load", e.statu && inner.model_obj[global.model][global.version.version].extre)
+                this.window.webContents.send("extra_load", e.statu && inner.model_obj[global.model][global.version.version].extra)
             }
             else {
-                this.window.webContents.send("extre_load", e.statu ? [{ "type": "act-plan" }] : utils.getConfig("extre"));
+                this.window.webContents.send("extra_load", e.statu ? [{ "type": "act-plan" }] : utils.getConfig("extra"));
             }
         }
-        extreReact();
-        return extreReact;
+        extraReact();
+        return extraReact;
     }
 
     initFuncItems() {
@@ -390,7 +390,7 @@ class MainWindow extends Window {
                 click: () => {
                     global.version = _version
                     if (global.is_plugin) {
-                        this.window.webContents.send("extre_load", version?.extre)
+                        this.window.webContents.send("extra_load", version?.extra)
                     }
                 },
                 label: _version
@@ -607,8 +607,8 @@ class MainWindow extends Window {
     setChain(chain) {
         let config = utils.getConfig();
         config.chain_call = JSON.parse(chain).chain_call;
-        config.extre = JSON.parse(chain).extre;
-        this.window.webContents.send("extre_load", config.extre);
+        config.extra = JSON.parse(chain).extra;
+        this.window.webContents.send("extra_load", config.extra);
         this.funcItems.react.statu = false;
         this.funcItems.react.event();
         this.updateVersionsSubmenu();

@@ -229,7 +229,7 @@ config.json
     "end": true
   }
 ],
-"extre": [
+"extra": [
   {
     "type": "system-prompt"
   }
@@ -245,7 +245,7 @@ config.json
     "end": true
   }
 ],
-"extre": [
+"extra": [
   {
     "type": "system-prompt"
   }
@@ -262,7 +262,7 @@ config.json
     "end": true
   }
 ],
-"extre": [
+"extra": [
   {
     "type": "system-prompt"
   }
@@ -287,7 +287,7 @@ config.json
     "end": true
   }
 ],
-"extre": [
+"extra": [
   {
     "type": "system-prompt"
   }
@@ -307,7 +307,7 @@ config.json
     "end": true
   }
 ],
-"extre": [
+"extra": [
   {
     "type": "system-prompt"
   },

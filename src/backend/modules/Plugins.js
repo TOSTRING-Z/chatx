@@ -16,10 +16,10 @@ class Plugins {
             const plugin = require(pluginPath);
             let item;
             if (pluginParams) {
-                item = { func: plugin.main(pluginParams), extre: params?.extre, getPrompt: plugin?.getPrompt };
+                item = { func: plugin.main(pluginParams), extra: params?.extra, getPrompt: plugin?.getPrompt };
             }
             else {
-                item = { func: plugin.main, extre: params?.extre, getPrompt: plugin?.getPrompt };
+                item = { func: plugin.main, extra: params?.extra, getPrompt: plugin?.getPrompt };
             }
             return item;
         } catch (error) {

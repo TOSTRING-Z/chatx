@@ -175,7 +175,7 @@
     },
     "file_load": {
       "path": "{resourcesPath}/resource/plugins/script/file_load.js",
-      "extre": [
+      "extra": [
         {
           "type": "file-reader"
         }
@@ -212,7 +212,8 @@
         "version": "claude-3-5-sonnet-20241022",
         "api_url": "",
         "api_key": ""
-      }
+      },
+      "enabled": false
     }
   },
   "mcp_server": {
@@ -231,6 +232,7 @@
   ],
   "tool_call": {
     "memory_length": 20,
+    "extra_prompt": "{resourcesPath}/extra_prompt.md",
     "llm_parmas": {
       "max_tokens": 4000,
       "temperature": 0.5,
@@ -240,7 +242,7 @@
       }
     }
   },
-  "extre": [
+  "extra": [
     {
       "type": "system-prompt"
     }

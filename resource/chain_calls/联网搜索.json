@@ -20,7 +20,7 @@
             "end": true
         }
     ],
-    "extre": [
+    "extra": [
         {
             "type": "system-prompt"
         }

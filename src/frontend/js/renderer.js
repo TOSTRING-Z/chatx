@@ -562,7 +562,7 @@ window.electronAPI.handleQuery(async (data) => {
   window.electronAPI.queryText(data);
 })
 
-window.electronAPI.handleExtreLoad((data) => {
+window.electronAPI.handleExtraLoad((data) => {
   system_prompt.style.display = "none";
   file_reader.style.display = "none";
   act_plan.style.display = "none";
