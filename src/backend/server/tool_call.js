@@ -6,88 +6,86 @@ const os = require('os');
 
 class ToolCall extends ReActAgent {
 
-    async init_mcp() {
-        try {
-            const configs = utils.getConfig("mcp_server");
-            Object.keys(configs).forEach(name => {
-                const config = configs[name];
-                this.mcp_client.setTransport({ name, config });
+  async init_mcp() {
+    try {
+      const configs = utils.getConfig("mcp_server");
+      Object.keys(configs).forEach(name => {
+        const config = configs[name];
+        this.mcp_client.setTransport({ name, config });
 
-            });
-            await this.mcp_client.connectMCP();
-            return this.mcp_client.mcp_prompt;
-        } catch (error) {
-            return "MCP server不可用!"
+      });
+      await this.mcp_client.connectMCP();
+      return this.mcp_client.mcp_prompt;
+    } catch (error) {
+      return "MCP server不可用!"
+    }
+  }
+
+  constructor() {
+    super();
+    this.mcp_client = new MCPClient();
+    this.tools = {
+      "python_execute": async ({ code }) => {
+        const func = inner.model_obj.plugins["python_execute"].func
+        return await func({ input: code })
+      },
+      "llm_ocr": async ({ img_path, prompt }) => {
+        const func = inner.model_obj.plugins["llm_ocr"].func
+        return await func({ input: img_path, prompt })
+      },
+      "write_to_file": async ({ file_path, context }) => {
+        const func = inner.model_obj.plugins["write_to_file"].func
+        return await func({ input: context, file_path })
+      },
+      "file_load": async ({ file_path }) => {
+        const func = inner.model_obj.plugins["file_load"].func
+        return await func({ file_path })
+      },
+      "list_files": async ({ path, recursive }) => {
+        const func = inner.model_obj.plugins["list_files"].func
+        return await func({ input: path, recursive: recursive })
+      },
+      "search_files": async ({ path, regex, file_pattern }) => {
+        const func = inner.model_obj.plugins["search_files"].func
+        return await func({ input: path, regex, file_pattern })
+      },
+      "replace_in_file": async ({ file_path, diff }) => {
+        const func = inner.model_obj.plugins["replace_in_file"].func
+        return await func({ input: diff, file_path })
+      },
+      "baidu_search": async ({ context }) => {
+        const func = inner.model_obj.plugins["baidu_search"].func
+        return await func({ input: context })
+      },
+      "mcp_server": async ({ name, args }) => {
+        const params = {
+          name: name,
+          arguments: args
         }
+        const result = await this.mcp_client.client.callTool(params, undefined, {
+          timeout: 600000
+        });
+        return result;
+      },
+      "ask_followup_question": async ({ question, options }) => {
+        this.state = State.PAUSE;
+        return { question, options }
+      },
+      "waiting_feedback": () => {
+        this.state = State.PAUSE;
+        return { question: "任务暂停,等待用户反馈...", options: ["允许", "拒绝"] }
+      },
+      "plan_mode_response": async ({ response, options }) => {
+        this.state = State.PAUSE;
+        return { question: response, options }
+      },
+      "terminate": ({ final_answer }) => {
+        this.state = State.FINAL;
+        return final_answer;
+      },
     }
 
-    constructor() {
-        super();
-        this.mcp_client = new MCPClient();
-        this.tools = {
-            "python_execute": async ({ code }) => {
-                const func = inner.model_obj.plugins["python_execute"].func
-                return await func({ input: code })
-            },
-            "llm_ocr": async ({ img_path, prompt }) => {
-                const func = inner.model_obj.plugins["llm_ocr"].func
-                return await func({ input: img_path, prompt })
-            },
-            "write_to_file": async ({ file_path, context }) => {
-                const func = inner.model_obj.plugins["write_to_file"].func
-                return await func({ input: context, file_path })
-            },
-            "file_load": async ({ file_path }) => {
-                const func = inner.model_obj.plugins["file_load"].func
-                return await func({ file_path })
-            },
-            "list_files": async ({ path, recursive }) => {
-                const func = inner.model_obj.plugins["list_files"].func
-                return await func({ input: path, recursive: recursive })
-            },
-            "search_files": async ({ path, regex, file_pattern }) => {
-                const func = inner.model_obj.plugins["search_files"].func
-                return await func({ input: path, regex, file_pattern })
-            },
-            "replace_in_file": async ({ file_path, diff }) => {
-                const func = inner.model_obj.plugins["replace_in_file"].func
-                return await func({ input: diff, file_path })
-            },
-            "baidu_search": async ({ context }) => {
-                const func = inner.model_obj.plugins["baidu_search"].func
-                return await func({ input: context })
-            },
-            "mcp_server": async ({ name, args }) => {
-                const result = await this.mcp_client.client.callTool({
-                    name: name,
-                    arguments: args
-                });
-                return result;
-            },
-            "memory_summary": async ({ context }) => {
-                this.environment_details.memory_len = 0;
-                console.log(`记忆总结: ${context}`);
-                return "记忆总结完成,当前记忆长度置零!"
-            },
-            "ask_followup_question": async ({ question, options }) => {
-                this.state = State.PAUSE;
-                return { question, options }
-            },
-            "waiting_feedback": () => {
-                this.state = State.PAUSE;
-                return { question: "任务暂停,等待用户反馈...", options: ["允许", "拒绝"] }
-            },
-            "plan_mode_response": async ({ response, options }) => {
-                this.state = State.PAUSE;
-                return { question: response, options }
-            },
-            "terminate": ({ final_answer }) => {
-                this.state = State.FINAL;
-                return final_answer;
-            },
-        }
-
-        this.task_prompt = `你是ChatX,一个全能的人工智能助手,旨在解决用户提出的任何任务.你可以使用各种工具来高效地完成复杂的请求.
+    this.task_prompt = `你是ChatX,一个全能的人工智能助手,旨在解决用户提出的任何任务.你可以使用各种工具来高效地完成复杂的请求.
 
 你应该严格遵循先思考,后行动,然后观察的整个流程:
 1. 思考: 描述你为了解决这个问题的思考过程或者计划
@@ -107,7 +105,7 @@ class ToolCall extends ReActAgent {
 工具使用采用纯JSON内容的格式,禁止使用任何Markdown代码块标记(包括\`\`\`json或\`\`\`),不要包含额外解释,注释或非JSON文本.以下是结构示例:
 
 {{
-    "content": "[思考过程]"
+    "thinking": "[思考过程]"
     "tool": "[工具名]",
     "params": {{
         {{
@@ -120,7 +118,7 @@ class ToolCall extends ReActAgent {
 
 ## 示例:
 {{
-    "content": "读取src/main.js"
+    "thinking": "读取src/main.js"
     "tool": "file_load",
     "params": {{
         {{
@@ -141,7 +139,7 @@ class ToolCall extends ReActAgent {
 - code: 可执行的python代码片段(python代码输出要求保留空格换行,并严格要求代码格式,不正确的缩进和换行会导致代码执行失败)
 使用:
 {{
-    "content": "[思考过程]"
+    "thinking": "[思考过程]"
     "tool": "python_execute",
     "params": {{
         {{
@@ -157,7 +155,7 @@ img_path: 图片路径(本地路径,在线或者base64格式的输入前应先�
 prompt: 提示词
 使用:
 {{
-    "content": "[思考过程]"
+    "thinking": "[思考过程]"
     "tool": "llm_ocr",
     "params": {{
         {{
@@ -173,7 +171,7 @@ prompt: 提示词
 - context: 需要搜索的文字,要求是用户输入中提取的关键字或总结的搜索内容
 使用:
 {{
-    "content": "[思考过程]"
+    "thinking": "[思考过程]"
     "tool": "baidu_search",
     "params": {{
         {{
@@ -189,7 +187,7 @@ prompt: 提示词
 - context: 需要保存的内容
 使用:
 {{
-    "content": "[思考过程]"
+    "thinking": "[思考过程]"
     "tool": "write_to_file",
     "params": {{
         {{
@@ -205,7 +203,7 @@ prompt: 提示词
 - file_path: 需要读取的文件路径
 使用:
 {{
-    "content": "[思考过程]"
+    "thinking": "[思考过程]"
     "tool": "file_load",
     "params": {{
         {{
@@ -221,7 +219,7 @@ prompt: 提示词
 - recursive: true或false,如果recursive为true,它将递归列出所有文件和目录.如果递归为false或未提供,则它将仅列出顶级内容.
 使用:
 {{
-    "content": "[思考过程]"
+    "thinking": "[思考过程]"
     "tool": "list_files",
     "params": {{
         {{
@@ -239,7 +237,7 @@ regex: 要搜索的正则表达式模式.使用 NodeJs 正则表达式语法.
 file_pattern: 用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 文件).
 使用:
 {{
-    "content": "[思考过程]"
+    "thinking": "[思考过程]"
     "tool": "search_files",
     "params": {{
         {{
@@ -278,7 +276,7 @@ file_pattern: 用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 
             * 删除代码: 使用空的 REPLACE 部分
 使用:
 {{
-    "content": "[思考过程]"
+    "thinking": "[思考过程]"
     "tool": "replace_in_file",
     "params": {{
         {{
@@ -295,7 +293,7 @@ file_pattern: 用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 
 - args: 请求MCP服务参数.
 使用:
 {{
-    "content": "[思考过程]"
+    "thinking": "[思考过程]"
     "tool": "mcp_server",
     "params": {{
         "name": "[value]",
@@ -307,21 +305,6 @@ file_pattern: 用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 
     }}
 }}
 
-## memory_summary
-描述: 由于你的记忆长度(过去的对话记录)是有限的,你需要在合适的时候对过去的记忆进行总结,防止后续对话中关键信息的遗漏.
-参数:
-- context: 总结过去对话的关键信息,需要尽可能的详细.
-使用:
-{{
-    "content": "[思考过程]"
-    "tool": "memory_summary",
-    "params": {{
-        {{
-            "context": "[value]"
-        }}
-    }}
-}}
-
 ## ask_followup_question
 描述: 向用户提问以收集完成任务所需的额外信息.在遇到歧义,需要澄清或需要更多细节以有效进行时,应使用此工具.它通过允许与用户的直接沟通,实现互动式问题解决.明智地使用此工具,以在收集必要信息和避免过多来回交流之间保持平衡.
 参数:
@@ -329,7 +312,7 @@ file_pattern: 用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 
 - options: (可选)为用户提供选择的2-5个选项.每个选项应为描述可能答案的字符串.您并非总是需要提供选项,但在许多情况下,这可以帮助用户避免手动输入回复.
 使用:
 {{
-    "content": "[思考过程]"
+    "thinking": "[思考过程]"
     "tool": "ask_followup_question",
     "params": {{
         {{
@@ -347,7 +330,7 @@ file_pattern: 用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 
 描述: 当需要执行文件操作,系统指令时调用该任务等待用户允许或拒绝
 使用示例:
 {{
-    "content": "[思考过程]"
+    "thinking": "[思考过程]"
     "tool": "waiting_feedback",
     "params": {{}}
 }}
@@ -359,7 +342,7 @@ response: 在思考过程之后提供给用户的响应.
 options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项应描述一个可能的选择或规划过程中的前进路径.这可以帮助引导讨论,并让用户更容易提供关键决策的输入.您可能并不总是需要提供选项,但在许多情况下,这可以节省用户手动输入响应的时间.不要提供切换模式的选项,因为不需要您引导用户操作.
 使用:
 {{
-    "content": "[思考过程]"
+    "thinking": "[思考过程]"
     "tool": "plan_mode_response",
     "params": {{
         {{
@@ -379,7 +362,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 - final_answer: 总结并给出最终回答(MarkDown格式)
 使用:
 {{
-    "content": "[思考过程]"
+    "thinking": "[思考过程]"
     "tool": "terminate",
     "params": {{
         "final_answer": "[value]"
@@ -391,6 +374,25 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 # 可用MCP服务
 
 {mcp_prompt}
+
+====
+
+# 读取文件
+
+您有三种工具可用于处理文件: **file_load**, **search_files** 和 **python_execute**.
+
+### 重要注意事项
+- 在读取文件前都应该首先检查文件大小,而不是直接读取整个文件:
+
+## 工作流提示
+1. 检查文件大小,包括文件行数,列数和占用存储大小.
+2. 若判断是小文件(1000行/列,500kb以下),则可以调用 **file_load** 工具读取整个文件.
+3. 若判断文件过大,则应该调用 **python_execute**或**search_files** 工具分析文件结构.
+4. 分析文件可以先少量读取部分文件内容,然后在使用功能读取其中相关的关键部分.
+5. 例如读取一个很长的python代码文件,应该先读取其中的类名,方法名和一些全局变量.最后再根据需求部分读取文件,逐步分析理解整个代码逻辑.
+6. 例如读取pdf,应该先读取其中章节目录.最后再根据需求部分读取对应章节内容.
+
+应根据实际情况制定合理的文件读取流程.
 
 ====
 
@@ -463,7 +465,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 
 # 自动模式 vs. 执行模式 vs. 规划模式
 
-环境详细信息将指定当前模式.有三种模式: 
+环境详细信息将指定当前模式,有三种模式: 
 
 **自动模式**: 在此模式下,您不能使用 plan_mode_response, waiting_feedback 和 ask_followup_question 工具.
 
@@ -495,6 +497,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 - 使用 replace_in_file 工具时,如果使用多个 SEARCH/REPLACE 块,请按它们在文件中出现的顺序列出它们.例如,如果需要对第10行和第50行进行更改,首先包括第10行的 SEARCH/REPLACE 块,然后是第50行的 SEARCH/REPLACE 块.
 - 每次使用工具后,等待用户的响应以确认工具使用的成功至关重要.例如,如果要求创建一个待办事项应用程序,您将创建一个文件,等待用户确认其成功创建,然后根据需要创建另一个文件,等待用户确认其成功创建,依此类推.
 - [思考过程]应使用规范的markdown格式.
+
 ====
 
 # 目标
@@ -507,7 +510,14 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 4. 接下来,当您处于"执行模式"时,请逐一检查相关工具的每个必需参数,并确定用户是否直接提供了足够的信息来推断值.在决定是否可以推断参数时,请仔细考虑所有上下文,以查看其是否支持特定值.如果所有必需的参数都存在或可以合理推断,请继续使用工具.但是,如果缺少某个必需参数的值,请不要调用工具(即使使用占位符填充缺失的参数),而是使用 ask_followup_question 工具要求用户提供缺失的参数.如果未提供可选参数的信息,请不要要求更多信息.
 5. 当您处于"自动模式"时,也应当逐一检查相关工具的每个必需参数,如果缺少某个必需参数的值,请自动规划解决方案并执行,请记住,在此模式下严禁调用与用户交互的工具.
 6. 一旦完成用户的任务,您必须使用 terminate 工具向用户展示任务结果.
-7. 你的记忆长度是有限的,请根据当前记忆的长度和最大记忆的长度判断是否需要对以往的记忆进行总结,这样可以防止后续任务中对重要记忆的遗忘.
+
+===
+
+# 环境详细信息部分解释
+- 临时文件夹: 所有执行过程中的临时文件存放位置
+- 当前时间: 当前系统时间
+- 当前模式: 当前所处模式(自动模式 / 执行模式 / 规划模式)
+
 
 ====
 
@@ -519,147 +529,145 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 
 ===
 
-# 环境详细信息部分解释
+# 记忆列表
 
-- 当前记忆长度: 当前记忆的长度
-- 最大记忆长度: 最大记忆的长度
-- 临时文件夹: 所有执行过程中的临时文件存放位置
-- 当前时间: 当前系统时间
-- 当前模式: 当前所处模式(自动模式 / 执行模式 / 规划模式)
-`
+过去的思考内容列表
 
-        this.system_prompt;
-        this.mcp_prompt;
+- 记忆列表: {memory_list}
 
-        this.env = `环境详细信息:
-- 当前记忆长度: {memory_len}
-- 最大记忆长度: {max_memory_len}
+====`
+
+    this.system_prompt;
+    this.mcp_prompt;
+    this.memory_list = [];
+
+    this.env = `环境详细信息:
 - 临时文件夹: {tmpdir}
 - 当前时间: {time}
 - 当前模式: {mode}`
 
-        this.modes = {
-            AUTO: '自动模式',
-            ACT: '执行模式',
-            PLAN: '规划模式',
-        }
-
-        this.environment_details = {
-            memory_len: 0,
-            max_memory_len: utils.getConfig("memory_length"),
-            mode: this.modes.ACT,
-            tmpdir: os.tmpdir(),
-            time: utils.formatDate()
-        }
+    this.modes = {
+      AUTO: '自动模式',
+      ACT: '执行模式',
+      PLAN: '规划模式',
     }
 
-    environment_update(data) {
-        this.environment_details.time = utils.formatDate();
-        this.environment_details.max_memory_len = utils.getConfig("memory_length");
-        this.environment_details.memory_len += 1;
-        pushMessage("user", this.env.format(this.environment_details), data.id);
+    this.environment_details = {
+      mode: this.modes.ACT,
+      tmpdir: os.tmpdir(),
+      time: utils.formatDate()
     }
+  }
 
-    plan_act_mode(mode) {
-        this.environment_details.mode = mode;
+  clear_memory() {
+    this.memory_list.length = 0
+  }
+
+  environment_update(data) {
+    this.environment_details.time = utils.formatDate();
+    this.environment_details.max_memory_len = data.memory_length;
+    pushMessage("user", this.env.format(this.environment_details), data.id);
+  }
+
+  plan_act_mode(mode) {
+    this.environment_details.mode = mode;
+  }
+
+  async step(data) {
+    this.system_prompt = this.task_prompt.format({
+      type: os.type(),
+      platform: os.platform(),
+      arch: os.arch(),
+      mcp_prompt: this.mcp_prompt,
+      memory_list: JSON.stringify(this.memory_list.slice(this.memory_list.length - utils.getConfig("memory_length") * 10,this.memory_list.length), null, 4)
+    })
+    if (!this.mcp_prompt) {
+      this.mcp_prompt = await this.init_mcp();
     }
-
-    async step(data) {
-        if (!this.mcp_prompt) {
-            this.mcp_prompt = await this.init_mcp();
-            this.system_prompt = this.task_prompt.format({
-                type: os.type(),
-                platform: os.platform(),
-                arch: os.arch(),
-                mcp_prompt: this.mcp_prompt
-            })
-        }
-        data.push_message = false
-        if (this.state == State.IDLE) {
-            this.environment_details.memory_len += 1;
-            pushMessage("user", data.query, data.id);
-            this.environment_update(data);
-            this.state = State.RUNNING;
-        }
-        const tool_info = await this.task(data);
-        // 判断是否调用工具
-        if (tool_info?.tool) {
-            const { observation, output } = await this.act(tool_info);
-            data.output_format = observation;
-            this.environment_details.memory_len += 1;
-            pushMessage("user", data.output_format, data.id);
-            this.environment_update(data);
-            if (this.state == State.PAUSE) {
-                const { question, options } = output;
-                data.event.sender.send('stream-data', { id: data.id, content: question, end: true });
-                return options;
-            }
-            if (this.state == State.FINAL) {
-                data.event.sender.send('stream-data', { id: data.id, content: output, end: true });
-            } else {
-                data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
-            }
-        }
+    data.push_message = false
+    if (this.state == State.IDLE) {
+      pushMessage("user", data.query, data.id);
+      this.memory_list.push({user: data.query})
+      this.environment_update(data);
+      this.state = State.RUNNING;
     }
-
-    async task(data) {
-        data.prompt = this.system_prompt;
-        data.output_format = await this.llmCall(data);
+    const tool_info = await this.task(data);
+    // 判断是否调用工具
+    if (tool_info?.tool) {
+      const { observation, output } = await this.act(tool_info);
+      data.output_format = observation;
+      pushMessage("user", data.output_format, data.id);
+      this.environment_update(data);
+      if (this.state == State.PAUSE) {
+        const { question, options } = output;
+        data.event.sender.send('stream-data', { id: data.id, content: question, end: true });
+        return options;
+      }
+      if (this.state == State.FINAL) {
+        data.event.sender.send('stream-data', { id: data.id, content: output, end: true });
+      } else {
         data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
-        return this.get_tool(data.output_format, data);
+      }
     }
+  }
 
-    async act({ tool, params }) {
-        try {
-            if (!this.tools.hasOwnProperty(tool)) {
-                const observation = `工具 ${tool} 不存在!请检查是否调用工具名出错或使用了错误的MCP服务调用格式.`;
-                return { observation, output: null };
-            }
-            const will_tool = this.tools[tool];
-            const output = await will_tool(params);
-            const observation = `工具 ${tool} 已经被执行,输出结果如下:
+  async task(data) {
+    data.prompt = this.system_prompt;
+    data.output_format = await this.llmCall(data);
+    data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
+    return this.get_tool(data.output_format, data);
+  }
+
+  async act({ tool, params }) {
+    try {
+      if (!this.tools.hasOwnProperty(tool)) {
+        const observation = `工具 ${tool} 不存在!请检查是否调用工具名出错或使用了错误的MCP服务调用格式.`;
+        return { observation, output: null };
+      }
+      const will_tool = this.tools[tool];
+      const output = await will_tool(params);
+      const observation = `工具 ${tool} 已经被执行,输出结果如下:
 {
     "observation": ${JSON.stringify(output, null, 4)},
     "error": ""
 }`;
-            return { observation, output };
-        } catch (error) {
-            console.log(error);
-            const observation = `工具 ${tool} 已经被执行,输出结果如下:
+      return { observation, output };
+    } catch (error) {
+      console.log(error);
+      const observation = `工具 ${tool} 已经被执行,输出结果如下:
 {
     "observation": "",
     "error": "${error.message}"
 }`;
-            return { observation, output: error.message };
-        }
+      return { observation, output: error.message };
     }
+  }
 
-    get_tool(content, data) {
-        this.environment_details.memory_len += 1;
-        pushMessage("assistant", content, data.id);
-        try {
-            const tool_info = JSON.parse(content);
-            if (!!tool_info?.content) {
-                data.event.sender.send('stream-data', { id: data.id, content: `${tool_info.content}\n\n---\n\n` });
-            }
-            if (!!tool_info?.tool) {
-                return tool_info;
-            }
-        } catch (error) {
-            console.log(error);
-            data.output_format = `工具未被执行,输出结果如下:
+  get_tool(content, data) {
+    pushMessage("assistant", content, data.id);
+    try {
+      const tool_info = JSON.parse(content);
+      if (!!tool_info?.thinking) {
+        this.memory_list.push({assistant: tool_info.thinking});
+        data.event.sender.send('stream-data', { id: data.id, content: `${tool_info.thinking}\n\n---\n\n` });
+      }
+      if (!!tool_info?.tool) {
+        return tool_info;
+      }
+    } catch (error) {
+      console.log(error);
+      data.output_format = `工具未被执行,输出结果如下:
 {
     "observation": "",
     "error": "您的回复不是一个纯JSON文本,或者JSON格式存在问题: ${error.message}"
 }`;
-            this.environment_details.memory_len += 1;
-            pushMessage("user", data.output_format, data.id);
-            this.environment_update(data);
-            data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
-        }
+      pushMessage("user", data.output_format, data.id);
+      this.environment_update(data);
+      data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
     }
+  }
 }
 
 module.exports = {
-    ToolCall
+  ToolCall
 };

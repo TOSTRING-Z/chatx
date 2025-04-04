@@ -154,10 +154,10 @@ async function chatBase(data) {
         }
         if (!!data.system_prompt) {
             messages_list = [{ "role": "system", "content": data.system_prompt, "id": data.id }]
-            messages_list = messages_list.concat(messages.slice(messages.length - parseInt(data.memory_length * 1.5), messages.length))
+            messages_list = messages_list.concat(messages.slice(messages.length - data.memory_length * 2, messages.length))
         }
         else {
-            messages_list = messages.slice(messages.length - parseInt(data.memory_length * 1.5), messages.length)
+            messages_list = messages.slice(messages.length - data.memory_length * 2, messages.length)
         }
         if (data?.push_message) {
             message_input = { "role": "user", "content": content, "id": data.id };

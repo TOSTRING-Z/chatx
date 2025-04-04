@@ -1,5 +1,4 @@
 document.addEventListener("click", (event) => {
-  // 使用Clipboard API进行复制
   if (event.target.classList.contains("copy-btn")) {
     const codeToCopy = decodeURIComponent(event.target.getAttribute('data-code'));
     navigator.clipboard.writeText(codeToCopy).then(() => {
@@ -13,10 +12,8 @@ document.addEventListener("click", (event) => {
 
 });
 
-const system_prompt = document.getElementById("system_prompt");
 const file_reader = document.getElementById("file_reader");
 const act_plan = document.getElementById("act_plan");
-const auto = document.getElementById("auto");
 const act = document.getElementById("act");
 const plan = document.getElementById("plan");
 const pause = document.getElementById("pause");
@@ -36,8 +33,6 @@ const formData = {
 }
 
 global = {
-  math_statu: true,
-  markdown_statu: true,
   scroll_top: {
     info: true,
     data: true,
@@ -60,13 +55,9 @@ function getFileName(path) {
 
 function toggleMode(mode) {
   window.electronAPI.planActMode(mode);
-  auto.classList.remove("active")
   act.classList.remove("active")
   plan.classList.remove("active")
   switch (mode) {
-    case "auto":
-      auto.classList.add("active");
-      break;
     case "act":
       act.classList.add("active");
       break;
@@ -75,10 +66,6 @@ function toggleMode(mode) {
       break;
   }
 }
-
-auto.addEventListener("click", async function (e) {
-  toggleMode("auto");
-})
 
 act.addEventListener("click", async function (e) {
   toggleMode("act");
@@ -107,7 +94,6 @@ function autoResizeTextarea(textarea) {
 }
 
 function init_size() {
-  system_prompt.style.height = input_h + "px";
   input.style.height = input_h + "px";
   top_div.style.height = window.innerHeight - bottom_div.clientHeight + "px";
 }
@@ -117,37 +103,19 @@ document.addEventListener("DOMContentLoaded", function () {
   autoResizeTextarea(input);
 
   // 监听输入事件，自动调整高度
-  input.addEventListener("input", function () {
-    autoResizeTextarea(input);
-    if (this.value.trim() !== '') {
-      submit.classList.add('success');
-    } else {
-      submit.classList.remove('success');
-    }
+  [input].forEach(textarea => {
+    textarea.addEventListener("input", function () {
+      autoResizeTextarea(textarea);
+      if (this.value.trim() !== '') {
+        submit.classList.add('success');
+      } else {
+        submit.classList.remove('success');
+      }
+    });
+    textarea.addEventListener("click", function () {
+      autoResizeTextarea(textarea);
+    })
   });
-  input.addEventListener("change", function () {
-    autoResizeTextarea(input);
-    if (this.value.trim() !== '') {
-      submit.classList.add('success');
-    } else {
-      submit.classList.remove('success');
-    }
-  });
-  input.addEventListener("click", function () {
-    autoResizeTextarea(input);
-    if (this.value.trim() !== '') {
-      submit.classList.add('success');
-    } else {
-      submit.classList.remove('success');
-    }
-  })
-
-  system_prompt.addEventListener("input", function () {
-    autoResizeTextarea(input);
-  });
-  system_prompt.addEventListener("click", function () {
-    autoResizeTextarea(input);
-  })
 
   top_div.addEventListener("click", function () {
     init_size();
@@ -169,29 +137,9 @@ user_message = `<div class="relative space-y-2 space-x-2" data-role="user" data-
 </div>`;
 
 system_message = `<div class="relative space-y-2 space-x-2" data-role="system" data-id="">
-  <div class="absolute">
+  <div class="flex flex-row">
     <div class="menu-container">
       <img class="menu system" src="" alt="System Avatar">
-      <div class="menu-item">
-        <svg viewBox="0 0 1024 1024">
-            <path fill="#ffffff"
-                d="M950.857143 224.304762H799.695238V63.390476H224.304762v160.914286H73.142857v97.523809h87.771429v638.780953h697.295238V321.828571h92.647619v-97.523809zM321.828571 160.914286h385.219048v63.390476H321.828571V160.914286z m438.857143 702.171428H258.438095V321.828571h502.247619v541.257143z">
-            </path>
-            <path fill="#ffffff"
-                d="M355.961905 438.857143h97.523809v326.704762h-97.523809zM570.514286 438.857143h97.523809v326.704762h-97.523809z">
-            </path>
-        </svg>
-      </div>
-      <div class="menu-item">
-        <svg viewBox="0 0 1024 1024">
-          <path fill="#ffffff"
-              d="M725.333333 960H128c-23.466667 0-42.666667-19.2-42.666667-42.666667V277.333333c0-23.466667 19.2-42.666667 42.666667-42.666666h128V106.666667c0-23.466667 19.2-42.666667 42.666667-42.666667h597.333333c23.466667 0 42.666667 19.2 42.666667 42.666667v640c0 23.466667-19.2 42.666667-42.666667 42.666666h-128v128c0 23.466667-19.2 42.666667-42.666667 42.666667zM170.666667 874.666667h512V320H170.666667v554.666667z m170.666666-725.333334v85.333334h384c23.466667 0 42.666667 19.2 42.666667 42.666666v426.666667h85.333333V149.333333H341.333333z">
-          </path>
-          <path fill="#ffffff"
-              d="M298.666667 490.666667h128c23.466667 0 42.666667-19.2 42.666666-42.666667s-19.2-42.666667-42.666666-42.666667h-128c-23.466667 0-42.666667 19.2-42.666667 42.666667s19.2 42.666667 42.666667 42.666667M512 576H298.666667c-23.466667 0-42.666667 19.2-42.666667 42.666667s19.2 42.666667 42.666667 42.666666h213.333333c23.466667 0 42.666667-19.2 42.666667-42.666666s-19.2-42.666667-42.666667-42.666667">
-          </path>
-        </svg>
-      </div>
     </div>
   </div>
   <div class="info hidden">
@@ -452,22 +400,10 @@ String.prototype.format = function (params) {
   return newElement;
 };
 
-window.electronAPI.handleMarkDownFormat((markdown_statu) => {
-  global.markdown_statu = markdown_statu;
-})
-
-window.electronAPI.handleMathFormat((math_statu) => {
-  global.math_statu = math_statu;
-  if (global.math_statu) {
-    typesetMath = function () {
-      MathJax.typesetPromise().catch((err) => console.log(err));
-    }
-    typesetMath();
-  }
-  else {
-    typesetMath = function () { }
-  }
-})
+typesetMath = function () {
+  MathJax.typesetPromise().catch((err) => console.log(err));
+}
+typesetMath();
 
 async function delete_message(id) {
   await window.electronAPI.deleteMessage(id);
@@ -486,8 +422,8 @@ function response_success(id) {
   });
 }
 
-function getIcon(is_plugin) {
-  return is_plugin ? "api" : "ai";
+function getIcon() {
+  return "ai";
 }
 
 window.electronAPI.streamData((chunk) => {
@@ -512,7 +448,7 @@ function addEventStop(messageSystem, id) {
 
 window.electronAPI.handleQuery(async (data) => {
   let user_content;
-  data.prompt = system_prompt.value;
+  data.prompt = "";
   if (data.img_url) {
     data.query = input.value;
   } else {
@@ -524,7 +460,7 @@ window.electronAPI.handleQuery(async (data) => {
     "image_url": data.img_url,
   }, "user"));
   let system_message_cursor = system_message.formatMessage({
-    "icon": getIcon(data.is_plugin),
+    "icon": getIcon(),
     "id": data.id,
     "message": ""
   }, "system")
@@ -532,26 +468,6 @@ window.electronAPI.handleQuery(async (data) => {
   messages.appendChild(system_message_cursor);
   top_div.scrollTop = top_div.scrollHeight;
   window.electronAPI.queryText(data);
-})
-
-window.electronAPI.handleExtreLoad((data) => {
-  system_prompt.style.display = "none";
-  file_reader.style.display = "none";
-  act_plan.style.display = "none";
-  data?.forEach(item => {
-    switch (item.type) {
-      case "system-prompt":
-        system_prompt.style.display = "block";
-        break;
-      case "file-reader":
-        file_reader.style.display = "block";
-        break;
-      case "act-plan":
-        act_plan.style.display = "flex";
-        break;
-    }
-  })
-  init_size();
 })
 
 let option_template = `<div class="btn" data-id="@id">@value</div>`
@@ -569,10 +485,6 @@ window.electronAPI.handleOptions(({ options, id }) => {
     })
     pause.appendChild(option);
   })
-})
-
-window.electronAPI.handlePrompt((prompt) => {
-  system_prompt.value = prompt;
 })
 
 window.electronAPI.handleClear(() => {
@@ -602,7 +514,7 @@ window.electronAPI.handleLoad((data) => {
     } else {
       text = data[i].content;
       const messageSystem = system_message.formatMessage({
-        "icon": getIcon(false),
+        "icon": getIcon(),
         "id": data[i].id,
         "message": text
       }, "system")
@@ -617,7 +529,7 @@ window.electronAPI.handleLoad((data) => {
 
 submit.addEventListener("click", () => {
   formData.query = input.value;
-  formData.prompt = system_prompt.value;
+  formData.prompt = "";
   window.electronAPI.clickSubmit(formData);
   pause.style.display = "none";
   pause.innerHTML = "";

@@ -161,6 +161,8 @@ class MainWindow extends Window {
                 input_template: null,
                 prompt_template: null,
                 params: null,
+                llm_parmas: utils.getConfig("llm_parmas"),
+                memory_length: utils.getConfig("memory_length"),   
                 push_message: true,
                 end: null,
                 event: _event
@@ -175,12 +177,13 @@ class MainWindow extends Window {
                 // ReAct
                 let step = 0;
                 this.tool_call.state = State.IDLE;
+                let tool_call = utils.getConfig("tool_call");
                 while (this.tool_call.state != State.FINAL && this.tool_call.state != State.PAUSE) {
                     if (getStopIds().includes(data.id)) {
                         this.tool_call.state = State.FINAL
                         break;
                     }
-                    data = { ...data, ...defaults, step: ++step };
+                    data = { ...data, ...defaults, ...tool_call, step: ++step };
 
                     let options = await this.tool_call.step(data);
                     if (this.tool_call.state == State.PAUSE) {
@@ -478,7 +481,7 @@ class MainWindow extends Window {
                         label: '重置对话',
                         click: () => {
                             clearMessages();
-                            this.tool_call.environment_details.memory_len = 0;
+                            this.tool_call.clear_memory();
                             this.window.webContents.send('clear')
                         }
                     },
