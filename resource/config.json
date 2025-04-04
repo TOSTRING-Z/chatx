@@ -11,7 +11,7 @@
   },
   "llm_parmas": {
     "max_tokens": 4000,
-    "temperature": 1.5,
+    "temperature": 0.7,
     "stream": true
   },
   "func_status": {
@@ -218,8 +218,15 @@
   "mcp_server": {
     "git": {
       "command": "uvx",
-      "args": ["mcp-server-git"],
+      "args": [
+        "mcp-server-git"
+      ],
       "enabled": true
+    }
+  },
+  "tool_call": {
+    "response_format": {
+      "type": "json_object"
     }
   },
   "chain_call": [
