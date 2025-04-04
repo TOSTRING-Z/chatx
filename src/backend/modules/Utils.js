@@ -56,9 +56,7 @@ class Utils {
         const hours = date.getHours().toString().padStart(2, '0');
         const minutes = date.getMinutes().toString().padStart(2, '0');
         const seconds = date.getSeconds().toString().padStart(2, '0');
-
-        // 返回格式化的日期字符串，例如 "2023-11-08 15:46:42"
-        return `${year}-${month}-${day}_${hours}:${minutes}:${seconds}`;
+        return `${year}-${month}-${day}_${hours}-${minutes}-${seconds}`;
     }
 
     copy(data) {

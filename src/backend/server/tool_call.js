@@ -405,7 +405,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
   environment_update(data) {
     this.environment_details.time = utils.formatDate();
     this.environment_details.max_memory_len = data.memory_length;
-    pushMessage("user", this.env.format(this.environment_details), data.id);
+    pushMessage("user", this.env.format(this.environment_details), data.id, false);
   }
 
   plan_act_mode(mode) {
@@ -436,7 +436,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     if (tool_info?.tool) {
       const { observation, output } = await this.act(tool_info);
       data.output_format = observation;
-      pushMessage("user", data.output_format, data.id);
+      pushMessage("user", data.output_format, data.id, false);
       this.environment_update(data);
       if (this.state == State.PAUSE) {
         const { question, options } = output;
@@ -501,7 +501,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     "observation": "",
     "error": "您的回复不是一个纯JSON文本,或者JSON格式存在问题: ${error.message}"
 }`;
-      pushMessage("user", data.output_format, data.id);
+      pushMessage("user", data.output_format, data.id, false);
       this.environment_update(data);
       data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
     }

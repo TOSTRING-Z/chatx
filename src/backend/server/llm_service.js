@@ -12,8 +12,8 @@ function getMessages() {
     return messages;
 }
 
-function pushMessage(role, content, id) {
-    let message = { role: role, content: content, id: id };
+function pushMessage(role, content, id, show = true, react = true) {
+    let message = { role: role, content: content, id: id, show: show, react: react };
     messages.push(message);
 }
 
@@ -36,7 +36,7 @@ function loadMessages(filePath) {
     try {
         const data = fs.readFileSync(filePath, "utf-8");
         messages = JSON.parse(data);
-        return messages;
+        return messages.filter(message => message.show);
     } catch (error) {
         console.log(error);
         return false;
@@ -67,6 +67,8 @@ function format_messages(messages_list, params) {
     messages_list = messages_list.map(message => {
         let message_copy = copy(message);
         delete message_copy.id;
+        delete message_copy.show;
+        delete message_copy.react;
         return message_copy;
     });
 
@@ -153,17 +155,17 @@ async function chatBase(data) {
             ];
         }
         if (!!data.system_prompt) {
-            messages_list = [{ "role": "system", "content": data.system_prompt, "id": data.id }]
+            messages_list = [{ role: "system", content: data.system_prompt, id: data.id, show: true, react: false }]
             messages_list = messages_list.concat(messages.slice(messages.length - parseInt(data.memory_length * 1.5), messages.length))
         }
         else {
             messages_list = messages.slice(messages.length - parseInt(data.memory_length * 1.5), messages.length)
         }
         if (data?.push_message) {
-            message_input = { "role": "user", "content": content, "id": data.id };
+            message_input = { role: "user", content: content, id: data.id, show: true, react: false };
             messages_list.push(message_input)
         }
-        let message_output = { role: 'assistant', content: '', id: data.id }
+        let message_output = { role: 'assistant', content: '', id: data.id, show: true, react: false }
 
         let body = {
             model: data.version,

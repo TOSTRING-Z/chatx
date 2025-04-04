@@ -162,7 +162,7 @@ class MainWindow extends Window {
                 prompt_template: null,
                 params: null,
                 llm_parmas: utils.getConfig("llm_parmas"),
-                memory_length: utils.getConfig("memory_length"),   
+                memory_length: utils.getConfig("memory_length"),
                 push_message: true,
                 end: null,
                 event: _event
@@ -374,7 +374,7 @@ class MainWindow extends Window {
         if (global.is_plugin) {
             versions = inner.model[inner.model_name.plugins]["versions"];
             console.log(versions)
-            versions = versions.filter(version=>version?.show);
+            versions = versions.filter(version => version?.show);
             console.log(versions)
         }
         else {
@@ -383,7 +383,7 @@ class MainWindow extends Window {
         this.funcItems.react.event();
         console.log(versions);
         return versions.map((version) => {
-            const _version = version?.version||version;
+            const _version = version?.version || version;
             return {
                 type: 'radio',
                 checked: global.version == _version,
@@ -518,6 +518,9 @@ class MainWindow extends Window {
                                 ]
                             }).then(result => {
                                 if (!result.canceled) {
+                                    clearMessages();
+                                    this.tool_call.clear_memory();
+                                    this.window.webContents.send('clear')
                                     let messages = loadMessages(result.filePaths[0])
                                     if (messages.length > 0) {
                                         const maxId = messages.reduce((max, current) => {
@@ -525,7 +528,35 @@ class MainWindow extends Window {
                                         }, messages[0]);
                                         if (!!maxId.id) {
                                             global.id = parseInt(maxId.id);
-                                            this.window.webContents.send('load', messages)
+                                            for (let i in messages) {
+                                                i = parseInt(i);
+                                                if (Object.hasOwnProperty.call(messages, i)) {
+                                                    let { id, role, content, react } = messages[i];
+                                                    if (role == "user") {
+                                                        if (!!react) {
+                                                            this.tool_call.memory_list.push({ user: content })
+                                                        }
+                                                        this.window.webContents.send('user-data', { id: id, content: content });
+                                                    } else {
+                                                        if (!!react) {
+                                                            try {
+                                                                const tool_info = JSON.parse(content);
+                                                                if (!!tool_info?.thinking) {
+                                                                    this.tool_call.memory_list.push({ assistant: tool_info.thinking });
+                                                                    const thinking = `${tool_info.thinking}\n\n---\n\n`
+                                                                    let content_format = content.replaceAll("\`", "'").replaceAll("`", "'");
+                                                                    this.window.webContents.send('info-data', { id: id, content: `阶段 ${i}, 输出: \n\n\`\`\`\n${content_format}\n\`\`\`\n\n` });
+                                                                    this.window.webContents.send('stream-data', { id: id, content: thinking, end: true });
+                                                                }
+                                                            } catch (error) {
+                                                                continue;
+                                                            }
+                                                        } else {
+                                                            this.window.webContents.send('stream-data', { id: id, content: content, end: true });
+                                                        }
+                                                    }
+                                                }
+                                            }
                                             console.log(`加载成功：${result.filePaths[0]}`)
                                         } else {
                                             console.log(`加载失败：${result.filePaths[0]}`)

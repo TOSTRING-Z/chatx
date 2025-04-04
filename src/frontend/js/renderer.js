@@ -226,7 +226,7 @@ function copy_message(raw) {
   });
 }
 
-function InfoAdd(info) {
+function infoAdd(info) {
   const messageSystem = document.querySelectorAll(`[data-id='${info.id}']`)[1];
   const info_content = messageSystem.getElementsByClassName('info-content')[0];
   const info_div = messageSystem.getElementsByClassName('info')[0];
@@ -239,6 +239,30 @@ function InfoAdd(info) {
     if (global.scroll_top.info)
       info_content.scrollTop = info_content.scrollHeight;
   }
+}
+
+function userAdd(data) {
+  if (typeof (data.content) == "string") {
+    messages.appendChild(user_message.formatMessage({
+      "id": data.id,
+      "message": data.content,
+      "image_url": data?.img_url,
+    }, "user"));
+  } else {
+    messages.appendChild(user_message.formatMessage({
+      "id": data.id,
+      "message": data.content[0].text.content,
+      "image_url": data.content[1].image_url.url,
+    }, "user"));
+  }
+  let system_message_cursor = system_message.formatMessage({
+    "icon": getIcon(false),
+    "id": data.id,
+    "message": ""
+  }, "system")
+  addEventStop(system_message_cursor, data.id);
+  messages.appendChild(system_message_cursor);
+
 }
 
 function streamMessageAdd(chunk) {
@@ -495,7 +519,11 @@ window.electronAPI.streamData((chunk) => {
 })
 
 window.electronAPI.infoData((info) => {
-  InfoAdd(info);
+  infoAdd(info);
+})
+
+window.electronAPI.userData((data) => {
+  userAdd(data);
 })
 
 function addEventStop(messageSystem, id) {
@@ -579,40 +607,6 @@ window.electronAPI.handleClear(() => {
   messages.innerHTML = null;
   pause.style.display = "none";
   pause.innerHTML = "";
-})
-
-
-window.electronAPI.handleLoad((data) => {
-  messages.innerHTML = null;
-  for (i in data) {
-    let text;
-    let image_url;
-    if (data[i].role == "user") {
-      if (typeof data[i].content !== 'string') {
-        text = data[i].content.find(c => c.type == "text").text;
-        image_url = data[i].content.find(c => c.type == "image_url").image_url.url;
-      } else {
-        text = data[i].content;
-      }
-      messages.appendChild(user_message.formatMessage({
-        "id": data[i].id,
-        "message": text,
-        "image_url": image_url,
-      }, "user"));
-    } else {
-      text = data[i].content;
-      const messageSystem = system_message.formatMessage({
-        "icon": getIcon(false),
-        "id": data[i].id,
-        "message": text
-      }, "system")
-      messages.appendChild(messageSystem);
-      const thinking = messageSystem.getElementsByClassName("thinking")[0];
-      thinking.remove();
-      typesetMath();
-      menuEvent(data[i].id, text);
-    }
-  }
 })
 
 submit.addEventListener("click", () => {
