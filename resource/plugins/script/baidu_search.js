@@ -3,7 +3,7 @@ const cheerio = require('cheerio')
 const S = require('string');
 
 function main(params) {
-    return async ({ input }) => {
+    return async ({ context }) => {
         let num_results = 5;
         let text_max_len = 1000;
         let jina = "https://r.jina.ai/";
@@ -15,7 +15,7 @@ function main(params) {
 
         const searchResults = []
         let page = 1
-        let nextUrl = `https://www.baidu.com/s?ie=utf-8&tn=baidu&wd=${encodeURIComponent(input)}`
+        let nextUrl = `https://www.baidu.com/s?ie=utf-8&tn=baidu&wd=${encodeURIComponent(context)}`
 
         while (searchResults.length < num_results) {
             const { results, nextPageUrl } = await parseBaiduPage(nextUrl, searchResults.length, num_results, text_max_len, jina)
@@ -136,6 +136,24 @@ async function getText(url, jina) {
 
 }
 
+function getPrompt() {
+    const prompt = `## baidu_search
+描述: 执行联网搜索
+参数:
+- context: 需要搜索的文字,要求是用户输入中提取的关键字或总结的搜索内容
+使用:
+{
+    "thinking": "[思考过程]"
+    "tool": "baidu_search",
+    "params": {
+        {
+            "context": "[value]"
+        }
+    }
+}`
+    return prompt
+}
+
 module.exports = {
-    main
+    main, getPrompt
 };

@@ -48,6 +48,24 @@ if (require.main === module) {
     });
 }
 
+function getPrompt() {
+    const prompt = `## file_load
+描述: 读取文件(仅支持docx,doc,pdf,odt,odp,ods和pptx)
+参数:
+- file_path: 需要读取的文件路径
+使用:
+{
+    "thinking": "[思考过程]"
+    "tool": "file_load",
+    "params": {
+        {
+            "file_path": "[value]"
+        }
+    }
+}`
+    return prompt
+}
+
 module.exports = {
-    main
+    main, getPrompt
 };

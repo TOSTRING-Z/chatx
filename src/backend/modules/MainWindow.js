@@ -16,7 +16,7 @@ const path = require('path');
 class MainWindow extends Window {
     constructor(windowManager) {
         super(windowManager);
-        this.tool_call = new ToolCall();
+        this.tool_call = new ToolCall(inner.model_obj[inner.model_name.plugins]);
         this.chain_call = new ChainCall();
         this.funcItems = {
             clip: {

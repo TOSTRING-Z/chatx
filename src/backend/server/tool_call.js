@@ -1,6 +1,6 @@
 const { ReActAgent, State } = require("./agent.js")
-const { utils, inner } = require('../modules/globals')
-const { pushMessage, getMessages } = require('../server/llm_service');
+const { utils } = require('../modules/globals')
+const { pushMessage } = require('../server/llm_service');
 const { MCPClient } = require('./mcp_client.js')
 const os = require('os');
 
@@ -21,69 +21,56 @@ class ToolCall extends ReActAgent {
     }
   }
 
-  constructor() {
+  constructor(tools = {}) {
     super();
     this.mcp_client = new MCPClient();
-    this.tools = {
-      "python_execute": async ({ code }) => {
-        const func = inner.model_obj.plugins["python_execute"].func
-        return await func({ input: code })
-      },
-      "llm_ocr": async ({ img_path, prompt }) => {
-        const func = inner.model_obj.plugins["llm_ocr"].func
-        return await func({ input: img_path, prompt })
-      },
-      "write_to_file": async ({ file_path, context }) => {
-        const func = inner.model_obj.plugins["write_to_file"].func
-        return await func({ input: context, file_path })
-      },
-      "file_load": async ({ file_path }) => {
-        const func = inner.model_obj.plugins["file_load"].func
-        return await func({ file_path })
-      },
-      "list_files": async ({ path, recursive }) => {
-        const func = inner.model_obj.plugins["list_files"].func
-        return await func({ input: path, recursive: recursive })
-      },
-      "search_files": async ({ path, regex, file_pattern }) => {
-        const func = inner.model_obj.plugins["search_files"].func
-        return await func({ input: path, regex, file_pattern })
-      },
-      "replace_in_file": async ({ file_path, diff }) => {
-        const func = inner.model_obj.plugins["replace_in_file"].func
-        return await func({ input: diff, file_path })
-      },
-      "baidu_search": async ({ context }) => {
-        const func = inner.model_obj.plugins["baidu_search"].func
-        return await func({ input: context })
-      },
-      "mcp_server": async ({ name, args }) => {
-        const params = {
-          name: name,
-          arguments: args
+    const base_tools = {
+      "mcp_server": {
+        func: async ({ name, args }) => {
+          const params = {
+            name: name,
+            arguments: args
+          }
+          const result = await this.mcp_client.client.callTool(params, undefined, {
+            timeout: 600000
+          });
+          return result;
         }
-        const result = await this.mcp_client.client.callTool(params, undefined, {
-          timeout: 600000
-        });
-        return result;
       },
-      "ask_followup_question": async ({ question, options }) => {
-        this.state = State.PAUSE;
-        return { question, options }
+      "ask_followup_question": {
+        func: async ({ question, options }) => {
+          this.state = State.PAUSE;
+          return { question, options }
+        }
       },
-      "waiting_feedback": () => {
-        this.state = State.PAUSE;
-        return { question: "任务暂停,等待用户反馈...", options: ["允许", "拒绝"] }
+      "waiting_feedback": {
+        func: () => {
+          this.state = State.PAUSE;
+          return { question: "任务暂停,等待用户反馈...", options: ["允许", "拒绝"] }
+        }
       },
-      "plan_mode_response": async ({ response, options }) => {
-        this.state = State.PAUSE;
-        return { question: response, options }
+      "plan_mode_response": {
+        func: async ({ response, options }) => {
+          this.state = State.PAUSE;
+          return { question: response, options }
+        }
       },
-      "terminate": ({ final_answer }) => {
-        this.state = State.FINAL;
-        return final_answer;
+      "terminate": {
+        func: ({ final_answer }) => {
+          this.state = State.FINAL;
+          return final_answer;
+        }
       },
     }
+
+    this.tool_prompt = []
+    for (let key in tools) {
+      if (!!tools[key]?.getPrompt) {
+        const getPrompt = tools[key].getPrompt;
+        this.tool_prompt.push(getPrompt());
+      }
+    }
+    this.tools = { ...tools, ...base_tools }
 
     this.task_prompt = `你是ChatX,一个全能的人工智能助手,旨在解决用户提出的任何任务.你可以使用各种工具来高效地完成复杂的请求.
 
@@ -118,13 +105,16 @@ class ToolCall extends ReActAgent {
 
 ## 示例:
 {{
-    "thinking": "读取src/main.js"
-    "tool": "file_load",
-    "params": {{
-        {{
-            "file_path": "src/main.js"
-        }}
-    }}
+  "content": "调用bedtools寻找基因和增强子重叠峰"
+  "tool": "mcp_server",
+  "params": {{
+      "name": "execute_bedtools",
+      "args": {
+          "subcommand": "intersect",
+          "options": "-a a.bed -b b.bed -u",
+          "timeout": 600.0
+      }
+  }}
 }}
 
 请始终遵循此格式以确保工具能够正确解析和执行
@@ -133,158 +123,7 @@ class ToolCall extends ReActAgent {
 
 # 工具:
 
-## python_execute
-描述: 本地执行python代码,例如实现文件读取,数据分析,和代码执行等
-参数:
-- code: 可执行的python代码片段(python代码输出要求保留空格换行,并严格要求代码格式,不正确的缩进和换行会导致代码执行失败)
-使用:
-{{
-    "thinking": "[思考过程]"
-    "tool": "python_execute",
-    "params": {{
-        {{
-            "code": "[value]"
-        }}
-    }}
-}}
-
-## llm_ocr
-描述: 当需要读取图片内容时调用该工具,该工具通过使用视觉大模型来识别图片内容,因此你需要提供具体的提示词让大模型理解你的意图.
-参数:
-img_path: 图片路径(本地路径,在线或者base64格式的输入前应先调用python_execute将图片保存在本地)
-prompt: 提示词
-使用:
-{{
-    "thinking": "[思考过程]"
-    "tool": "llm_ocr",
-    "params": {{
-        {{
-            "img_path": "[value]",
-            "prompt": "[value]",
-        }}
-    }}
-}}
-
-## baidu_search
-描述: 执行联网搜索
-参数:
-- context: 需要搜索的文字,要求是用户输入中提取的关键字或总结的搜索内容
-使用:
-{{
-    "thinking": "[思考过程]"
-    "tool": "baidu_search",
-    "params": {{
-        {{
-            "context": "[value]"
-        }}
-    }}
-}}
-
-## write_to_file
-描述: 保存文件到指定路径(仅支持文本文件)
-参数:
-- file_path: 需要保存的文件路径(一定要使用/)
-- context: 需要保存的内容
-使用:
-{{
-    "thinking": "[思考过程]"
-    "tool": "write_to_file",
-    "params": {{
-        {{
-            "file_path": "[value]",
-            "context": "[value]"
-        }}
-    }}
-}}
-
-## file_load
-描述: 读取文件(仅支持docx,doc,pdf,odt,odp,ods和pptx)
-参数:
-- file_path: 需要读取的文件路径
-使用:
-{{
-    "thinking": "[思考过程]"
-    "tool": "file_load",
-    "params": {{
-        {{
-            "file_path": "[value]"
-        }}
-    }}
-}}
-
-## list_files
-描述: 请求列出指定目录中的文件和目录.不要使用此工具来确认您可能创建的文件的存在,因为用户会让您知道文件是否已成功创建.
-参数:
-- path: 需要读取的文件夹路径
-- recursive: true或false,如果recursive为true,它将递归列出所有文件和目录.如果递归为false或未提供,则它将仅列出顶级内容.
-使用:
-{{
-    "thinking": "[思考过程]"
-    "tool": "list_files",
-    "params": {{
-        {{
-            "path": "[value]",
-            "recursive": [value],
-        }}
-    }}
-}}
-
-## search_files 
-描述: 请求在指定目录中对文件执行正则表达式搜索,提供上下文丰富的结果.此工具在多个文件中搜索模式或特定内容,显示每个匹配项及其封装上下文.
-参数:
-path: 要搜索的目录路径.此目录将被递归搜索. 
-regex: 要搜索的正则表达式模式.使用 NodeJs 正则表达式语法. 
-file_pattern: 用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 文件).
-使用:
-{{
-    "thinking": "[思考过程]"
-    "tool": "search_files",
-    "params": {{
-        {{
-            "path": "[value]",
-            "regex": "[value]",
-            "file_pattern": "[value]"
-        }}
-    }}
-}}
-
-## replace_in_file
-描述: 此工具用于在现有文件中使用 SEARCH/REPLACE 块来替换部分内容.当需要对文件的特定部分进行精确修改时,应使用此工具
-参数:
-- file_path: 需要修改的文件路径
-- diff: 一个或多个 SEARCH/REPLACE 块,格式如下:
-    <<<<<<< SEARCH
-    [要查找的确切内容]
-    =======
-    [替换后的新内容]
-    >>>>>>> REPLACE
-    关键规则:
-        1. SEARCH 内容必须与文件中的目标部分完全匹配:
-            * 匹配时需逐字符对比,包括空格,缩进和行尾符
-            * 包含所有注释,文档字符串等内容.
-        2. SEARCH/REPLACE 块仅替换第一个匹配项:
-            * 如果需要进行多次修改,请包含多个独立的 SEARCH/REPLACE 块
-            * 每个 SEARCH 部分只需包含足够的行数以确保唯一性
-            * 列出的 SEARCH/REPLACE 块顺序应与文件中出现的顺序一致
-        3. 保持 SEARCH/REPLACE 块简洁:
-            * 将较大的块拆分为多个较小的块,每个块只修改文件的一小部分
-            * 仅包含需要更改的行,以及为唯一性所需的上下文行
-            * 不要在 SEARCH/REPLACE 块中包含大量未更改的行
-            * 每一行必须完整,不能中途截断,否则可能导致匹配失败
-        4. 特殊操作:
-            * 移动代码: 使用两个 SEARCH/REPLACE 块(一个从原位置删除,另一个在新位置插入)
-            * 删除代码: 使用空的 REPLACE 部分
-使用:
-{{
-    "thinking": "[思考过程]"
-    "tool": "replace_in_file",
-    "params": {{
-        {{
-            "file_path": "[value]",
-            "diff": "[value]"
-        }}
-    }}
-}}
+{tool_prompt}
 
 ## mcp_server
 描述: 请求MCP(模型上下文协议)服务.
@@ -578,8 +417,9 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
       type: os.type(),
       platform: os.platform(),
       arch: os.arch(),
+      tool_prompt: this.tool_prompt.join("\n\n"),
       mcp_prompt: this.mcp_prompt,
-      memory_list: JSON.stringify(this.memory_list.slice(this.memory_list.length - utils.getConfig("memory_length") * 10,this.memory_list.length), null, 4)
+      memory_list: JSON.stringify(this.memory_list.slice(this.memory_list.length - utils.getConfig("memory_length") * 10, this.memory_list.length), null, 4)
     })
     if (!this.mcp_prompt) {
       this.mcp_prompt = await this.init_mcp();
@@ -587,7 +427,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     data.push_message = false
     if (this.state == State.IDLE) {
       pushMessage("user", data.query, data.id);
-      this.memory_list.push({user: data.query})
+      this.memory_list.push({ user: data.query })
       this.environment_update(data);
       this.state = State.RUNNING;
     }
@@ -624,7 +464,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
         const observation = `工具 ${tool} 不存在!请检查是否调用工具名出错或使用了错误的MCP服务调用格式.`;
         return { observation, output: null };
       }
-      const will_tool = this.tools[tool];
+      const will_tool = this.tools[tool].func;
       const output = await will_tool(params);
       const observation = `工具 ${tool} 已经被执行,输出结果如下:
 {
@@ -648,7 +488,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     try {
       const tool_info = JSON.parse(content);
       if (!!tool_info?.thinking) {
-        this.memory_list.push({assistant: tool_info.thinking});
+        this.memory_list.push({ assistant: tool_info.thinking });
         data.event.sender.send('stream-data', { id: data.id, content: `${tool_info.thinking}\n\n---\n\n` });
       }
       if (!!tool_info?.tool) {

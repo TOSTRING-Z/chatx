@@ -14,12 +14,14 @@ class Plugins {
         try {
             console.log(`loading plugin: ${params.version}`);
             const plugin = require(pluginPath);
+            let item;
             if (pluginParams) {
-                return { func: plugin.main(pluginParams), extre: params?.extre };
+                item = { func: plugin.main(pluginParams), extre: params?.extre, getPrompt: plugin?.getPrompt };
             }
             else {
-                return { func: plugin.main, extre: params?.extre };
+                item = { func: plugin.main, extre: params?.extre, getPrompt: plugin?.getPrompt };
             }
+            return item;
         } catch (error) {
             return {
                 func: () => `插件: ${params.version}, 路径: ${pluginPath}, 加载插件发生错误: ${error.message}`
@@ -30,9 +32,15 @@ class Plugins {
         // 加载插件
         const plugins = utils.getConfig("plugins");
         Object.keys(plugins).forEach((version) => {
-            const params = {version, ...plugins[version]}
-            inner.model[inner.model_name.plugins].versions.push(params);
-            inner.model_obj[inner.model_name.plugins][version] = this.loadPlugin(params)
+            const params = { version, ...plugins[version] }
+            let enabled = true;
+            if (params.hasOwnProperty("enabled")) {
+                enabled = params.enabled;
+            }
+            if (enabled) {
+                inner.model[inner.model_name.plugins].versions.push(params);
+                inner.model_obj[inner.model_name.plugins][version] = this.loadPlugin(params)
+            }
         })
     }
 }
