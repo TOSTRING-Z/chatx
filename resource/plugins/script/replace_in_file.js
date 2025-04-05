@@ -8,8 +8,8 @@ function main({ file_path, diff }) {
         blocks.shift(); // Remove the first element as it is empty
         blocks.forEach(block => {
             const [search, replace] = block.split('=======');
-            const searchContent = search.trim();
-            const replaceContent = replace.split('>>>>>>> REPLACE')[0].trim();
+            const searchContent = search;
+            const replaceContent = replace.split('>>>>>>> REPLACE')[0];
             content = content.replace(searchContent, replaceContent);
         });
         if (content === originalContent) {
@@ -37,8 +37,8 @@ function getPrompt() {
     const prompt = `## replace_in_file
 描述: 此工具用于在现有文件中使用 SEARCH/REPLACE 块来替换部分内容.当需要对文件的特定部分进行精确修改时,应使用此工具
 参数:
-- file_path: 需要修改的文件路径
-- diff: 一个或多个 SEARCH/REPLACE 块,格式如下:
+- file_path: (需要)需要修改的文件路径
+- diff: (需要)一个或多个 SEARCH/REPLACE 块,格式如下:
     <<<<<<< SEARCH
     [要查找的确切内容]
     =======

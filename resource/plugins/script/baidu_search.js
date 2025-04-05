@@ -140,7 +140,7 @@ function getPrompt() {
     const prompt = `## baidu_search
 描述: 执行联网搜索
 参数:
-- context: 需要搜索的文字,要求是用户输入中提取的关键字或总结的搜索内容
+- context: (需要)需要搜索的文字,要求是用户输入中提取的关键字或总结的搜索内容
 使用:
 {
     "thinking": "[思考过程]"

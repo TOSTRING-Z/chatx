@@ -1,6 +1,6 @@
 const { ReActAgent, State } = require("./agent.js")
 const { utils } = require('../modules/globals')
-const { pushMessage } = require('../server/llm_service');
+const { pushMessage, getMessages } = require('../server/llm_service');
 const { MCPClient } = require('./mcp_client.js')
 const fs = require('fs');
 const os = require('os');
@@ -33,7 +33,7 @@ class ToolCall extends ReActAgent {
             arguments: args
           }
           const result = await this.mcp_client.client.callTool(params, undefined, {
-            timeout: 600000
+            timeout: utils.getConfig("tool_call").mcp_timeout * 1000
           });
           return result;
         }
@@ -60,6 +60,12 @@ class ToolCall extends ReActAgent {
         func: ({ final_answer }) => {
           this.state = State.FINAL;
           return final_answer;
+        }
+      },
+      "memory_retrieval": {
+        func: ({ memory_id }) => {
+          const memory = getMessages().filter(m => m.memory_id === memory_id).map(m => { return { role: m.role, content: m.content } });
+          return memory || "未找到指定的记忆ID";
         }
       },
     }
@@ -106,15 +112,15 @@ class ToolCall extends ReActAgent {
 
 ## 示例:
 {{
-  "content": "调用bedtools寻找基因和增强子重叠峰"
-  "tool": "mcp_server",
+  "thinking": "用户简单地打招呼，没有提出具体任务或问题。在规划模式下，我需要与用户交流以了解他们的需求或任务。",
+  "tool": "plan_mode_response",
   "params": {{
-      "name": "execute_bedtools",
-      "args": {
-          "subcommand": "intersect",
-          "options": "-a a.bed -b b.bed -u",
-          "timeout": 600.0
-      }
+      "response": "你好！请问有什么我可以帮助您的吗？",
+      "options": [
+          "我需要帮助完成一个项目",
+          "我想了解如何使用某些工具",
+          "我有一些具体的问题需要解答"
+      ]
   }}
 }}
 
@@ -129,8 +135,8 @@ class ToolCall extends ReActAgent {
 ## mcp_server
 描述: 请求MCP(模型上下文协议)服务.
 参数:
-- name: 请求MCP服务名.
-- args: 请求MCP服务参数.
+- name: (需要)请求MCP服务名.
+- args: (需要)请求MCP服务参数.
 使用:
 {{
     "thinking": "[思考过程]"
@@ -148,7 +154,7 @@ class ToolCall extends ReActAgent {
 ## ask_followup_question
 描述: 向用户提问以收集完成任务所需的额外信息.在遇到歧义,需要澄清或需要更多细节以有效进行时,应使用此工具.它通过允许与用户的直接沟通,实现互动式问题解决.明智地使用此工具,以在收集必要信息和避免过多来回交流之间保持平衡.
 参数:
-- question: 要问用户的问题.这应该是一个针对您需要的信息的明确和具体的问题.
+- question: (需要)要问用户的问题.这应该是一个针对您需要的信息的明确和具体的问题.
 - options: (可选)为用户提供选择的2-5个选项.每个选项应为描述可能答案的字符串.您并非总是需要提供选项,但在许多情况下,这可以帮助用户避免手动输入回复.
 使用:
 {{
@@ -178,7 +184,7 @@ class ToolCall extends ReActAgent {
 ## plan_mode_response
 描述: 响应用户的询问,以规划解决用户任务的方案.当您需要回应用户关于如何完成任务的问题或陈述时,应使用此工具.此工具仅在"规划模式"下可用.环境详细信息将指定当前模式,如果不是"规划模式",则不应使用此工具.根据用户的消息,您可能会提出问题以澄清用户的请求,设计任务的解决方案,并与用户一起进行头脑风暴.例如,如果用户的任务是创建一个网站,您可以从提出一些澄清问题开始,然后根据上下文提出详细的计划,说明您将如何完成任务,并可能进行来回讨论直到用户将您切换模式以实施解决方案之前最终确定细节.
 参数:
-response: 在思考过程之后提供给用户的响应.
+response: (需要)在思考过程之后提供给用户的响应.
 options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项应描述一个可能的选择或规划过程中的前进路径.这可以帮助引导讨论,并让用户更容易提供关键决策的输入.您可能并不总是需要提供选项,但在许多情况下,这可以节省用户手动输入响应的时间.不要提供切换模式的选项,因为不需要您引导用户操作.
 使用:
 {{
@@ -196,10 +202,23 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     }}
 }}
 
+## memory_retrieval
+描述: 记忆回溯工具,通过记忆ID检索过去的工具调用信息和执行结果.
+参数:
+- memory_id: (需要)要检索的记忆ID。
+使用:
+{{
+    "thinking": "[思考过程]"
+    "tool": "memory_retrieval",
+    "params": {{
+        "memory_id": "[value]"
+    }}
+}}
+
 ## terminate
 描述: 停止任务(当判断任务完成时调用)
 参数:
-- final_answer: 总结并给出最终回答(MarkDown格式)
+- final_answer: (需要)总结并给出最终回答(MarkDown格式)
 使用:
 {{
     "thinking": "[思考过程]"
@@ -214,7 +233,6 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 # 可用MCP服务
 
 {mcp_prompt}
-
 
 ====
 
@@ -259,14 +277,15 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 4. 接下来,当您处于"执行模式"时,请逐一检查相关工具的每个必需参数,并确定用户是否直接提供了足够的信息来推断值.在决定是否可以推断参数时,请仔细考虑所有上下文,以查看其是否支持特定值.如果所有必需的参数都存在或可以合理推断,请继续使用工具.但是,如果缺少某个必需参数的值,请不要调用工具(即使使用占位符填充缺失的参数),而是使用 ask_followup_question 工具要求用户提供缺失的参数.如果未提供可选参数的信息,请不要要求更多信息.
 5. 当您处于"自动模式"时,也应当逐一检查相关工具的每个必需参数,如果缺少某个必需参数的值,请自动规划解决方案并执行,请记住,在此模式下严禁调用与用户交互的工具.
 6. 一旦完成用户的任务,您必须使用 terminate 工具向用户展示任务结果.
+7. 应当根据上下文信息判断是否需要进行记忆检索.
 
 ====
 
-# 环境详细信息部分解释
+# 环境详细信息解释
+- 语言: 助手回复消息需要使用的语言类型
 - 临时文件夹: 所有执行过程中的临时文件存放位置
 - 当前时间: 当前系统时间
 - 当前模式: 当前所处模式(自动模式 / 执行模式 / 规划模式)
-
 
 ====
 
@@ -278,19 +297,31 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 
 ===
 
-# 记忆列表
+# 记忆索引列表
 
-过去的思考内容列表
+{memory_list}
 
-- 记忆列表: {memory_list}
+===
+
+# 记忆索引列表解释
+
+每次用户和助手消息时,会存储"memory_id"在"记忆索引列表"中.并且记忆存储是按"memory_id"的大小顺序连续排列的.
+"memory_id"是连接工具调用细节的索引,而工具调用细节被保存在数据库中,仅可以使用 memory_retrieval 工具来查询.
+
+- 应该何时调用 memory_retrieval 工具:
+1. 当用户询问内容在历史对话记录里出现过时.
+2. 当助手需要了解历史工具调用的具体细节时.
+3. 当需要调用重复的工具时,应当首先调用 memory_retrieval 工具来获取工具的执行结果.
 
 ====`
 
     this.system_prompt;
     this.mcp_prompt;
+    this.memory_id = 0;
     this.memory_list = [];
 
     this.env = `环境详细信息:
+- 语言: {language}
 - 临时文件夹: {tmpdir}
 - 当前时间: {time}
 - 当前模式: {mode}`
@@ -304,7 +335,8 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     this.environment_details = {
       mode: this.modes.ACT,
       tmpdir: os.tmpdir(),
-      time: utils.formatDate()
+      time: utils.formatDate(),
+      language: utils.getLanguage()
     }
   }
 
@@ -324,8 +356,8 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 
   environment_update(data) {
     this.environment_details.time = utils.formatDate();
-    this.environment_details.max_memory_len = data.memory_length;
-    pushMessage("user", this.env.format(this.environment_details), data.id, false);
+    this.environment_details.language = utils.getLanguage();
+    pushMessage("user", this.env.format(this.environment_details), data.id, this.memory_id, false);
   }
 
   plan_act_mode(mode) {
@@ -347,8 +379,8 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     }
     data.push_message = false
     if (this.state == State.IDLE) {
-      pushMessage("user", data.query, data.id);
-      this.memory_list.push({ user: data.query })
+      pushMessage("user", data.query, data.id, ++this.memory_id, true, false);
+      this.memory_list.push({ memory_id: this.memory_id, user: data.query })
       this.environment_update(data);
       this.state = State.RUNNING;
     }
@@ -357,7 +389,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     if (tool_info?.tool) {
       const { observation, output } = await this.act(tool_info);
       data.output_format = observation;
-      pushMessage("user", data.output_format, data.id, false);
+      pushMessage("user", data.output_format, data.id, this.memory_id);
       this.environment_update(data);
       if (this.state == State.PAUSE) {
         const { question, options } = output;
@@ -405,11 +437,12 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
   }
 
   get_tool(content, data) {
-    pushMessage("assistant", content, data.id);
+    pushMessage("assistant", content, data.id, ++this.memory_id);
     try {
       const tool_info = JSON.parse(content);
       if (!!tool_info?.thinking) {
-        this.memory_list.push({ assistant: tool_info.thinking });
+        this.memory_list.push({ memory_id: this.memory_id, assistant: tool_info.thinking });
+        this.memory_list.push({ memory_id: this.memory_id, user: `助手调用了 ${tool_info.tool} 工具` });
         data.event.sender.send('stream-data', { id: data.id, content: `${tool_info.thinking}\n\n---\n\n` });
       }
       if (!!tool_info?.tool) {
@@ -422,7 +455,7 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     "observation": "",
     "error": "您的回复不是一个纯JSON文本,或者JSON格式存在问题: ${error.message}"
 }`;
-      pushMessage("user", data.output_format, data.id, false);
+      pushMessage("user", data.output_format, data.id, this.memory_id);
       this.environment_update(data);
       data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
     }

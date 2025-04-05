@@ -233,6 +233,7 @@
   "tool_call": {
     "memory_length": 20,
     "extra_prompt": "{resourcesPath}/extra_prompt.md",
+    "mcp_timeout": 600,
     "llm_parmas": {
       "max_tokens": 4000,
       "temperature": 0.5,

@@ -528,21 +528,32 @@ class MainWindow extends Window {
                                         }, messages[0]);
                                         if (!!maxId.id) {
                                             global.id = parseInt(maxId.id);
+                                            if (!!messages[0].react) {
+                                                const maxMemoryId = messages.reduce((max, current) => {
+                                                    return parseInt(current.memory_id) > parseInt(max.memory_id) ? current : max;
+                                                }, messages[0]);
+                                                this.tool_call.memory_id = maxMemoryId.memory_id;
+                                            }
                                             for (let i in messages) {
                                                 i = parseInt(i);
                                                 if (Object.hasOwnProperty.call(messages, i)) {
-                                                    let { id, role, content, react } = messages[i];
+                                                    let { role, content, id, memory_id, react } = messages[i];
                                                     if (role == "user") {
                                                         if (!!react) {
-                                                            this.tool_call.memory_list.push({ user: content })
+                                                            let content_format = content.replaceAll("\`", "'").replaceAll("`", "'");
+                                                            this.window.webContents.send('info-data', { id: id, content: `阶段 ${i}, 输出: \n\n\`\`\`\n${content_format}\n\`\`\`\n\n` });
                                                         }
-                                                        this.window.webContents.send('user-data', { id: id, content: content });
+                                                        else {
+                                                            this.tool_call.memory_list.push({ user: content, memory_id: memory_id })
+                                                            this.window.webContents.send('user-data', { id: id, content: content });
+                                                        }
                                                     } else {
                                                         if (!!react) {
                                                             try {
                                                                 const tool_info = JSON.parse(content);
                                                                 if (!!tool_info?.thinking) {
-                                                                    this.tool_call.memory_list.push({ assistant: tool_info.thinking });
+                                                                    this.tool_call.memory_list.push({ assistant: tool_info.thinking, memory_id: memory_id });
+                                                                    this.tool_call.memory_list.push({ memory_id: memory_id, user: `助手调用了 ${tool_info.tool} 工具` });
                                                                     const thinking = `${tool_info.thinking}\n\n---\n\n`
                                                                     let content_format = content.replaceAll("\`", "'").replaceAll("`", "'");
                                                                     this.window.webContents.send('info-data', { id: id, content: `阶段 ${i}, 输出: \n\n\`\`\`\n${content_format}\n\`\`\`\n\n` });

@@ -3,7 +3,7 @@
 // and find regex matches within those files, returning the matching content with context.
 
 const fs = require('fs');
-const path = require('path');
+const path_ = require('path');
 const glob = require('glob');
 
 /**
@@ -42,7 +42,7 @@ async function main({ path, regex="test", file_pattern="*.js" }) {
         const end = Math.min(content.length, match.index + match[0].length + 50);
         const context = content.substring(start, end);
         results.push({
-          file: path.relative(path, file),
+          file: path_.relative(path, file),
           match: match[0],
           context: context,
           line: (content.substring(0, match.index).match(/\n/g) || []).length + 1
@@ -62,9 +62,9 @@ function getPrompt() {
   const prompt = `## search_files 
 描述: 请求在指定目录中对文件执行正则表达式搜索,提供上下文丰富的结果.此工具在多个文件中搜索模式或特定内容,显示每个匹配项及其封装上下文.
 参数:
-path: 要搜索的目录路径.此目录将被递归搜索. 
-regex: 要搜索的正则表达式模式.使用 NodeJs 正则表达式语法. 
-file_pattern: 用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 文件).
+path: (需要)要搜索的目录路径.此目录将被递归搜索. 
+regex: (需要)要搜索的正则表达式模式.使用 NodeJs 正则表达式语法. 
+file_pattern: (需要)用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 文件).
 使用:
 {
     "thinking": "[思考过程]"

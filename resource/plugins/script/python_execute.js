@@ -40,7 +40,7 @@ function getPrompt() {
     const prompt = `## python_execute
 描述: 本地执行python代码,例如实现文件读取,数据分析,和代码执行等
 参数:
-- code: 可执行的python代码片段(python代码输出要求保留空格换行,并严格要求代码格式,不正确的缩进和换行会导致代码执行失败)
+- code: (需要)可执行的python代码片段(python代码输出要求保留空格换行,并严格要求代码格式,不正确的缩进和换行会导致代码执行失败)
 使用:
 {
     "thinking": "[思考过程]"

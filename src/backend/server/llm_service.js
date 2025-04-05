@@ -12,8 +12,8 @@ function getMessages() {
     return messages;
 }
 
-function pushMessage(role, content, id, show = true, react = true) {
-    let message = { role: role, content: content, id: id, show: show, react: react };
+function pushMessage(role, content, id, memory_id, show = true, react = true) {
+    let message = { role: role, content: content, id: id, memory_id: memory_id, show: show, react: react };
     messages.push(message);
 }
 
@@ -155,17 +155,17 @@ async function chatBase(data) {
             ];
         }
         if (!!data.system_prompt) {
-            messages_list = [{ role: "system", content: data.system_prompt, id: data.id, show: true, react: false }]
+            messages_list = [{ role: "system", content: data.system_prompt, id: data.id, memory_id: null, show: true, react: false }]
             messages_list = messages_list.concat(messages.slice(messages.length - parseInt(data.memory_length * 1.5), messages.length))
         }
         else {
             messages_list = messages.slice(messages.length - parseInt(data.memory_length * 1.5), messages.length)
         }
         if (data?.push_message) {
-            message_input = { role: "user", content: content, id: data.id, show: true, react: false };
+            message_input = { role: "user", content: content, id: data.id, memory_id: null, show: true, react: false };
             messages_list.push(message_input)
         }
-        let message_output = { role: 'assistant', content: '', id: data.id, show: true, react: false }
+        let message_output = { role: 'assistant', content: '', id: data.id, memory_id: null, show: true, react: false }
 
         let body = {
             model: data.version,

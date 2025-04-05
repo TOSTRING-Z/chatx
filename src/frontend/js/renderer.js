@@ -238,6 +238,8 @@ function infoAdd(info) {
     info_content.innerHTML = marked.parse(info_content.dataset.content);
     if (global.scroll_top.info)
       info_content.scrollTop = info_content.scrollHeight;
+    if (global.scroll_top.data)
+      top_div.scrollTop = top_div.scrollHeight;
   }
 }
 
