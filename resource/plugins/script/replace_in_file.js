@@ -13,12 +13,12 @@ function main({ file_path, diff }) {
             content = content.replace(searchContent, replaceContent);
         });
         if (content === originalContent) {
-            return `文件 ${file_path} 未修改: SEARCH块中的内容,"\r","\n",空格或特殊字符等与文件中的实际内容可能不完全匹配`;
+            return `File ${file_path} not modified: The content in SEARCH block, "\r", "\n", spaces or special characters may not exactly match the actual content in the file`;
         }
         fs.writeFileSync(file_path, content);
-        return `文件 ${file_path} 修改成功`;
+        return `File ${file_path} modified successfully`;
     } catch (error) {
-        return `文件 ${file_path} 修改失败: ${error.message}`;
+        return `File ${file_path} modification failed: ${error.message}`;
     }
 }
 
@@ -35,34 +35,34 @@ if (require.main === module) {
 
 function getPrompt() {
     const prompt = `## replace_in_file
-描述: 此工具用于在现有文件中使用 SEARCH/REPLACE 块来替换部分内容.当需要对文件的特定部分进行精确修改时,应使用此工具
-参数:
-- file_path: (需要)需要修改的文件路径
-- diff: (需要)一个或多个 SEARCH/REPLACE 块,格式如下:
+Description: This tool is used to replace parts of content in existing files using SEARCH/REPLACE blocks. It should be used when precise modifications to specific parts of a file are needed.
+Parameters:
+- file_path: (Required) The file path to be modified
+- diff: (Required) One or more SEARCH/REPLACE blocks, formatted as follows:
     <<<<<<< SEARCH
-    [要查找的确切内容]
+    [exact content to search for]
     =======
-    [替换后的新内容]
+    [new content after replacement]
     >>>>>>> REPLACE
-    关键规则:
-        1. SEARCH 内容必须与文件中的目标部分完全匹配:
-            * 匹配时需逐字符对比,包括空格,缩进和行尾符
-            * 包含所有注释,文档字符串等内容.
-        2. SEARCH/REPLACE 块仅替换第一个匹配项:
-            * 如果需要进行多次修改,请包含多个独立的 SEARCH/REPLACE 块
-            * 每个 SEARCH 部分只需包含足够的行数以确保唯一性
-            * 列出的 SEARCH/REPLACE 块顺序应与文件中出现的顺序一致
-        3. 保持 SEARCH/REPLACE 块简洁:
-            * 将较大的块拆分为多个较小的块,每个块只修改文件的一小部分
-            * 仅包含需要更改的行,以及为唯一性所需的上下文行
-            * 不要在 SEARCH/REPLACE 块中包含大量未更改的行
-            * 每一行必须完整,不能中途截断,否则可能导致匹配失败
-        4. 特殊操作:
-            * 移动代码: 使用两个 SEARCH/REPLACE 块(一个从原位置删除,另一个在新位置插入)
-            * 删除代码: 使用空的 REPLACE 部分
-使用:
+    Key Rules:
+        1. SEARCH content must exactly match the target part in the file:
+            * Compare character by character when matching, including spaces, indentation and line endings
+            * Include all comments, docstrings, etc.
+        2. SEARCH/REPLACE blocks only replace the first match:
+            * If multiple modifications are needed, include multiple independent SEARCH/REPLACE blocks
+            * Each SEARCH section only needs to contain enough lines to ensure uniqueness
+            * The order of SEARCH/REPLACE blocks should match their appearance in the file
+        3. Keep SEARCH/REPLACE blocks concise:
+            * Split larger blocks into multiple smaller ones, each modifying only a small part of the file
+            * Only include lines that need to be changed and necessary context lines for uniqueness
+            * Don't include large amounts of unchanged lines in SEARCH/REPLACE blocks
+            * Each line must be complete, not truncated midway, otherwise matching may fail
+        4. Special operations:
+            * Move code: Use two SEARCH/REPLACE blocks (one to delete from original location, another to insert at new location)
+            * Delete code: Use empty REPLACE section
+Usage:
 {
-  "thinking": "[思考过程]",
+  "thinking": "[Thinking process]",
   "tool": "replace_in_file",
   "params": {
     "file_path": "[value]",

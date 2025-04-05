@@ -7,19 +7,19 @@ function main(params) {
 
         return new Promise(async (resolve, reject) => {
             try {
-                // 读取文件内容
+                // Read file content
                 const imageBuffer = await fs.promises.readFile(img_path)
 
-                // 获取文件扩展名
+                // Get file extension
                 const ext = path.extname(img_path).slice(1)
 
-                // 构建 Base64 字符串
+                // Construct Base64 string
                 let url = `data:image/${ext};base64,${imageBuffer.toString('base64')}`
 
                 let content = [
                     {
                         "type": "text",
-                        "text": !!prompt?prompt:"提取图片中的所有文字"
+                        "text": !!prompt?prompt:"Extract all text from the image"
                     },
                     {
                         "type": "image_url",
@@ -49,7 +49,7 @@ function main(params) {
                 });
 
                 if (!response.ok) {
-                    resolve(`视觉大模型API请求失败: ${response.statusText}`);
+                    resolve(`Vision model API request failed: ${response.statusText}`);
                 }
 
                 let data = await response.json();
@@ -63,13 +63,13 @@ function main(params) {
 
 function getPrompt() {
     const prompt = `## llm_ocr
-描述: 当需要读取图片内容时调用该工具,该工具通过使用视觉大模型来识别图片内容,因此你需要提供具体的提示词让大模型理解你的意图.
-参数:
-img_path: (需要)图片路径(本地路径,在线或者base64格式的输入前应先调用python_execute将图片保存在本地)
-prompt: (需要)提示词
-使用:
+Description: Call this tool when you need to read image content. This tool uses a visual large model to recognize image content, so you need to provide specific prompts to help the model understand your intent.
+Parameters:
+img_path: (Required) Image path (for local paths, online URLs or base64 inputs, you should first call python_execute to save the image locally)
+prompt: (Required) Prompt text
+Usage:
 {
-  "thinking": "[思考过程]",
+  "thinking": "[Thinking process]",
   "tool": "llm_ocr",
   "params": {
     "img_path": "[value]",

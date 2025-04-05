@@ -1,16 +1,16 @@
 /**
  * test_cli_command.js
- * 这个文件用于测试cli_command.js中的openConsole函数的功能。
- * 它执行openConsole函数并打印输出，然后在2秒后退出进程。
+ * This file is used to test the functionality of the openConsole function in cli_command.js.
+ * It executes the openConsole function and prints the output, then exits the process after 2 seconds.
  */
 
 import { openConsole } from './cli_command.js';
 
-// 测试初始命令的执行
+// Test the execution of the initial command
 let output = await openConsole();
 console.log(output);
 
-// 设置一个定时器，2秒后退出进程
+// Set a timer to exit the process after 2 seconds
 setTimeout(() => {
   process.exit(0);
 }, 2000);

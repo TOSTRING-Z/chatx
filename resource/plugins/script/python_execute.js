@@ -5,7 +5,7 @@ const path = require('path');
 
 function main(params) {
     return async ({ code }) => {
-        // 创建临时文件
+        // Create temporary file
         const tempFile = path.join(tmpdir(), `temp_${Date.now()}.py`)
         writeFileSync(tempFile, code)
         console.log(tempFile)
@@ -14,7 +14,7 @@ function main(params) {
             const command = `${params.python_bin} ${tempFile}`
 
             const child = exec(command, (error, stdout, stderr) => {
-                // 清理临时文件
+                // Clean up temporary file
                 unlinkSync(tempFile)
 
                 if (error) {
@@ -27,7 +27,7 @@ function main(params) {
                     const output = stdout?.toString()?.trim();
                     resolve(JSON.stringify({
                         success: true,
-                        output: output.length > params.threshold ? '返回内容过多,请尝试其它方案!' : output,
+                        output: output.length > params.threshold ? 'The returned content is too much, please try another solution!' : output,
                         error: null
                     }))
                 }
@@ -38,12 +38,12 @@ function main(params) {
 
 function getPrompt() {
     const prompt = `## python_execute
-描述: 本地执行python代码,例如实现文件读取,数据分析,和代码执行等
-参数:
-- code: (需要)可执行的python代码片段(python代码输出要求保留"\n"和空格,请严格要求代码格式,不正确的缩进和换行会导致代码执行失败)
-使用:
+Description: Execute Python code locally, such as file reading, data analysis, and code execution.
+Parameters:
+- code: (Required) Executable Python code snippet (Python code output must retain "\n" and spaces, please strictly follow the code format, incorrect indentation and line breaks will cause code execution to fail)
+Usage:
 {
-  "thinking": "[思考过程]",
+  "thinking": "[Thinking process]",
   "tool": "python_execute",
   "params": {
     "code": "[value]"

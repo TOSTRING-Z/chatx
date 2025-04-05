@@ -114,18 +114,18 @@ async function getText(url, jina) {
         if (!!jina) {
             text = $('body').text();
         } else {
-            // 在获取文本前先清理页面
-            $('script, style, noscript, iframe').remove(); // 移除无用标签
-            // 扩展选择器以包含常见内容容器
+            // Clean the page before getting text
+            $('script, style, noscript, iframe').remove(); // Remove useless tags
+            // Extend selector to include common content containers
             const contentElements = $('p, div.article-content, section.main-text');
             text = contentElements
                 .map((i, el) => {
-                    // 移除不需要的子元素（如按钮、广告等）
+                    // Remove unwanted child elements (such as buttons, ads, etc.)
                     $(el).find('button, .ad').remove();
                     return $(el).text().trim();
                 })
                 .get()
-                .filter(t => t.length > 0) // 过滤空段落
+                .filter(t => t.length > 0) // Filter empty paragraphs
                 .join('\n');
         }
         return text;
@@ -138,12 +138,12 @@ async function getText(url, jina) {
 
 function getPrompt() {
     const prompt = `## baidu_search
-描述: 执行联网搜索
-参数:
-- context: (需要)需要搜索的文字,要求是用户输入中提取的关键字或总结的搜索内容
-使用:
+Description: Perform online search
+Parameters:
+- context: (Required) Text to be searched, which should be keywords extracted from user input or summarized search content
+Usage:
 {
-  "thinking": "[思考过程]",
+  "thinking": "[Thinking process]",
   "tool": "baidu_search",
   "params": {
     "context": "[value]"

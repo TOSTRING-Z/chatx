@@ -1,27 +1,27 @@
 const axios = require('axios');
 const axiosCookieJarSupport = require('axios-cookiejar-support').wrapper;
 const { CookieJar } = require('tough-cookie');
-const { JSDOM } = require('jsdom');  // 引入 jsdom
+const { JSDOM } = require('jsdom');  // Import jsdom
 
 const TRANSLATION_API_URL = 'https://www.google.com/async/translate?vet=12ahUKEwjA7b3giYuLAxU3hlYBHZvEAhYQqDh6BAgcEDA..i&ei=886RZ4CoELeM2roPm4mLsAE&opi=89978449&client=firefox-b-d&yv=3&_fmt=pc&cs=0'
 
-// 判断翻译方式
+// Determine translation method
 function getMode(text) {
     return text.match('[\u4e00-\u9fa5]') ? ['zh-CN', 'en'] : ['en', 'zh-CN']
 }
 
-// 结果解析
+// Result parsing
 function format(result) {
     const startIndex = result.indexOf('<style>');
     const htmlContent = startIndex !== -1 ? result.slice(startIndex) : result;
 
-    // 使用 jsdom 解析 HTML
+    // Use jsdom to parse HTML
     const dom = new JSDOM(htmlContent);
     const doc = dom.window.document;
 
     const getText = (id) => (doc.getElementById(id)?.textContent || '');
 
-    // 提取数据（与之前逻辑一致）
+    // Extract data (same logic as before)
     const data = {
         sourceText: getText('tw-answ-source-text'),
         targetText: getText('tw-answ-target-text'),
@@ -33,7 +33,7 @@ function format(result) {
         bilingualEntries: []
     };
 
-    // 处理双语释义（逻辑不变）
+    // Process bilingual definitions (same logic)
     const bilContainer = doc.getElementById('tw-answ-bil-fd');
     if (bilContainer) {
         const partOfSpeech = bilContainer.querySelector('.tw-bilingual-pos')?.textContent || '';
@@ -48,7 +48,7 @@ function format(result) {
 
     let text;
     if (data.bilingualEntries.length > 0) {
-        text = data.bilingualEntries.map(item => `[${item.partOfSpeech}] ${item.source} (同义词:  ${item.target})`).join("<br>")
+        text = data.bilingualEntries.map(item => `[${item.partOfSpeech}] ${item.source} (Synonym: ${item.target})`).join("<br>")
     }
     else {
         text = data.targetText

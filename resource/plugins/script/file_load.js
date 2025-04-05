@@ -2,9 +2,9 @@ const fs = require('fs');
 const officeParser = require('officeparser');
 
 /**
- * 获取文件扩展名
- * @param {string} filename - 文件名
- * @returns {string|null} 文件扩展名
+ * Get file extension
+ * @param {string} filename - File name
+ * @returns {string|null} File extension
  */
 function getFileExtension(filename) {
     const parts = filename.split('.');
@@ -22,7 +22,7 @@ function readLines(data, startLine, endLine, params) {
         data = lines.slice(startLine - 1, endLine).join('\r\n');
     } 
     if (data.length > params.threshold) {
-        return "返回内容过多,请尝试其它方案!";
+        return "Returned content is too large, please try another solution!";
     } else {
         return data;
     }
@@ -60,14 +60,14 @@ if (require.main === module) {
 
 function getPrompt() {
     const prompt = `## file_load
-描述: 读取文件(仅支持docx,doc,pdf,odt,odp,ods和pptx)
-参数:
-- file_path: (需要)需要读取的文件路径
-- startLine: (可选)开始读取的行号
-- endLine: (可选)结束读取的行号
-使用:
+Description: Read files (only supports docx,doc,pdf,odt,odp,ods and pptx)
+Parameters:
+- file_path: (Required) File path to read
+- startLine: (Optional) Starting line number to read
+- endLine: (Optional) Ending line number to read
+Usage:
 {
-  "thinking": "[思考过程]",
+  "thinking": "[Thinking process]",
   "tool": "file_load",
   "params": {
     "file_path": "[value]",

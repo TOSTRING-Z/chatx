@@ -57,19 +57,19 @@ function hash(r) {
         p.toString() + '.' + (p ^ m)
 }
 
-// 判断翻译方式
+// Determine the translation method
 function getMode(text) {
     return text.match('[\u4e00-\u9fa5]') ? ['zh', 'en'] : ['en', 'zh']
 }
 
-// 结果解析
+// Result parsing
 function format(result) {
     try {
         if ('dict_result' in result) {
             let en = result['dict_result']['simple_means']['symbols'][0]['ph_en']
             let am = result['dict_result']['simple_means']['symbols'][0]['ph_am']
             let word = result['dict_result']['simple_means']['word_means'].join(";")
-            text = `英[${en}]\n美[${am}]\n${word}`
+            text = `UK[${en}]\nUS[${am}]\n${word}`
         }
         else {
             text = result['trans_result']['data'].map((d) => {

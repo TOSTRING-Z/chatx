@@ -236,6 +236,9 @@ async function chatBase(data) {
                 body: JSON.stringify(body),
             });
             const respJson = await resp.json();
+            if (respJson.hasOwnProperty("error")) {
+                data.event.sender.send('info-data', { id: data.id, content: `POST Error:\n\n\`\`\`\n${respJson.message}\n\`\`\`\n\n` });
+            }
             if (respJson.hasOwnProperty("message")) {
                 data.output = respJson.message.content;
             } else {

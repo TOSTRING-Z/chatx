@@ -291,15 +291,16 @@ You complete the given task iteratively, breaking it down into clear steps and s
 
 ===
 
-# Memory Index List
+# Memory List
 
 {memory_list}
 
 ===
 
-# Memory Index List Explanation
-Each time a user and assistant message is exchanged, a "memory_id" is stored in the "memory index list". The memory storage is continuously arranged in order of the size of "memory_id".
+# Memory List Explanation
+Each time a user and assistant message is exchanged, a "memory_id" is stored in the "memory list". The memory storage is continuously arranged in order of the size of "memory_id".
 "memory_id" is an index linking to the details of tool calls, and the details of tool calls are stored in the database, which can only be queried using the memory_retrieval tool.
+All task messages submitted by users will also be saved in the "memory list". If there is no specific task in the current message list, the memory_retrieval tool should be used immediately to trace back user tasks.
 
 - When should the memory_retrieval tool be called:
 1. When the content the user is asking about has appeared in the historical conversation records.
@@ -330,38 +331,6 @@ Each time a user and assistant message is exchanged, a "memory_id" is stored in 
       tmpdir: os.tmpdir(),
       time: utils.formatDate(),
       language: utils.getLanguage()
-    }
-  }
-
-  error_response(text) {
-    text = JSON.stringify(`${text.slice(0,10)}...`);
-    switch (this.environment_details.mode) {
-      case this.modes.PLAN:
-        return `{
-  "thinking": ${text},
-  "tool": "plan_mode_response",
-  "params": {
-    "response": "Continue?",
-    "options": ["Continue","End"]
-  }
-}`;
-    case this.modes.ACT:
-      return `{
-  "thinking": ${text},
-  "tool": "ask_followup_question",
-  "params": {
-    "response": "Continue?",
-    "options": ["Continue","End"]
-  }
-}`;
-    case this.modes.AUTO:
-      return `{
-  "thinking": ${text},
-  "tool": "terminate",
-  "params": {
-    "final_answer": "Continue?"
-  }
-}`;
     }
   }
 

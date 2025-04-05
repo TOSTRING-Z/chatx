@@ -1,19 +1,7 @@
-// search_files.js
-// This script provides a function to search files in a directory matching a given pattern,
-// and find regex matches within those files, returning the matching content with context.
-
 const fs = require('fs');
 const path_ = require('path');
 const glob = require('glob');
 
-/**
- * Searches files in a directory for regex matches
- * @param {Object} options - Search options
- * @param {string} options.path - Directory path to search
- * @param {string} [options.regex="test"] - Regular expression to search for
- * @param {string} [options.file_pattern="*.js"] - File pattern to search within
- * @returns {Array|string} Array of match results or error message
- */
 async function main({ path, regex="test", file_pattern="*.js" }) {
   try {
     // Find all files matching the pattern using glob
@@ -51,7 +39,7 @@ async function main({ path, regex="test", file_pattern="*.js" }) {
     }
 
     // Return array of match results
-    return results;
+    return results.slice(0,100);
   } catch (error) {
     console.log(error);
     return error.message;
@@ -60,14 +48,14 @@ async function main({ path, regex="test", file_pattern="*.js" }) {
 
 function getPrompt() {
   const prompt = `## search_files 
-描述: 请求在指定目录中对文件执行正则表达式搜索,提供上下文丰富的结果.此工具在多个文件中搜索模式或特定内容,显示每个匹配项及其封装上下文.
-参数:
-path: (需要)要搜索的目录路径.此目录将被递归搜索. 
-regex: (需要)要搜索的正则表达式模式.使用 NodeJs 正则表达式语法. 
-file_pattern: (需要)用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 文件).
-使用:
+Description: Request to perform a regular expression search in the specified directory, providing context-rich results. This tool searches for patterns or specific content across multiple files, displaying each match and its surrounding context.
+Parameters:
+path: (Required) The directory path to search. This directory will be searched recursively. 
+regex: (Required) The regular expression pattern to search for. Uses NodeJs regular expression syntax. 
+file_pattern: (Required) The Glob pattern to filter files (e.g., '*.ts' for TypeScript files).
+Usage:
 {
-  "thinking": "[思考过程]",
+  "thinking": "[Thinking process]",
   "tool": "search_files",
   "params": {
     "path": "[value]",

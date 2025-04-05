@@ -41,7 +41,7 @@ function main(params) {
         }
       });
       if (result.length > params.threshold) {
-        return '返回内容过多,请尝试其它方案!';
+        return 'Too much content returned, please try another solution!';
       }
       return result;
     } catch (error) {
@@ -59,13 +59,13 @@ if (require.main === module) {
 
 function getPrompt() {
   const prompt = `## list_files
-描述: 请求列出指定目录中的文件和目录.不要使用此工具来确认您可能创建的文件的存在,因为用户会让您知道文件是否已成功创建.
-参数:
-- path: (需要)需要读取的文件夹路径
-- recursive: (可选)true或false,如果recursive为true,它将递归列出所有文件和目录.如果递归为false或未提供,则它将仅列出顶级内容.
-使用:
+Description: Request to list files and directories in the specified directory. Do not use this tool to confirm the existence of files you may have created, as the user will let you know if the file was successfully created.
+Parameters:
+- path: (Required) The folder path to read
+- recursive: (Optional) true or false, if recursive is true, it will recursively list all files and directories. If recursive is false or not provided, it will only list the top-level content.
+Usage:
 {
-  "thinking": "[思考过程]",
+  "thinking": "[Thinking process]",
   "tool": "list_files",
   "params": {
     "path": "[value]",

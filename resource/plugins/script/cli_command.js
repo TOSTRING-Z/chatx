@@ -1,11 +1,11 @@
-// 引入child_process模块中的spawn和exec方法，用于创建子进程执行命令
+// Import spawn and exec methods from child_process module for creating child processes to execute commands
 const { spawn } = require('child_process');
 
 /**
- * 打开控制台并执行命令
- * @param {string} command - 要在控制台中执行的命令，默认为'dir'（Windows）
- * @description 此函数根据当前操作系统类型，打开终端并执行指定命令
- * Windows系统使用cmd.exe，MacOS使用Terminal.app，Linux使用x-terminal-emulator
+ * Open console and execute command
+ * @param {string} command - Command to be executed in console, default is 'dir' (Windows)
+ * @description This function opens a terminal and executes the specified command based on the current OS type
+ * Windows uses cmd.exe, MacOS uses Terminal.app, Linux uses x-terminal-emulator
  */
 function openConsole(command = 'dir') {
   return new Promise((resolve, reject) => {
@@ -70,5 +70,5 @@ function openConsole(command = 'dir') {
   });
 }
 
-// 导出函数，供其他模块使用
+// Export function for use by other modules
 module.exports = { openConsole };

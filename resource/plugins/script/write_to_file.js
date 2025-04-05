@@ -8,21 +8,21 @@ async function main({ file_path, context }) {
             fs.mkdirSync(dir, { recursive: true });
         }
         await fs.writeFileSync(file_path, context);
-        return `文件 ${file_path} 保存成功`;
+        return `File ${file_path} saved successfully`;
     } catch (error) {
-        return `文件 ${file_path} 保存失败: ${error.message}`;
+        return `File ${file_path} save failed: ${error.message}`;
     }
 }
 
 function getPrompt() {
     const prompt = `## write_to_file
-描述: 保存文件到指定路径(仅支持文本文件)
-参数:
-- file_path: (需要)需要保存的文件路径(一定要使用/)
-- context: (需要)需要保存的内容
-使用:
+Description: Save file to specified path (text files only)
+Parameters:
+- file_path: (Required) File path to save (must use /)
+- context: (Required) Content to save
+Usage:
 {
-  "thinking": "[思考过程]",
+  "thinking": "[Thinking process]",
   "tool": "write_to_file",
   "params": {
     "file_path": "[value]",

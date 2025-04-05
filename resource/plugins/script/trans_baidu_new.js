@@ -11,12 +11,12 @@ function decodeHtmlEntities(str) {
   });
 }
 
-// 判断翻译方式
+// Determine the translation method
 function mode(text) {
   return text.match("[\u4e00-\u9fa5]") ? ["zh", "en"] : ["en", "zh"];
 }
 
-// 结果解析
+// Result parsing
 function format(result) {
   try {
     let text;
@@ -30,12 +30,12 @@ function format(result) {
       if ("voice" in result) {
         if (result["voice"].length == 1) {
           let phonic = result["voice"][0]["phonic"];
-          text = `发音[${phonic}]\n${word}`;
+          text = `Pronunciation[${phonic}]\n${word}`;
         }
         else if(result["voice"].length == 2){
           let en_phonic = result["voice"][0]["en_phonic"];
           let am_phonic = result["voice"][1]["us_phonic"];
-          text = `英[${en_phonic}]\n美[${am_phonic}]\n${word}`;
+          text = `UK[${en_phonic}]\nUS[${am_phonic}]\n${word}`;
         } else {
           text = word;
         }
@@ -92,9 +92,9 @@ async function main({input}) {
           "User-Agent":
             "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0",
         },
-        // 禁止自动编码，手动序列化数据
+        // Disable automatic encoding, manually serialize data
         transformRequest: [(data, headers) => {
-          // 将 data 对象转换为 application/x-www-form-urlencoded 格式的查询字符串
+          // Convert the data object to a query string in application/x-www-form-urlencoded format
           let queryString = Object.keys(data).map(key => {
               return encodeURIComponent(key) + '=' + encodeURIComponent(data[key]);
           }).join('&');
