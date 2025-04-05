@@ -155,6 +155,7 @@ class MainWindow extends Window {
                 prompt: this.funcItems.text.event(data.prompt),
                 query: this.funcItems.text.event(data.query),
                 img_url: data?.img_url,
+                file_path: data?.file_path,
                 model: utils.copy(data.model),
                 version: utils.copy(data.version),
                 output_template: null,
@@ -201,7 +202,15 @@ class MainWindow extends Window {
                         break;
                     }
                     data = { ...data, ...defaults, ...chain_calls[step], step: step };
-
+                    const tool_parmas = {}
+                    const input_data = chain_calls[step]?.input_data || [];
+                    for (const key in input_data) {
+                        if (Object.hasOwnProperty.call(input_data, key)) {
+                            const item = input_data[key];
+                            tool_parmas[key] = item.format(data);
+                        }
+                    }
+                    data = { ...data, ...tool_parmas };
                     await this.chain_call.step(data);
                     if (this.chain_call.state == State.FINAL) {
                         if (this.chain_call.is_plugin)
@@ -270,14 +279,10 @@ class MainWindow extends Window {
                 }
                 if (this.funcItems.text.statu) {
                     try {
-                        // 使用jsdom解析剪贴板内容，假设它是HTML
                         const dom = new JSDOM(global.last_clipboard_content);
                         const plainText = dom.window.document.body.textContent;
                         global.last_clipboard_content = plainText
-
-                        // 将纯文本写回剪贴板
                         clipboard.writeText(plainText);
-
                         console.log('Clipboard content has been converted to plain text.');
                     } catch (error) {
                         console.error('Failed to clear clipboard formatting:', error);
@@ -330,7 +335,7 @@ class MainWindow extends Window {
             if (global.is_plugin) {
                 console.log(inner.model_obj)
                 console.log(global)
-                this.window.webContents.send("extra_load", e.statu && inner.model_obj[global.model][global.version.version].extra)
+                this.window.webContents.send("extra_load", e.statu && inner.model_obj[global.model][global.version]?.extra)
             }
             else {
                 this.window.webContents.send("extra_load", e.statu ? [{ "type": "act-plan" }] : utils.getConfig("extra"));
@@ -472,7 +477,6 @@ class MainWindow extends Window {
                     {
                         label: '控制台',
                         click: () => {
-                            // if (this.windowManager?.iconWindow) this.windowManager.iconWindow.window.webContents.openDevTools();
                             if (this.windowManager?.configsWindow) this.windowManager.configsWindow.window?.webContents.openDevTools();
                             if (this.window) this.window.webContents.openDevTools();
                         }
@@ -593,9 +597,7 @@ class MainWindow extends Window {
     }
 
     loadPrompt() {
-        // 获取上次打开的目录
         const lastDirectory = store.get('lastPromptDirectory') || path.join(process.resourcesPath, 'resource/', 'system_prompts/');
-        // 打开文件选择对话框
         dialog
             .showOpenDialog(this.window, {
                 properties: ['openFile'],
@@ -603,9 +605,9 @@ class MainWindow extends Window {
             })
             .then(result => {
                 if (!result.canceled) {
-                    const filePath = result.filePaths[0]; // 获取用户选取的文件路径
-                    store.set('lastPromptDirectory', path.dirname(filePath)); // 记录当前选择的目录
-                    console.log(filePath); // 在控制台输出文件路径
+                    const filePath = result.filePaths[0];
+                    store.set('lastPromptDirectory', path.dirname(filePath));
+                    console.log(filePath);
                     const prompt = fs.readFileSync(filePath, 'utf-8');
                     this.setPrompt(prompt);
                 }
@@ -618,12 +620,34 @@ class MainWindow extends Window {
     setChain(chain) {
         let config = utils.getConfig();
         config.chain_call = JSON.parse(chain).chain_call;
-        config.extra = JSON.parse(chain).extra;
-        this.window.webContents.send("extra_load", config.extra);
+        config.extra = [];
+        for (const key in config.chain_call) {
+            if (Object.hasOwnProperty.call(config.chain_call, key)) {
+                const item = config.chain_call[key];
+                let extra;
+                if (item?.model == inner.model_name.plugins) {
+                    extra = inner.model_obj.plugins[item.version]?.extra || []
+                } else {
+                    extra = [{ "type": "system-prompt" }]
+                }
+                extra.forEach(extra_ => {
+                    config.extra.push(extra_)
+                });
+            }
+        }
+        const deduplicateByType = (arr) => {
+            const seen = new Set();
+            return arr.filter(item => {
+                const duplicate = seen.has(item.type);
+                seen.add(item.type);
+                return !duplicate;
+            });
+        }
+        config.extra = deduplicateByType(config.extra);
+        utils.setConfig(config);
         this.funcItems.react.statu = false;
         this.funcItems.react.event();
         this.updateVersionsSubmenu();
-        utils.setConfig(config);
     }
 
     loadChain() {

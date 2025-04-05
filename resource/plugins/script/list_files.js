@@ -65,14 +65,12 @@ function getPrompt() {
 - recursive: (可选)true或false,如果recursive为true,它将递归列出所有文件和目录.如果递归为false或未提供,则它将仅列出顶级内容.
 使用:
 {
-    "thinking": "[思考过程]"
-    "tool": "list_files",
-    "params": {
-        {
-            "path": "[value]",
-            "recursive": [value],
-        }
-    }
+  "thinking": "[思考过程]",
+  "tool": "list_files",
+  "params": {
+    "path": "[value]",
+    "recursive": [value]
+  }
 }`
   return prompt
 }

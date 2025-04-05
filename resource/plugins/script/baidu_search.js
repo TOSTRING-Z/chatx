@@ -143,13 +143,11 @@ function getPrompt() {
 - context: (需要)需要搜索的文字,要求是用户输入中提取的关键字或总结的搜索内容
 使用:
 {
-    "thinking": "[思考过程]"
-    "tool": "baidu_search",
-    "params": {
-        {
-            "context": "[value]"
-        }
-    }
+  "thinking": "[思考过程]",
+  "tool": "baidu_search",
+  "params": {
+    "context": "[value]"
+  }
 }`
     return prompt
 }

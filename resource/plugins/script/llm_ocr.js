@@ -69,14 +69,12 @@ img_path: (需要)图片路径(本地路径,在线或者base64格式的输入前
 prompt: (需要)提示词
 使用:
 {
-    "thinking": "[思考过程]"
-    "tool": "llm_ocr",
-    "params": {
-        {
-            "img_path": "[value]",
-            "prompt": "[value]",
-        }
-    }
+  "thinking": "[思考过程]",
+  "tool": "llm_ocr",
+  "params": {
+    "img_path": "[value]",
+    "prompt": "[value]"
+  }
 }`
     return prompt
 }

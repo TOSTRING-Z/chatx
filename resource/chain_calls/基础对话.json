@@ -3,10 +3,5 @@
         {
             "end": true
         }
-    ],
-    "extra": [
-        {
-            "type": "system-prompt"
-        }
     ]
 }

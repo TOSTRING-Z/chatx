@@ -99,15 +99,13 @@ class ToolCall extends ReActAgent {
 工具使用采用纯JSON内容的格式,禁止使用任何Markdown代码块标记(包括\`\`\`json或\`\`\`),不要包含额外解释,注释或非JSON文本.以下是结构示例:
 
 {{
-    "thinking": "[思考过程]"
-    "tool": "[工具名]",
-    "params": {{
-        {{
-            "[parameter1_name]": "[value1]",
-            "[parameter2_name]": "[value2]",
-            ...
-        }}
-    }}
+  "thinking": "[思考过程]",
+  "tool": "[工具名]",
+  "params": {{
+    "[parameter1_name]": "[value1]",
+    "[parameter2_name]": "[value2]",
+    ...
+  }}
 }}
 
 ## 示例:
@@ -115,12 +113,12 @@ class ToolCall extends ReActAgent {
   "thinking": "用户简单地打招呼，没有提出具体任务或问题。在规划模式下，我需要与用户交流以了解他们的需求或任务。",
   "tool": "plan_mode_response",
   "params": {{
-      "response": "你好！请问有什么我可以帮助您的吗？",
-      "options": [
-          "我需要帮助完成一个项目",
-          "我想了解如何使用某些工具",
-          "我有一些具体的问题需要解答"
-      ]
+    "response": "你好！请问有什么我可以帮助您的吗？",
+    "options": [
+      "我需要帮助完成一个项目",
+      "我想了解如何使用某些工具",
+      "我有一些具体的问题需要解答"
+    ]
   }}
 }}
 
@@ -139,16 +137,16 @@ class ToolCall extends ReActAgent {
 - args: (需要)请求MCP服务参数.
 使用:
 {{
-    "thinking": "[思考过程]"
-    "tool": "mcp_server",
-    "params": {{
-        "name": "[value]",
-        "args": {
-            "[parameter1_name]": [value1],
-            "[parameter2_name]": [value2],
-            ...
-        }
+  "thinking": "[思考过程]",
+  "tool": "mcp_server",
+  "params": {{
+    "name": "[value]",
+    "args": {{
+      "[parameter1_name]": [value1],
+      "[parameter2_name]": [value2],
+      ...
     }}
+  }}
 }}
 
 ## ask_followup_question
@@ -158,27 +156,25 @@ class ToolCall extends ReActAgent {
 - options: (可选)为用户提供选择的2-5个选项.每个选项应为描述可能答案的字符串.您并非总是需要提供选项,但在许多情况下,这可以帮助用户避免手动输入回复.
 使用:
 {{
-    "thinking": "[思考过程]"
-    "tool": "ask_followup_question",
-    "params": {{
-        {{
-            "question": "[value]",
-            "options": [
-                "Option 1",
-                "Option 2",
-                ...
-            ]
-        }}
-    }}
+  "thinking": "[思考过程]",
+  "tool": "ask_followup_question",
+  "params": {{
+    "question": "[value]",
+    "options": [
+      "Option 1",
+      "Option 2",
+      ...
+    ]
+  }}
 }}
 
 ## waiting_feedback
 描述: 当需要执行文件操作,系统指令时调用该任务等待用户允许或拒绝
 使用示例:
 {{
-    "thinking": "[思考过程]"
-    "tool": "waiting_feedback",
-    "params": {{}}
+  "thinking": "[思考过程]",
+  "tool": "waiting_feedback",
+  "params": {{}}
 }}
 
 ## plan_mode_response
@@ -188,18 +184,16 @@ response: (需要)在思考过程之后提供给用户的响应.
 options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项应描述一个可能的选择或规划过程中的前进路径.这可以帮助引导讨论,并让用户更容易提供关键决策的输入.您可能并不总是需要提供选项,但在许多情况下,这可以节省用户手动输入响应的时间.不要提供切换模式的选项,因为不需要您引导用户操作.
 使用:
 {{
-    "thinking": "[思考过程]"
-    "tool": "plan_mode_response",
-    "params": {{
-        {{
-            "response": "[value]",
-            "options": [
-                "Option 1",
-                "Option 2",
-                ...
-            ]
-        }}
-    }}
+  "thinking": "[思考过程]",
+  "tool": "plan_mode_response",
+  "params": {{
+    "response": "[value]",
+    "options": [
+      "Option 1",
+      "Option 2",
+      ...
+    ]
+  }}
 }}
 
 ## memory_retrieval
@@ -208,11 +202,11 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 - memory_id: (需要)要检索的记忆ID。
 使用:
 {{
-    "thinking": "[思考过程]"
-    "tool": "memory_retrieval",
-    "params": {{
-        "memory_id": "[value]"
-    }}
+  "thinking": "[思考过程]",
+  "tool": "memory_retrieval",
+  "params": {{
+    "memory_id": "[value]"
+  }}
 }}
 
 ## terminate
@@ -221,11 +215,11 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 - final_answer: (需要)总结并给出最终回答(MarkDown格式)
 使用:
 {{
-    "thinking": "[思考过程]"
-    "tool": "terminate",
-    "params": {{
-        "final_answer": "[value]"
-    }}
+  "thinking": "[思考过程]",
+  "tool": "terminate",
+  "params": {{
+    "final_answer": "[value]"
+  }}
 }}
 
 ====
@@ -340,6 +334,38 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
     }
   }
 
+  error_response(text) {
+    text = JSON.stringify(`${text.slice(0,10)}...`);
+    switch (this.environment_details.mode) {
+      case this.modes.PLAN:
+        return `{
+  "thinking": ${text},
+  "tool": "plan_mode_response",
+  "params": {
+    "response": "是否继续?",
+    "options": ["继续","结束"]
+  }
+}`;
+    case this.modes.ACT:
+      return `{
+  "thinking": ${text},
+  "tool": "ask_followup_question",
+  "params": {
+    "response": "是否继续?",
+    "options": ["继续","结束"]
+  }
+}`;
+    case this.modes.AUTO:
+      return `{
+  "thinking": ${text},
+  "tool": "terminate",
+  "params": {
+    "final_answer": "是否继续?"
+  }
+}`;
+    }
+  }
+
   clear_memory() {
     this.memory_list.length = 0
   }
@@ -406,7 +432,9 @@ options: (可选)一个包含2-5个选项的数组,供用户选择.每个选项�
 
   async task(data) {
     data.prompt = this.system_prompt;
-    data.output_format = await this.llmCall(data);
+    const raw_json = await this.llmCall(data);
+    console.log(`raw_json: ${raw_json}`);
+    data.output_format = utils.extractJson(raw_json) || this.error_response(raw_json);
     data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
     return this.get_tool(data.output_format, data);
   }

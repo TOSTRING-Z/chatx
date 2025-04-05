@@ -1,6 +1,7 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const JSON5 = require('json5');
 const { app } = require('electron');
 
 class Utils {
@@ -10,6 +11,41 @@ class Utils {
             Utils.instance = this;
         }
         return Utils.instance;
+    }
+
+    fixJsonString(jsonString) {
+        // 修复常见的 JSON 格式问题
+        let fixed = jsonString;
+
+        // 1. 修复未转义的特殊字符
+        fixed = fixed.replace(/([^\\])\\([^\\\/bfnrtu"])/g, '$1\\\\$2');
+
+        // 3. 修复单引号问题（将单引号转为双引号）
+        fixed = fixed.replace(/'/g, '"');
+
+        // 4. 修复未闭合的字符串
+        fixed = fixed.replace(/"([^"]*)$/, '"$1"');
+
+        // 5. 修复未闭合的对象或数组
+        if ((fixed.match(/{/g) || []).length > (fixed.match(/}/g) || []).length) {
+            fixed += '}';
+        }
+
+        if ((fixed.match(/\[/g) || []).length > (fixed.match(/\]/g) || []).length) {
+            fixed += ']';
+        }
+
+        return fixed;
+    }
+
+    extractJson(text) {
+        try {
+            const jsonRegex = /{(?:[^{}]|{(?:[^{}]|{[^{}]*})*})*}/g;
+            const matches = text.match(jsonRegex);
+            return !!matches ? matches[0] : null;
+        } catch (error) {
+            return null
+        }
     }
 
     delay(seconds) {
@@ -52,25 +88,25 @@ class Utils {
     getLanguage() {
         // 方法1: 使用 app.getLocale()
         let locale = app.getLocale();
-        
+
         // 方法2: 如果为空，尝试 process.env.LANG (Unix-like 系统)
         if (!locale && process.env.LANG) {
             locale = process.env.LANG.split('.')[0].replace('_', '-');
         }
-        
+
         // 方法3: 如果仍然为空，使用 navigator.language (仅在渲染进程可用)
         if (!locale && typeof navigator !== 'undefined') {
             locale = navigator.language;
         }
-        
+
         // 方法4: 最终回退到英语
         if (!locale) {
             locale = 'en-US';
         }
-        
+
         // 标准化语言代码
         locale = locale.replace('_', '-');
-        
+
         // 映射到友好名称
         const languageMap = {
             'zh': '中文',
@@ -90,11 +126,11 @@ class Utils {
             'it': '意大利文',
             // 可以添加更多语言映射
         };
-        
+
         // 尝试匹配完整代码，如果不匹配则尝试基础语言代码
-        return languageMap[locale] || 
-               languageMap[locale.split('-')[0]] || 
-               locale;
+        return languageMap[locale] ||
+            languageMap[locale.split('-')[0]] ||
+            locale;
     }
 
     formatDate() {

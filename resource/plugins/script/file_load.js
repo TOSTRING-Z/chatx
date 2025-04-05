@@ -67,15 +67,13 @@ function getPrompt() {
 - endLine: (可选)结束读取的行号
 使用:
 {
-    "thinking": "[思考过程]"
-    "tool": "file_load",
-    "params": {
-        {
-            "file_path": "[value]",
-            "startLine": [value],
-            "endLine": [value]
-        }
-    }
+  "thinking": "[思考过程]",
+  "tool": "file_load",
+  "params": {
+    "file_path": "[value]",
+    "startLine": [value],
+    "endLine": [value]
+  }
 }`
     return prompt
 }

@@ -44,7 +44,8 @@
     "@modelcontextprotocol/sdk": "^1.7.0",
     "electron-squirrel-startup": "^1.0.0",
     "electron-store": "^4.0.0",
-    "jsdom": "^26.0.0"
+    "jsdom": "^26.0.0",
+    "json5": "^2.2.3"
   },
   "scripts": {
     "start": "electron-forge start",

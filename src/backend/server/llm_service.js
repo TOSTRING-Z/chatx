@@ -67,6 +67,7 @@ function format_messages(messages_list, params) {
     messages_list = messages_list.map(message => {
         let message_copy = copy(message);
         delete message_copy.id;
+        delete message_copy.memory_id;
         delete message_copy.show;
         delete message_copy.react;
         return message_copy;
@@ -140,7 +141,7 @@ String.prototype.format = function (data) {
 async function chatBase(data) {
     try {
         let content = data.input;
-        if (data.img_url) {
+        if (!!data?.img_url) {
             content = [
                 {
                     "type": "text",

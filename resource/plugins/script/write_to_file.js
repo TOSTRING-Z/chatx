@@ -22,14 +22,12 @@ function getPrompt() {
 - context: (需要)需要保存的内容
 使用:
 {
-    "thinking": "[思考过程]"
-    "tool": "write_to_file",
-    "params": {
-        {
-            "file_path": "[value]",
-            "context": "[value]"
-        }
-    }
+  "thinking": "[思考过程]",
+  "tool": "write_to_file",
+  "params": {
+    "file_path": "[value]",
+    "context": "[value]"
+  }
 }`
     return prompt
 }

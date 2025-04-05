@@ -4,10 +4,5 @@
             "input_template": "{img_url?'请识别图像内容后回答。':''}{input}",
             "end": true
         }
-    ],
-    "extra": [
-        {
-            "type": "system-prompt"
-        }
     ]
 }

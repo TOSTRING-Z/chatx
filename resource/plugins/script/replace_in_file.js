@@ -4,16 +4,16 @@ function main({ file_path, diff }) {
     try {
         const originalContent = fs.readFileSync(file_path, 'utf8');
         let content = originalContent;
-        const blocks = diff.split('<<<<<<< SEARCH');
+        const blocks = diff.split('<<<<<<< SEARCH\n');
         blocks.shift(); // Remove the first element as it is empty
         blocks.forEach(block => {
-            const [search, replace] = block.split('=======');
+            const [search, replace] = block.split('\n=======\n');
             const searchContent = search;
-            const replaceContent = replace.split('>>>>>>> REPLACE')[0];
+            const replaceContent = replace.split('\n>>>>>>> REPLACE')[0];
             content = content.replace(searchContent, replaceContent);
         });
         if (content === originalContent) {
-            return `文件 ${file_path} 未修改: SEARCH块中的内容,换行符或空格与文件中的实际内容可能不完全匹配`;
+            return `文件 ${file_path} 未修改: SEARCH块中的内容,"\r","\n",空格或特殊字符等与文件中的实际内容可能不完全匹配`;
         }
         fs.writeFileSync(file_path, content);
         return `文件 ${file_path} 修改成功`;
@@ -62,14 +62,12 @@ function getPrompt() {
             * 删除代码: 使用空的 REPLACE 部分
 使用:
 {
-    "thinking": "[思考过程]"
-    "tool": "replace_in_file",
-    "params": {
-        {
-            "file_path": "[value]",
-            "diff": "[value]"
-        }
-    }
+  "thinking": "[思考过程]",
+  "tool": "replace_in_file",
+  "params": {
+    "file_path": "[value]",
+    "diff": "[value]"
+  }
 }`
     return prompt
 }

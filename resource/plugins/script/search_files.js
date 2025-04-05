@@ -67,15 +67,13 @@ regex: (需要)要搜索的正则表达式模式.使用 NodeJs 正则表达式�
 file_pattern: (需要)用于过滤文件的 Glob 模式(例如,'*.ts' 用于 TypeScript 文件).
 使用:
 {
-    "thinking": "[思考过程]"
-    "tool": "search_files",
-    "params": {
-        {
-            "path": "[value]",
-            "regex": "[value]",
-            "file_pattern": "[value]"
-        }
-    }
+  "thinking": "[思考过程]",
+  "tool": "search_files",
+  "params": {
+    "path": "[value]",
+    "regex": "[value]",
+    "file_pattern": "[value]"
+  }
 }`
   return prompt
 }
