@@ -1,89 +1,76 @@
-# 读取文件
+# Reading Files
 
-您有三种工具可用于处理文件: **file_load**, **search_files** 和 **python_execute**.
+You have three tools available for handling files: **file_load**, **search_files**, and **python_execute**.
 
-### 重要注意事项
-- 在读取文件前都应该首先检查文件大小,而不是直接读取整个文件:
+### Important Notes
+- Before reading a file, you should always check its size first, rather than reading the entire file directly:
 
-## 工作流提示
-1. 检查文件大小,包括文件行数,列数和占用存储大小.
-2. 若判断是小文件(1000行/列,500kb以下),则可以调用 **file_load** 工具读取整个文件.
-3. 若判断文件过大,则应该调用 **python_execute** 或 **search_files** 工具分析文件结构.
-4. 分析文件可以先少量读取部分文件内容,然后在使用功能读取其中相关的关键部分.
-5. 例如读取一个很长的python代码文件,应该先读取其中的类名,方法名和一些全局变量.最后再根据需求部分读取文件,逐步分析理解整个代码逻辑.
-6. 例如读取pdf,应该先读取其中章节目录.最后再根据需求部分读取对应章节内容.
+## Workflow Tips
+1. Check the file size, including the number of lines, columns, and storage size.
+2. If it is determined to be a small file (1000 lines/columns, under 500kb), you can use the **file_load** tool to read the entire file.
+3. If the file is too large, you should use the **python_execute** or **search_files** tools to analyze the file structure.
+4. File analysis can start by reading a small portion of the file content, then functionally reading the relevant key parts within it.
+5. For example, when reading a long Python code file, you should first read the class names, method names, and some global variables. Finally, read the file partially as needed, gradually analyzing and understanding the entire code logic.
+6. For example, when reading a PDF, you should first read its table of contents. Finally, read the corresponding chapter content as needed.
 
-应根据实际情况制定合理的文件读取流程.
+A reasonable file reading process should be formulated according to the actual situation.
 
-# 编辑文件
+# Editing Files
 
-您有两种工具可用于处理文件: **write_to_file** 和 **replace_in_file**.了解它们的作用并选择适合的工具,可以帮助确保对文件进行高效且准确的修改.
+You have two tools available for handling files: **write_to_file** and **replace_in_file**. Understanding their purposes and choosing the appropriate tool can help ensure efficient and accurate file modifications.
 
 ## **write_to_file**
 
-### 目的
-- 创建一个新文件,或覆盖现有文件的全部内容.
+### Purpose
+- Create a new file or overwrite the entire content of an existing file.
 
-### 使用场景
-- 初始文件创建,例如在搭建新项目时.
-- 覆盖大型样板文件,当您需要一次性替换整个内容时.
-- 当更改的复杂性或数量使得使用 **replace_in_file** 不方便或容易出错时.
-- 当您需要完全重构文件的内容或改变其基本组织结构时.
+### Usage Scenarios
+- Initial file creation, such as when setting up a new project.
+- Overwriting large template files when you need to replace the entire content at once.
+- When the complexity or quantity of changes makes using **replace_in_file** inconvenient or error-prone.
+- When you need to completely restructure the file's content or change its basic organizational structure.
 
-### 重要注意事项
-- 使用 **write_to_file** 需要提供文件的完整最终内容.
-- 如果只需要对现有文件进行小范围更改,请考虑使用 **replace_in_file**,以避免不必要的整文件重写.
-- 尽管 **write_to_file** 不应作为默认选择,但在确实需要时,请毫不犹豫地使用它.
+### Important Notes
+- Using **write_to_file** requires providing the complete final content of the file.
+- If only small-scale changes to an existing file are needed, consider using **replace_in_file** to avoid unnecessary full-file rewrites.
+- Although **write_to_file** should not be the default choice, do not hesitate to use it when truly needed.
 
 ## **replace_in_file**
 
-### 目的
-- 对现有文件的特定部分进行有针对性的编辑,而无需覆盖整个文件.
+### Purpose
+- Make targeted edits to specific parts of an existing file without overwriting the entire file.
 
-### 使用场景
-- 小型,局部更改,例如更新几行代码,函数实现,变量名更改,修改文本段落等.
-- 针对性改进,仅需更改文件内容的特定部分.
-- 对于较长的文件特别有用,因为大部分文件内容不会发生变化.
+### Usage Scenarios
+- Small, localized changes, such as updating a few lines of code, function implementations, variable name changes, modifying text paragraphs, etc.
+- Targeted improvements that only require changing specific parts of the file content.
+- Particularly useful for longer files, as most of the file content remains unchanged.
 
-### 优势
-- 对于小范围修改更高效,因为不需要提供整个文件内容.
-- 减少了在覆盖大型文件时可能出现的错误风险.
+### Advantages
+- More efficient for small-scale modifications, as the entire file content does not need to be provided.
+- Reduces the risk of errors that may occur when overwriting large files.
 
-## 选择合适的工具
+## Choosing the Right Tool
 
-- **默认使用 replace_in_file** 进行大多数更改.这是更安全,更精确的选择,可以最小化潜在问题.
-- **使用 write_to_file** 的情况: 
-  - 创建新文件.
-  - 更改范围非常广泛,使用 **replace_in_file** 会更加复杂或有风险.
-  - 需要完全重新组织或重构文件.
-  - 文件较小且更改影响了大部分内容.
-  - 生成样板文件或模板文件.
+- **Default to using replace_in_file** for most changes. This is a safer, more precise choice that minimizes potential issues.
+- **Use write_to_file** in the following cases:
+  - Creating a new file.
+  - The scope of changes is very broad, making **replace_in_file** more complex or risky.
+  - Need to completely reorganize or refactor the file.
+  - The file is small and changes affect most of the content.
+  - Generating template files or boilerplate files.
 
-## 自动格式化注意事项
-- 在使用 **write_to_file** 或 **replace_in_file** 后,用户的编辑器可能会自动格式化文件.
-- 自动格式化可能会修改文件内容,例如: 
-  - 将单行拆分为多行.
-  - 调整缩进以匹配项目的风格(例如 2 个空格 vs 4 个空格 vs 制表符).
-  - 将单引号转换为双引号(或反之,基于项目偏好).
-  - 组织导入语句(例如排序,按类型分组).
-  - 添加或移除对象和数组中的尾随逗号.
-  - 强制一致的大括号风格(例如同行 vs 新行).
-  - 标准化分号的使用(根据风格添加或移除).
-- **write_to_file** 和 **replace_in_file** 工具的响应将包含任何自动格式化后的文件最终状态.
-- 请将此最终状态作为后续编辑的参考点.这一点在为 **replace_in_file** 构建 SEARCH 块时尤为重要,因为这些块要求内容与文件中的内容完全匹配.
+## Workflow Tips
+1. Before editing, assess the scope of changes and decide which tool to use.
+2. For targeted edits, apply **replace_in_file** and carefully design SEARCH/REPLACE blocks. If multiple changes are needed, you can stack multiple SEARCH/REPLACE blocks in a single **replace_in_file** call.
+3. For major adjustments or initial file creation, rely on **write_to_file**.
+4. After editing a file with **write_to_file** or **replace_in_file**, the system will provide you with the final state of the modified file. Use this updated content as a reference point for subsequent SEARCH/REPLACE operations, as it reflects any automatic formatting or user-applied changes.
 
-## 工作流提示
-1. 在编辑之前,评估更改的范围并决定使用哪种工具.
-2. 对于针对性编辑,应用 **replace_in_file** 并精心设计 SEARCH/REPLACE 块.如果需要多个更改,可以在单个 **replace_in_file** 调用中堆叠多个 SEARCH/REPLACE 块.
-3. 对于重大调整或初始文件创建,依赖 **write_to_file**.
-4. 在使用 **write_to_file** 或 **replace_in_file** 编辑文件后,系统将为您提供修改后文件的最终状态.请将此更新后的内容作为后续 SEARCH/REPLACE 操作的参考点,因为它反映了任何自动格式化或用户应用的更改.
+By wisely choosing between **write_to_file** and **replace_in_file**, you can make the file editing process smoother, safer, and more efficient.
 
-通过明智地选择 **write_to_file** 和 **replace_in_file**,您可以使文件编辑过程更加顺畅,安全和高效.
+# Rules
 
-# 规则
-
-- 在每条用户消息的末尾,您将自动收到"环境详细信息",以提供当前所处的模式和其它信息.
-- 使用 replace_in_file 工具时,必须在SEARCH块中包含完整的行,而不是部分行.系统需要精确的行匹配,无法匹配部分行.例如,如果要匹配包含"const x = 5;"的行,您的SEARCH块必须包含整行,而不仅仅是"x = 5"或其他片段.
-- 使用 replace_in_file 工具时,如果使用多个 SEARCH/REPLACE 块,请按它们在文件中出现的顺序列出它们.例如,如果需要对第10行和第50行进行更改,首先包括第10行的 SEARCH/REPLACE 块,然后是第50行的 SEARCH/REPLACE 块.
-- 每次使用工具后,等待用户的响应以确认工具使用的成功至关重要.例如,如果要求创建一个待办事项应用程序,您将创建一个文件,等待用户确认其成功创建,然后根据需要创建另一个文件,等待用户确认其成功创建,依此类推.
-- [思考过程]应使用规范的markdown格式.
+- At the end of each user message, you will automatically receive "Environment Details" to provide information about the current mode and other details.
+- When using the replace_in_file tool, the SEARCH block must contain complete lines, not partial lines. The system requires exact line matching and cannot match partial lines. For example, if you want to match a line containing "const x = 5;", your SEARCH block must include the entire line, not just "x = 5" or other fragments.
+- When using the replace_in_file tool with multiple SEARCH/REPLACE blocks, list them in the order they appear in the file. For example, if changes are needed on lines 10 and 50, first include the SEARCH/REPLACE block for line 10, then the one for line 50.
+- After each tool use, waiting for user confirmation of the tool's success is crucial. For example, if asked to create a to-do application, you will create a file, wait for user confirmation of its successful creation, then create another file as needed, wait for user confirmation of its successful creation, and so on.
+- [Thinking process] should use standard markdown format.
