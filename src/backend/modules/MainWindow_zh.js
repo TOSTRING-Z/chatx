@@ -80,35 +80,35 @@ class MainWindow extends Window {
 
         this.window.loadFile('src/frontend/index.html')
 
-        // Send message to renderer process after window loaded
+        // 在窗口加载完成后发送消息到渲染进程
         this.window.webContents.on('did-finish-load', () => {
             this.setPrompt(utils.getConfig("prompt"));
             this.initFuncItems();
         });
 
-        // Intercept page navigation
+        // 拦截页面跳转
         this.window.webContents.on('will-navigate', (event, url) => {
             function isValidUrl(url) {
                 try {
-                    new URL(url); // If URL is invalid, will throw error
+                    new URL(url); // 如果 URL 无效，会抛出错误
                     return true;
                 } catch {
                     return false;
                 }
             }
-            // Prevent navigation
+            // 阻止跳转
             event.preventDefault();
-            console.log(`Attempt to navigate to: ${url}, has been blocked`);
+            console.log(`试图跳转到: ${url}，已被阻止`);
             if (isValidUrl(url)) {
                 shell.openExternal(url).catch((error) => {
-                    console.error('Failed to open link:', error.message);
+                    console.error('打开链接失败:', error.message);
                 });
             } else {
-                console.error('Invalid URL:', url);
+                console.error('无效的 URL:', url);
             }
         });
 
-        // Bind window close event
+        // 绑定窗口关闭事件
         this.window.on('close', () => {
             this.windowManager.closeAllWindows();
         })
@@ -150,7 +150,7 @@ class MainWindow extends Window {
             } else {
                 this.window.focus();
             }
-            // Default values
+            // 默认值
             let defaults = {
                 prompt: this.funcItems.text.event(data.prompt),
                 query: this.funcItems.text.event(data.query),
@@ -194,7 +194,7 @@ class MainWindow extends Window {
 
             }
             else {
-                // Chain call
+                // 链式调用
                 this.chain_call.state = State.IDLE;
                 let chain_calls = utils.getConfig("chain_call");
                 for (const step in chain_calls) {
@@ -218,7 +218,7 @@ class MainWindow extends Window {
                         break;
                     }
                     if (this.chain_call.state == State.ERROR) {
-                        _event.sender.send('stream-data', { id: data.id, content: "Error occurred!", end: true });
+                        _event.sender.send('stream-data', { id: data.id, content: "发生错误！", end: true });
                         break;
                     }
 
@@ -406,19 +406,19 @@ class MainWindow extends Window {
     getTemplate() {
         return [
             {
-                label: "Model Selection",
+                label: "模型选择",
                 submenu: this.getModelsSubmenu()
             },
             {
-                label: "Version Selection",
+                label: "版本选择",
                 submenu: this.getVersionsSubmenu()
             },
             {
-                label: "Feature Selection",
+                label: "功能选择",
                 submenu: [
                     {
                         click: this.funcItems.clip.click,
-                        label: 'Copy Translation',
+                        label: '复制翻译',
                         type: 'checkbox',
                         checked: this.funcItems.clip.statu,
                     },
@@ -430,29 +430,29 @@ class MainWindow extends Window {
                     },
                     {
                         click: this.funcItems.math.click,
-                        label: 'Formula Formatting',
+                        label: '公式格式化',
                         type: 'checkbox',
                         checked: this.funcItems.math.statu,
                     },
                     {
                         click: this.funcItems.text.click,
-                        label: 'Text Formatting',
+                        label: '文本格式化',
                         type: 'checkbox',
                         checked: this.funcItems.text.statu,
                     }
                 ]
             },
             {
-                label: "Agent",
+                label: "智能体",
                 submenu: [
                     {
-                        label: 'System Prompt',
+                        label: '系统提示',
                         click: async () => {
                             this.loadPrompt();
                         }
                     },
                     {
-                        label: 'Chain Call',
+                        label: '链式调用',
                         click: async () => {
                             this.loadChain();
                         }
@@ -466,23 +466,23 @@ class MainWindow extends Window {
                 ]
             },
             {
-                label: 'Others',
+                label: '其它',
                 submenu: [
                     {
-                        label: 'Configuration',
+                        label: '配置文件',
                         click: async () => {
                             this.windowManager.configsWindow.create();
                         }
                     },
                     {
-                        label: 'Console',
+                        label: '控制台',
                         click: () => {
                             if (this.windowManager?.configsWindow) this.windowManager.configsWindow.window?.webContents.openDevTools();
                             if (this.window) this.window.webContents.openDevTools();
                         }
                     },
                     {
-                        label: 'Reset Conversation',
+                        label: '重置对话',
                         click: () => {
                             clearMessages();
                             this.tool_call.clear_memory();
@@ -490,15 +490,15 @@ class MainWindow extends Window {
                         }
                     },
                     {
-                        label: 'Save Conversation',
+                        label: '保存对话',
                         click: () => {
                             const lastPath = path.join(store.get('lastSavePath') || path.join(process.resourcesPath, 'resource/', 'messages/'), `messages_${utils.formatDate()}.json`);
                             console.log(lastPath)
                             dialog.showSaveDialog(this.window, {
                                 defaultPath: lastPath,
                                 filters: [
-                                    { name: 'JSON File', extensions: ['json'] },
-                                    { name: 'All Files', extensions: ['*'] }
+                                    { name: 'JSON文件', extensions: ['json'] },
+                                    { name: '所有文件', extensions: ['*'] }
                                 ]
                             }).then(result => {
                                 if (!result.canceled) {
@@ -511,14 +511,14 @@ class MainWindow extends Window {
                         }
                     },
                     {
-                        label: 'Load Conversation',
+                        label: '加载对话',
                         click: () => {
                             const lastPath = store.get('lastSavePath') || path.join(process.resourcesPath, 'resource/', 'messages/');
                             dialog.showOpenDialog(this.window, {
                                 defaultPath: lastPath,
                                 filters: [
-                                    { name: 'JSON File', extensions: ['json'] },
-                                    { name: 'All Files', extensions: ['*'] }
+                                    { name: 'JSON文件', extensions: ['json'] },
+                                    { name: '所有文件', extensions: ['*'] }
                                 ]
                             }).then(result => {
                                 if (!result.canceled) {
@@ -545,7 +545,7 @@ class MainWindow extends Window {
                                                     if (role == "user") {
                                                         if (!!react) {
                                                             let content_format = content.replaceAll("\`", "'").replaceAll("`", "'");
-                                                            this.window.webContents.send('info-data', { id: id, content: `Stage ${i}, Output: \n\n\`\`\`\n${content_format}\n\`\`\`\n\n` });
+                                                            this.window.webContents.send('info-data', { id: id, content: `阶段 ${i}, 输出: \n\n\`\`\`\n${content_format}\n\`\`\`\n\n` });
                                                         }
                                                         else {
                                                             this.tool_call.memory_list.push({ user: content, memory_id: memory_id })
@@ -557,10 +557,10 @@ class MainWindow extends Window {
                                                                 const tool_info = JSON.parse(content);
                                                                 if (!!tool_info?.thinking) {
                                                                     this.tool_call.memory_list.push({ assistant: tool_info.thinking, memory_id: memory_id });
-                                                                    this.tool_call.memory_list.push({ memory_id: memory_id, user: `Assistant called ${tool_info.tool} tool` });
+                                                                    this.tool_call.memory_list.push({ memory_id: memory_id, user: `助手调用了 ${tool_info.tool} 工具` });
                                                                     const thinking = `${tool_info.thinking}\n\n---\n\n`
                                                                     let content_format = content.replaceAll("\`", "'").replaceAll("`", "'");
-                                                                    this.window.webContents.send('info-data', { id: id, content: `Stage ${i}, Output: \n\n\`\`\`\n${content_format}\n\`\`\`\n\n` });
+                                                                    this.window.webContents.send('info-data', { id: id, content: `阶段 ${i}, 输出: \n\n\`\`\`\n${content_format}\n\`\`\`\n\n` });
                                                                     this.window.webContents.send('stream-data', { id: id, content: thinking, end: true });
                                                                 }
                                                             } catch (error) {
@@ -572,9 +572,9 @@ class MainWindow extends Window {
                                                     }
                                                 }
                                             }
-                                            console.log(`Load success: ${result.filePaths[0]}`)
+                                            console.log(`加载成功：${result.filePaths[0]}`)
                                         } else {
-                                            console.log(`Load failed: ${result.filePaths[0]}`)
+                                            console.log(`加载失败：${result.filePaths[0]}`)
                                         }
                                     };
                                 }
