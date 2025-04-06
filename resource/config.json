@@ -167,6 +167,15 @@
         "text_max_len": 1000
       }
     },
+    "llm_ocr": {
+      "path": "{resourcesPath}/resource/plugins/script/llm_ocr.js",
+      "params": {
+        "version": "claude-3-5-sonnet-20241022",
+        "api_url": "",
+        "api_key": ""
+      },
+      "enabled": false
+    },
     "get_think": {
       "path": "{resourcesPath}/resource/plugins/script/get_think.js"
     },
@@ -185,35 +194,22 @@
       }
     },
     "search_files": {
-      "path": "{resourcesPath}/resource/plugins/script/search_files.js"
     },
     "list_files": {
-      "path": "{resourcesPath}/resource/plugins/script/list_files.js",
       "params": {
         "threshold": 50
       }
     },
     "write_to_file": {
-      "path": "{resourcesPath}/resource/plugins/script/write_to_file.js"
     },
     "replace_in_file": {
-      "path": "{resourcesPath}/resource/plugins/script/replace_in_file.js"
     },
     "python_execute": {
-      "path": "{resourcesPath}/resource/plugins/script/python_execute.js",
       "params": {
         "python_bin": "python",
-        "threshold": 10000
+        "threshold": 10000,
+        "delay_time": 5
       }
-    },
-    "llm_ocr": {
-      "path": "{resourcesPath}/resource/plugins/script/llm_ocr.js",
-      "params": {
-        "version": "claude-3-5-sonnet-20241022",
-        "api_url": "",
-        "api_key": ""
-      },
-      "enabled": false
     }
   },
   "mcp_server": {

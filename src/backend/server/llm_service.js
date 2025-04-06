@@ -3,6 +3,7 @@ const { streamJSON, streamSse } = require("./stream.js")
 
 let messages = [];
 let stop_ids = [];
+let env_message;
 
 function getStopIds() {
     return stop_ids;
@@ -15,6 +16,10 @@ function getMessages() {
 function pushMessage(role, content, id, memory_id, show = true, react = true) {
     let message = { role: role, content: content, id: id, memory_id: memory_id, show: show, react: react };
     messages.push(message);
+}
+
+function envMessage(content) {
+    env_message = { role: "user", content: content };
 }
 
 function clearMessages() {
@@ -114,6 +119,11 @@ function format_messages(messages_list, params) {
                 return message;
             }
         })
+    }
+
+    // env_message
+    if (!!env_message) {
+        messages_list.push(env_message);
     }
 
     return messages_list;
@@ -237,7 +247,8 @@ async function chatBase(data) {
             });
             const respJson = await resp.json();
             if (respJson.hasOwnProperty("error")) {
-                data.event.sender.send('info-data', { id: data.id, content: `POST Error:\n\n\`\`\`\n${respJson.message}\n\`\`\`\n\n` });
+                data.event.sender.send('info-data', { id: data.id, content: `POST Error:\n\n\`\`\`\n${respJson.error?.message}\n\`\`\`\n\n` });
+                return null;
             }
             if (respJson.hasOwnProperty("message")) {
                 data.output = respJson.message.content;
@@ -265,5 +276,5 @@ async function chatBase(data) {
 }
 
 module.exports = {
-    chatBase, clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds, pushMessage, getMessages
+    chatBase, clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds, pushMessage, getMessages, envMessage
 };

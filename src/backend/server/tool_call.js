@@ -1,7 +1,8 @@
 const { ReActAgent, State } = require("./agent.js")
 const { utils } = require('../modules/globals')
-const { pushMessage, getMessages } = require('../server/llm_service');
+const { pushMessage, getMessages, envMessage } = require('../server/llm_service');
 const { MCPClient } = require('./mcp_client.js')
+const JSON5 = require("json5")
 const fs = require('fs');
 const os = require('os');
 
@@ -291,12 +292,6 @@ You complete the given task iteratively, breaking it down into clear steps and s
 
 ===
 
-# Memory List
-
-{memory_list}
-
-===
-
 # Memory List Explanation
 Each time a user and assistant message is exchanged, a "memory_id" is stored in the "memory list". The memory storage is continuously arranged in order of the size of "memory_id".
 "memory_id" is an index linking to the details of tool calls, and the details of tool calls are stored in the database, which can only be queried using the memory_retrieval tool.
@@ -315,6 +310,7 @@ All task messages submitted by users will also be saved in the "memory list". If
     this.memory_list = [];
 
     this.env = `Environment details:
+- Memory List: {memory_list}
 - Language: {language}
 - Temporary folder: {tmpdir}
 - Current time: {time}
@@ -327,10 +323,11 @@ All task messages submitted by users will also be saved in the "memory list". If
     }
 
     this.environment_details = {
-      mode: this.modes.ACT,
+      memory_list: [],
+      language: utils.getLanguage(),
       tmpdir: os.tmpdir(),
       time: utils.formatDate(),
-      language: utils.getLanguage()
+      mode: this.modes.ACT,
     }
   }
 
@@ -351,7 +348,8 @@ All task messages submitted by users will also be saved in the "memory list". If
   environment_update(data) {
     this.environment_details.time = utils.formatDate();
     this.environment_details.language = utils.getLanguage();
-    pushMessage("user", this.env.format(this.environment_details), data.id, this.memory_id, false);
+    this.environment_details.memory_list = JSON.stringify(this.memory_list.slice(this.memory_list.length - utils.getConfig("memory_length") * 10, this.memory_list.length), null, 4)
+    envMessage(this.env.format(this.environment_details));
   }
 
   plan_act_mode(mode) {
@@ -365,8 +363,7 @@ All task messages submitted by users will also be saved in the "memory list". If
       arch: os.arch(),
       tool_prompt: this.tool_prompt.join("\n\n"),
       mcp_prompt: this.mcp_prompt,
-      extra_prompt: this.get_extra_prompt(data.extra_prompt),
-      memory_list: JSON.stringify(this.memory_list.slice(this.memory_list.length - utils.getConfig("memory_length") * 10, this.memory_list.length), null, 4)
+      extra_prompt: this.get_extra_prompt(data.extra_prompt)
     })
     if (!this.mcp_prompt) {
       this.mcp_prompt = await this.init_mcp();
@@ -435,7 +432,7 @@ All task messages submitted by users will also be saved in the "memory list". If
   get_tool(content, data) {
     pushMessage("assistant", content, data.id, ++this.memory_id);
     try {
-      const tool_info = JSON.parse(content);
+      const tool_info = JSON5.parse(content);
       if (!!tool_info?.thinking) {
         this.memory_list.push({ memory_id: this.memory_id, assistant: tool_info.thinking });
         this.memory_list.push({ memory_id: this.memory_id, user: `Assistant called ${tool_info.tool} tool` });

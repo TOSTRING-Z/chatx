@@ -4,12 +4,12 @@ function main({ file_path, diff }) {
     try {
         const originalContent = fs.readFileSync(file_path, 'utf8');
         let content = originalContent;
-        const blocks = diff.split('<<<<<<< SEARCH\n');
+        const blocks = diff.split('<<<<<<< SEARCH');
         blocks.shift(); // Remove the first element as it is empty
         blocks.forEach(block => {
-            const [search, replace] = block.split('\n=======\n');
-            const searchContent = search;
-            const replaceContent = replace.split('\n>>>>>>> REPLACE')[0];
+            const [search, replace] = block.split('=======');
+            const searchContent = search.trim();
+            const replaceContent = replace.split('>>>>>>> REPLACE')[0].trim();
             content = content.replace(searchContent, replaceContent);
         });
         if (content === originalContent) {

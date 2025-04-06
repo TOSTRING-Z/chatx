@@ -1,4 +1,7 @@
+const path = require("path");
+const fs = require('fs');
 const { utils, inner } = require("./globals");
+
 
 class Plugins {
     constructor() {
@@ -9,11 +12,17 @@ class Plugins {
     }
     // 配置插件接口
     loadPlugin(params) {
-        const pluginPath = utils.getConfig("plugins")[params.version].path.format(process);
+        const pluginPath = utils.getConfig("plugins")[params.version]?.path.format(process);
         const pluginParams = utils.getConfig("plugins")[params.version]?.params;
         try {
             console.log(`loading plugin: ${params.version}`);
-            const plugin = require(pluginPath);
+            let plugin;
+            if(!!pluginPath && fs.existsSync(pluginPath)) {
+                plugin = require(pluginPath);
+            }
+            else {
+                plugin = require(path.join(__dirname, `../tools/${params.version}.js`));
+            }
             let item;
             if (pluginParams) {
                 item = { func: plugin.main(pluginParams), extra: params?.extra, getPrompt: plugin?.getPrompt };

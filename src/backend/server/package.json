@@ -1,7 +1,0 @@
-{
-  "type": "commonjs",
-  "devDependencies": {
-    "@modelcontextprotocol/sdk": "^1.7.0",
-    "jest": "^29.7.0"
-  }
-}

@@ -1,7 +1,6 @@
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const JSON5 = require('json5');
 const { app } = require('electron');
 
 class Utils {
@@ -11,31 +10,6 @@ class Utils {
             Utils.instance = this;
         }
         return Utils.instance;
-    }
-
-    fixJsonString(jsonString) {
-        // 修复常见的 JSON 格式问题
-        let fixed = jsonString;
-
-        // 1. 修复未转义的特殊字符
-        fixed = fixed.replace(/([^\\])\\([^\\\/bfnrtu"])/g, '$1\\\\$2');
-
-        // 3. 修复单引号问题（将单引号转为双引号）
-        fixed = fixed.replace(/'/g, '"');
-
-        // 4. 修复未闭合的字符串
-        fixed = fixed.replace(/"([^"]*)$/, '"$1"');
-
-        // 5. 修复未闭合的对象或数组
-        if ((fixed.match(/{/g) || []).length > (fixed.match(/}/g) || []).length) {
-            fixed += '}';
-        }
-
-        if ((fixed.match(/\[/g) || []).length > (fixed.match(/\]/g) || []).length) {
-            fixed += ']';
-        }
-
-        return fixed;
     }
 
     extractJson(text) {
@@ -143,22 +117,13 @@ class Utils {
 
         // 映射到友好名称
         const languageMap = {
-            'zh': '中文',
-            'zh-CN': '中文(简体)',
-            'zh-TW': '中文(繁体)',
-            'zh-HK': '中文(香港)',
-            'en': '英文',
-            'en-US': '英文(美国)',
-            'en-GB': '英文(英国)',
-            'ja': '日文',
-            'ko': '韩文',
-            'fr': '法文',
-            'de': '德文',
-            'es': '西班牙文',
-            'ru': '俄文',
-            'pt': '葡萄牙文',
-            'it': '意大利文',
-            // 可以添加更多语言映射
+            'zh': 'You should answer in Chinese.',
+            'zh-CN': 'You should answer in Chinese.',
+            'zh-TW': 'You should answer in Chinese.',
+            'zh-HK': 'You should answer in Chinese.',
+            'en': 'You should answer in English.',
+            'en-US': 'You should answer in English.',
+            'en-GB': 'You should answer in English.'
         };
 
         // 尝试匹配完整代码，如果不匹配则尝试基础语言代码
