@@ -1,6 +1,6 @@
 const { Window } = require("./Window")
 const { store, global, inner, utils } = require('./globals')
-const { clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds } = require('../server/llm_service');
+const { clearMessages, saveMessages, deleteMessage, stopMessage, getStopIds } = require('../server/llm_service');
 const { captureMouse } = require('../mouse/capture_mouse');
 const { State } = require("../server/agent.js")
 const { ToolCall } = require('../server/tool_call');
@@ -522,61 +522,7 @@ class MainWindow extends Window {
                                 ]
                             }).then(result => {
                                 if (!result.canceled) {
-                                    clearMessages();
-                                    this.tool_call.clear_memory();
-                                    this.window.webContents.send('clear')
-                                    let messages = loadMessages(result.filePaths[0])
-                                    if (messages.length > 0) {
-                                        const maxId = messages.reduce((max, current) => {
-                                            return parseInt(current.id) > parseInt(max.id) ? current : max;
-                                        }, messages[0]);
-                                        if (!!maxId.id) {
-                                            global.id = parseInt(maxId.id);
-                                            if (!!messages[0].react) {
-                                                const maxMemoryId = messages.reduce((max, current) => {
-                                                    return parseInt(current.memory_id) > parseInt(max.memory_id) ? current : max;
-                                                }, messages[0]);
-                                                this.tool_call.memory_id = maxMemoryId.memory_id;
-                                            }
-                                            for (let i in messages) {
-                                                i = parseInt(i);
-                                                if (Object.hasOwnProperty.call(messages, i)) {
-                                                    let { role, content, id, memory_id, react } = messages[i];
-                                                    if (role == "user") {
-                                                        if (!!react) {
-                                                            let content_format = content.replaceAll("\`", "'").replaceAll("`", "'");
-                                                            this.window.webContents.send('info-data', { id: id, content: `Stage ${i}, Output: \n\n\`\`\`\n${content_format}\n\`\`\`\n\n` });
-                                                        }
-                                                        else {
-                                                            this.tool_call.memory_list.push({ user: content, memory_id: memory_id })
-                                                            this.window.webContents.send('user-data', { id: id, content: content });
-                                                        }
-                                                    } else {
-                                                        if (!!react) {
-                                                            try {
-                                                                const tool_info = JSON.parse(content);
-                                                                if (!!tool_info?.thinking) {
-                                                                    this.tool_call.memory_list.push({ assistant: tool_info.thinking, memory_id: memory_id });
-                                                                    this.tool_call.memory_list.push({ memory_id: memory_id, user: `Assistant called ${tool_info.tool} tool` });
-                                                                    const thinking = `${tool_info.thinking}\n\n---\n\n`
-                                                                    let content_format = content.replaceAll("\`", "'").replaceAll("`", "'");
-                                                                    this.window.webContents.send('info-data', { id: id, content: `Stage ${i}, Output: \n\n\`\`\`\n${content_format}\n\`\`\`\n\n` });
-                                                                    this.window.webContents.send('stream-data', { id: id, content: thinking, end: true });
-                                                                }
-                                                            } catch (error) {
-                                                                continue;
-                                                            }
-                                                        } else {
-                                                            this.window.webContents.send('stream-data', { id: id, content: content, end: true });
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            console.log(`Load success: ${result.filePaths[0]}`)
-                                        } else {
-                                            console.log(`Load failed: ${result.filePaths[0]}`)
-                                        }
-                                    };
+                                    this.tool_call.load_message(this.window, result.filePaths[0])
                                 }
                             }).catch(err => {
                                 console.error(err);

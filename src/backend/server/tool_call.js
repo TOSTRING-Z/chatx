@@ -1,6 +1,6 @@
 const { ReActAgent, State } = require("./agent.js")
-const { utils } = require('../modules/globals')
-const { pushMessage, getMessages, envMessage } = require('../server/llm_service');
+const { utils, global } = require('../modules/globals')
+const { pushMessage, getMessages, envMessage, clearMessages, loadMessages } = require('../server/llm_service');
 const { MCPClient } = require('./mcp_client.js')
 const JSON5 = require("json5")
 const fs = require('fs');
@@ -34,7 +34,7 @@ class ToolCall extends ReActAgent {
             arguments: args
           }
           const result = await this.mcp_client.client.callTool(params, undefined, {
-            timeout: utils.getConfig("tool_call").mcp_timeout * 1000
+            timeout: (utils.getConfig("tool_call")?.mcp_timeout || 600) * 1000
           });
           return result;
         }
@@ -452,6 +452,69 @@ All task messages submitted by users will also be saved in the "memory list". If
       this.environment_update(data);
       data.event.sender.send('info-data', { id: data.id, content: this.get_info(data) });
     }
+  }
+
+  load_message(window, filePath) {
+    this.window = window;
+
+    clearMessages();
+    this.clear_memory();
+    this.window.webContents.send('clear')
+    let messages = loadMessages(filePath)
+    if (messages.length > 0) {
+      const maxId = messages.reduce((max, current) => {
+        return parseInt(current.id) > parseInt(max.id) ? current : max;
+      }, messages[0]);
+      if (!!maxId.id) {
+        global.id = parseInt(maxId.id);
+        if (!!messages[0].react) {
+          const maxMemoryId = messages.reduce((max, current) => {
+            return parseInt(current.memory_id) > parseInt(max.memory_id) ? current : max;
+          }, messages[0]);
+          this.memory_id = maxMemoryId.memory_id;
+        }
+        for (let i in messages) {
+          i = parseInt(i);
+          if (Object.hasOwnProperty.call(messages, i)) {
+            let { role, content, id, memory_id, react } = messages[i];
+            if (role == "user") {
+              if (!!react) {
+                let content_format = content.replaceAll("\`", "'").replaceAll("`", "'");
+                this.window.webContents.send('info-data', { id: id, content: `Step ${i}, Output: \n\n\`\`\`json\n${content_format}\n\`\`\`\n\n` });
+              }
+              else {
+                this.memory_list.push({ user: content, memory_id: memory_id })
+                this.window.webContents.send('user-data', { id: id, content: content });
+              }
+            } else {
+              if (!!react) {
+                try {
+                  const tool_info = JSON5.parse(content);
+                  if (!!tool_info?.thinking) {
+                    this.memory_list.push({ assistant: tool_info.thinking, memory_id: memory_id });
+                    this.memory_list.push({ memory_id: memory_id, user: `Assistant called ${tool_info.tool} tool` });
+                    const thinking = `${tool_info.thinking}\n\n---\n\n`
+                    let content_format = content.replaceAll("\`", "'").replaceAll("`", "'");
+                    this.window.webContents.send('info-data', { id: id, content: `Step ${i}, Output:\n\n\`\`\`json\n${content_format}\n\`\`\`\n\n` });
+                    this.window.webContents.send('stream-data', { id: id, content: thinking, end: true });
+                    if (tool_info.tool == "terminate") {
+                      this.window.webContents.send('stream-data', { id: id, content: tool_info.params.final_answer, end: true });
+                    }
+                  }
+                } catch (error) {
+                  continue;
+                }
+              } else {
+                this.window.webContents.send('stream-data', { id: id, content: content, end: true });
+              }
+            }
+          }
+        }
+        console.log(`Load success: ${filePath}`)
+      } else {
+        console.log(`Load failed: ${filePath}`)
+      }
+    };
   }
 }
 

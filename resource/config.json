@@ -165,7 +165,8 @@
         "jina": "",
         "num_results": 5,
         "text_max_len": 1000
-      }
+      },
+      "enabled": false
     },
     "llm_ocr": {
       "path": "{resourcesPath}/resource/plugins/script/llm_ocr.js",
@@ -191,25 +192,30 @@
       ],
       "params": {
         "threshold": 10000
-      }
+      },
+      "enabled": true
     },
     "search_files": {
     },
     "list_files": {
       "params": {
         "threshold": 50
-      }
+      },
+      "enabled": true
     },
     "write_to_file": {
+      "enabled": true
     },
     "replace_in_file": {
+      "enabled": true
     },
     "python_execute": {
       "params": {
         "python_bin": "python",
         "threshold": 10000,
         "delay_time": 5
-      }
+      },
+      "enabled": true
     }
   },
   "mcp_server": {
