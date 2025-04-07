@@ -26,47 +26,6 @@ tmp_docker = "/tmp"
 async def execute_bash(
     cmd: str = "echo hello!", timeout: Optional[float] = 600.0
 ) -> str:
-    """
-    Execute the bash tool with the given command.
-
-    当前工具可以用于复杂的生物信息分析流程，包括复杂的数据分析，绘图和系统级别指令调用。已经安装的工具如下：
-    - homer: 用于ChIP-seq和motif分析的工具
-      Example: `execute_bash("findMotifsGenome.pl peaks.txt hg19 output_dir -size 200 -mask")`
-    - deeptools: 用于高通量测序数据的可视化
-      Example: `execute_bash("computeMatrix reference-point --referencePoint TSS -b 1000 -a 1000 -R genes.bed -S coverage.bw -out matrix.gz")`
-    - chipseeker: 用于ChIP-seq数据的注释
-      Example: `execute_bash("Rscript -e 'library(ChIPseeker); peakAnno <- annotatePeak("peaks.bed", tssRegion=c(-1000, 1000), TxDb=TxDb.Hsapiens.UCSC.hg19.knownGene)'")`
-    - ucsc-liftover: 用于基因组坐标转换
-      Example: `execute_bash("liftOver input.bed hg19ToHg38.over.chain output.bed unmapped.bed")`
-    - cistrome_beta: 用于ChIP-seq数据分析的beta版本工具
-      Example: `execute_bash("cistrome beta --input peaks.bed --genome hg19 --output output_dir")`
-    - fastqc: 用于测序数据的质量控制
-      Example: `execute_bash("fastqc seq.fastq -o output_dir")`
-    - trim_galore: 用于测序数据的适配器修剪
-      Example: `execute_bash("trim_galore --paired --quality 20 --length 20 read1.fastq read2.fastq")`
-    - bowtie2: 用于序列比对
-      Example: `execute_bash("bowtie2 -x index -1 read1.fastq -2 read2.fastq -S output.sam")`
-    - picard: 用于处理高通量测序数据的工具
-      Example: `execute_bash("picard MarkDuplicates I=input.bam O=marked_duplicates.bam M=metrics.txt")`
-    - macs2: 用于ChIP-seq峰值检测
-      Example: `execute_bash("macs2 callpeak -t ChIP.bam -c Control.bam -f BAM -g hs -n output_prefix")`
-    - pandas: 用于数据分析和操作
-      Example: `execute_bash("python -c 'import pandas as pd; df = pd.read_csv("data.csv"); print(df.head())'")
-    - seaborn: 用于数据可视化
-      Example: `execute_bash("python -c 'import seaborn as sns; tips = sns.load_dataset("tips"); sns.boxplot(x="day", y="total_bill", data=tips)'")
-
-    Args:
-        cmd: The bash command to execute.
-        timeout: Timeout time (seconds), None means no timeout.
-
-    Returns:
-        The output of the bash command.
-
-    Examples:
-        >>> execute_bash("ls -l")
-        'total 4\ndrwxr-xr-x 2 root root 4096 Apr  5 12:34 data'
-    """
-
     try:
         command = ["docker", "exec", "transagent", cmd]
         command = " ".join(command)
@@ -102,16 +61,7 @@ async def execute_bash(
         return f"Execution error: {str(e)}"
 
 
-def get_bed_data(biological_type: str) -> str:
-    """
-    Get bed data for a given biological type.
-
-    Args:
-        biological_type: Type of biological element (Enhancer, TR, SNP)
-
-    Returns:
-        The path to the [biological_type]-bed file.
-    """
+async def get_bed_data(biological_type: str) -> str:
     bed_data_db = {
         "Enhancer": "/data/human/human_Super_Enhancer_SEdbv2.bed",
         "TR": "/data/human/human_TFBS.bed",
@@ -122,15 +72,7 @@ def get_bed_data(biological_type: str) -> str:
     return "Biological type {biological_type} not found in database"
 
 
-def get_gene_position(genes: list = ["TP53"]) -> str:
-    """Query the positions of genes and return a Gene-bed file path.
-
-    Args:
-        genes: A list of gene names (e.g. TP53).
-
-    Returns:
-        The path to the Gene-bed file.
-    """
+async def get_gene_position(genes: list = ["TP53"]) -> str:
     bed_config = {"gene_bed_path": "/data/gene.bed"}
     gene_bed = pd.read_csv(
         bed_config["gene_bed_path"], index_col=None, header=None, sep="\t"
@@ -147,17 +89,6 @@ async def execute_bedtools(
     options: str = "--help",
     timeout: Optional[float] = 600.0,
 ) -> str:
-    """bedtools is a powerful toolset for genome arithmetic.
-
-    Args:
-        subcommand: The bedtools sub-commands (e.g. intersect).
-        options: The parameter list of the sub-command (e.g. "-a a.bed -b b.bed -u"]).
-        timeout: Timeout time (seconds), None means no timeout.
-
-    Returns:
-        The path to the result-bed file.
-    """
-
     try:
         uuid_ = uuid.uuid1()
         docker_out_path = f"{tmp_docker}/result_bed_{uuid_}.bed"
@@ -364,5 +295,5 @@ starlette_app = Starlette(
 import uvicorn  # 导入uvicorn ASGI服务器
 
 uvicorn.run(
-    starlette_app, host="0.0.0.0", port=8900
+    starlette_app, host="0.0.0.0", port=3001
 )  # 运行Starlette应用，监听0.0.0.0和指定端口
