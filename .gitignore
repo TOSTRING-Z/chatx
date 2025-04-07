@@ -6,3 +6,5 @@ glm_token.py
 test.html
 OpenManus
 cline
+mcp_client/data/
+mcp_client/tmp/

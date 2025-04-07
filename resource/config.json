@@ -165,7 +165,17 @@
         "jina": "",
         "num_results": 5,
         "text_max_len": 1000
-      }
+      },
+      "enabled": false
+    },
+    "llm_ocr": {
+      "path": "{resourcesPath}/resource/plugins/script/llm_ocr.js",
+      "params": {
+        "version": "claude-3-5-sonnet-20241022",
+        "api_url": "",
+        "api_key": ""
+      },
+      "enabled": false
     },
     "get_think": {
       "path": "{resourcesPath}/resource/plugins/script/get_think.js"
@@ -175,44 +185,37 @@
     },
     "file_load": {
       "path": "{resourcesPath}/resource/plugins/script/file_load.js",
-      "extre": [
+      "extra": [
         {
           "type": "file-reader"
         }
       ],
       "params": {
         "threshold": 10000
-      }
+      },
+      "enabled": true
     },
     "search_files": {
-      "path": "{resourcesPath}/resource/plugins/script/search_files.js"
     },
     "list_files": {
-      "path": "{resourcesPath}/resource/plugins/script/list_files.js",
       "params": {
         "threshold": 50
-      }
+      },
+      "enabled": true
     },
     "write_to_file": {
-      "path": "{resourcesPath}/resource/plugins/script/write_to_file.js"
+      "enabled": true
     },
     "replace_in_file": {
-      "path": "{resourcesPath}/resource/plugins/script/replace_in_file.js"
+      "enabled": true
     },
     "python_execute": {
-      "path": "{resourcesPath}/resource/plugins/script/python_execute.js",
       "params": {
         "python_bin": "python",
-        "threshold": 10000
-      }
-    },
-    "llm_ocr": {
-      "path": "{resourcesPath}/resource/plugins/script/llm_ocr.js",
-      "params": {
-        "version": "claude-3-5-sonnet-20241022",
-        "api_url": "",
-        "api_key": ""
-      }
+        "threshold": 10000,
+        "delay_time": 5
+      },
+      "enabled": true
     }
   },
   "mcp_server": {
@@ -236,6 +239,8 @@
   ],
   "tool_call": {
     "memory_length": 20,
+    "extra_prompt": "{resourcesPath}/extra_prompt.md",
+    "mcp_timeout": 600,
     "llm_parmas": {
       "max_tokens": 4000,
       "temperature": 0.5,
@@ -245,7 +250,7 @@
       }
     }
   },
-  "extre": [
+  "extra": [
     {
       "type": "system-prompt"
     }

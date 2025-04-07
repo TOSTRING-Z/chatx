@@ -3,6 +3,7 @@ const { streamJSON, streamSse } = require("./stream.js")
 
 let messages = [];
 let stop_ids = [];
+let env_message;
 
 function getStopIds() {
     return stop_ids;
@@ -12,9 +13,13 @@ function getMessages() {
     return messages;
 }
 
-function pushMessage(role, content, id) {
-    let message = { role: role, content: content, id: id };
+function pushMessage(role, content, id, memory_id, show = true, react = true) {
+    let message = { role: role, content: content, id: id, memory_id: memory_id, show: show, react: react };
     messages.push(message);
+}
+
+function envMessage(content) {
+    env_message = { role: "user", content: content };
 }
 
 function clearMessages() {
@@ -36,7 +41,7 @@ function loadMessages(filePath) {
     try {
         const data = fs.readFileSync(filePath, "utf-8");
         messages = JSON.parse(data);
-        return messages;
+        return messages.filter(message => message.show);
     } catch (error) {
         console.log(error);
         return false;
@@ -67,6 +72,9 @@ function format_messages(messages_list, params) {
     messages_list = messages_list.map(message => {
         let message_copy = copy(message);
         delete message_copy.id;
+        delete message_copy.memory_id;
+        delete message_copy.show;
+        delete message_copy.react;
         return message_copy;
     });
 
@@ -113,6 +121,11 @@ function format_messages(messages_list, params) {
         })
     }
 
+    // env_message
+    if (!!env_message) {
+        messages_list.push(env_message);
+    }
+
     return messages_list;
 
 }
@@ -138,7 +151,7 @@ String.prototype.format = function (data) {
 async function chatBase(data) {
     try {
         let content = data.input;
-        if (data.img_url) {
+        if (!!data?.img_url) {
             content = [
                 {
                     "type": "text",
@@ -153,17 +166,17 @@ async function chatBase(data) {
             ];
         }
         if (!!data.system_prompt) {
-            messages_list = [{ "role": "system", "content": data.system_prompt, "id": data.id }]
+            messages_list = [{ role: "system", content: data.system_prompt, id: data.id, memory_id: null, show: true, react: false }]
             messages_list = messages_list.concat(messages.slice(messages.length - parseInt(data.memory_length * 1.5), messages.length))
         }
         else {
             messages_list = messages.slice(messages.length - parseInt(data.memory_length * 1.5), messages.length)
         }
         if (data?.push_message) {
-            message_input = { "role": "user", "content": content, "id": data.id };
+            message_input = { role: "user", content: content, id: data.id, memory_id: null, show: true, react: false };
             messages_list.push(message_input)
         }
-        let message_output = { role: 'assistant', content: '', id: data.id }
+        let message_output = { role: 'assistant', content: '', id: data.id, memory_id: null, show: true, react: false }
 
         let body = {
             model: data.version,
@@ -233,6 +246,10 @@ async function chatBase(data) {
                 body: JSON.stringify(body),
             });
             const respJson = await resp.json();
+            if (respJson.hasOwnProperty("error")) {
+                data.event.sender.send('info-data', { id: data.id, content: `POST Error:\n\n\`\`\`\n${respJson.error?.message}\n\`\`\`\n\n` });
+                return null;
+            }
             if (respJson.hasOwnProperty("message")) {
                 data.output = respJson.message.content;
             } else {
@@ -259,5 +276,5 @@ async function chatBase(data) {
 }
 
 module.exports = {
-    chatBase, clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds, pushMessage, getMessages
+    chatBase, clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds, pushMessage, getMessages, envMessage
 };

@@ -1,6 +1,6 @@
 const { Window } = require("./Window")
 const { store, global, inner, utils } = require('./globals')
-const { clearMessages, saveMessages, loadMessages, deleteMessage, stopMessage, getStopIds } = require('../server/llm_service');
+const { clearMessages, saveMessages, deleteMessage, stopMessage, getStopIds } = require('../server/llm_service');
 const { captureMouse } = require('../mouse/capture_mouse');
 const { State } = require("../server/agent.js")
 const { ToolCall } = require('../server/tool_call');
@@ -16,7 +16,7 @@ const path = require('path');
 class MainWindow extends Window {
     constructor(windowManager) {
         super(windowManager);
-        this.tool_call = new ToolCall();
+        this.tool_call = new ToolCall(inner.model_obj[inner.model_name.plugins]);
         this.chain_call = new ChainCall();
         this.funcItems = {
             clip: {
@@ -80,35 +80,35 @@ class MainWindow extends Window {
 
         this.window.loadFile('src/frontend/index.html')
 
-        // 在窗口加载完成后发送消息到渲染进程
+        // Send message to renderer process after window loaded
         this.window.webContents.on('did-finish-load', () => {
             this.setPrompt(utils.getConfig("prompt"));
             this.initFuncItems();
         });
 
-        // 拦截页面跳转
+        // Intercept page navigation
         this.window.webContents.on('will-navigate', (event, url) => {
             function isValidUrl(url) {
                 try {
-                    new URL(url); // 如果 URL 无效，会抛出错误
+                    new URL(url); // If URL is invalid, will throw error
                     return true;
                 } catch {
                     return false;
                 }
             }
-            // 阻止跳转
+            // Prevent navigation
             event.preventDefault();
-            console.log(`试图跳转到: ${url}，已被阻止`);
+            console.log(`Attempt to navigate to: ${url}, has been blocked`);
             if (isValidUrl(url)) {
                 shell.openExternal(url).catch((error) => {
-                    console.error('打开链接失败:', error.message);
+                    console.error('Failed to open link:', error.message);
                 });
             } else {
-                console.error('无效的 URL:', url);
+                console.error('Invalid URL:', url);
             }
         });
 
-        // 绑定窗口关闭事件
+        // Bind window close event
         this.window.on('close', () => {
             this.windowManager.closeAllWindows();
         })
@@ -150,11 +150,12 @@ class MainWindow extends Window {
             } else {
                 this.window.focus();
             }
-            // 默认值
+            // Default values
             let defaults = {
                 prompt: this.funcItems.text.event(data.prompt),
                 query: this.funcItems.text.event(data.query),
                 img_url: data?.img_url,
+                file_path: data?.file_path,
                 model: utils.copy(data.model),
                 version: utils.copy(data.version),
                 output_template: null,
@@ -162,7 +163,7 @@ class MainWindow extends Window {
                 prompt_template: null,
                 params: null,
                 llm_parmas: utils.getConfig("llm_parmas"),
-                memory_length: utils.getConfig("memory_length"),   
+                memory_length: utils.getConfig("memory_length"),
                 push_message: true,
                 end: null,
                 event: _event
@@ -193,7 +194,7 @@ class MainWindow extends Window {
 
             }
             else {
-                // 链式调用
+                // Chain call
                 this.chain_call.state = State.IDLE;
                 let chain_calls = utils.getConfig("chain_call");
                 for (const step in chain_calls) {
@@ -201,7 +202,15 @@ class MainWindow extends Window {
                         break;
                     }
                     data = { ...data, ...defaults, ...chain_calls[step], step: step };
-
+                    const tool_parmas = {}
+                    const input_data = chain_calls[step]?.input_data || [];
+                    for (const key in input_data) {
+                        if (Object.hasOwnProperty.call(input_data, key)) {
+                            const item = input_data[key];
+                            tool_parmas[key] = item.format(data);
+                        }
+                    }
+                    data = { ...data, ...tool_parmas };
                     await this.chain_call.step(data);
                     if (this.chain_call.state == State.FINAL) {
                         if (this.chain_call.is_plugin)
@@ -209,7 +218,7 @@ class MainWindow extends Window {
                         break;
                     }
                     if (this.chain_call.state == State.ERROR) {
-                        _event.sender.send('stream-data', { id: data.id, content: "发生错误！", end: true });
+                        _event.sender.send('stream-data', { id: data.id, content: "Error occurred!", end: true });
                         break;
                     }
 
@@ -270,14 +279,10 @@ class MainWindow extends Window {
                 }
                 if (this.funcItems.text.statu) {
                     try {
-                        // 使用jsdom解析剪贴板内容，假设它是HTML
                         const dom = new JSDOM(global.last_clipboard_content);
                         const plainText = dom.window.document.body.textContent;
                         global.last_clipboard_content = plainText
-
-                        // 将纯文本写回剪贴板
                         clipboard.writeText(plainText);
-
                         console.log('Clipboard content has been converted to plain text.');
                     } catch (error) {
                         console.error('Failed to clear clipboard formatting:', error);
@@ -326,18 +331,18 @@ class MainWindow extends Window {
     }
 
     getReactEvent(e) {
-        const extreReact = () => {
+        const extraReact = () => {
             if (global.is_plugin) {
                 console.log(inner.model_obj)
                 console.log(global)
-                this.window.webContents.send("extre_load", e.statu && inner.model_obj[global.model][global.version.version].extre)
+                this.window.webContents.send("extra_load", e.statu && inner.model_obj[global.model][global.version]?.extra)
             }
             else {
-                this.window.webContents.send("extre_load", e.statu ? [{ "type": "act-plan" }] : utils.getConfig("extre"));
+                this.window.webContents.send("extra_load", e.statu ? [{ "type": "act-plan" }] : utils.getConfig("extra"));
             }
         }
-        extreReact();
-        return extreReact;
+        extraReact();
+        return extraReact;
     }
 
     initFuncItems() {
@@ -374,7 +379,7 @@ class MainWindow extends Window {
         if (global.is_plugin) {
             versions = inner.model[inner.model_name.plugins]["versions"];
             console.log(versions)
-            versions = versions.filter(version=>version?.show);
+            versions = versions.filter(version => version?.show);
             console.log(versions)
         }
         else {
@@ -383,14 +388,14 @@ class MainWindow extends Window {
         this.funcItems.react.event();
         console.log(versions);
         return versions.map((version) => {
-            const _version = version?.version||version;
+            const _version = version?.version || version;
             return {
                 type: 'radio',
                 checked: global.version == _version,
                 click: () => {
                     global.version = _version
                     if (global.is_plugin) {
-                        this.window.webContents.send("extre_load", version?.extre)
+                        this.window.webContents.send("extra_load", version?.extra)
                     }
                 },
                 label: _version
@@ -401,19 +406,19 @@ class MainWindow extends Window {
     getTemplate() {
         return [
             {
-                label: "模型选择",
+                label: "Model Selection",
                 submenu: this.getModelsSubmenu()
             },
             {
-                label: "版本选择",
+                label: "Version Selection",
                 submenu: this.getVersionsSubmenu()
             },
             {
-                label: "功能选择",
+                label: "Feature Selection",
                 submenu: [
                     {
                         click: this.funcItems.clip.click,
-                        label: '复制翻译',
+                        label: 'Copy Translation',
                         type: 'checkbox',
                         checked: this.funcItems.clip.statu,
                     },
@@ -425,29 +430,29 @@ class MainWindow extends Window {
                     },
                     {
                         click: this.funcItems.math.click,
-                        label: '公式格式化',
+                        label: 'Formula Formatting',
                         type: 'checkbox',
                         checked: this.funcItems.math.statu,
                     },
                     {
                         click: this.funcItems.text.click,
-                        label: '文本格式化',
+                        label: 'Text Formatting',
                         type: 'checkbox',
                         checked: this.funcItems.text.statu,
                     }
                 ]
             },
             {
-                label: "智能体",
+                label: "Agent",
                 submenu: [
                     {
-                        label: '系统提示',
+                        label: 'System Prompt',
                         click: async () => {
                             this.loadPrompt();
                         }
                     },
                     {
-                        label: '链式调用',
+                        label: 'Chain Call',
                         click: async () => {
                             this.loadChain();
                         }
@@ -461,24 +466,23 @@ class MainWindow extends Window {
                 ]
             },
             {
-                label: '其它',
+                label: 'Others',
                 submenu: [
                     {
-                        label: '配置文件',
+                        label: 'Configuration',
                         click: async () => {
                             this.windowManager.configsWindow.create();
                         }
                     },
                     {
-                        label: '控制台',
+                        label: 'Console',
                         click: () => {
-                            // if (this.windowManager?.iconWindow) this.windowManager.iconWindow.window.webContents.openDevTools();
                             if (this.windowManager?.configsWindow) this.windowManager.configsWindow.window?.webContents.openDevTools();
                             if (this.window) this.window.webContents.openDevTools();
                         }
                     },
                     {
-                        label: '重置对话',
+                        label: 'Reset Conversation',
                         click: () => {
                             clearMessages();
                             this.tool_call.clear_memory();
@@ -486,15 +490,15 @@ class MainWindow extends Window {
                         }
                     },
                     {
-                        label: '保存对话',
+                        label: 'Save Conversation',
                         click: () => {
                             const lastPath = path.join(store.get('lastSavePath') || path.join(process.resourcesPath, 'resource/', 'messages/'), `messages_${utils.formatDate()}.json`);
                             console.log(lastPath)
                             dialog.showSaveDialog(this.window, {
                                 defaultPath: lastPath,
                                 filters: [
-                                    { name: 'JSON文件', extensions: ['json'] },
-                                    { name: '所有文件', extensions: ['*'] }
+                                    { name: 'JSON File', extensions: ['json'] },
+                                    { name: 'All Files', extensions: ['*'] }
                                 ]
                             }).then(result => {
                                 if (!result.canceled) {
@@ -507,30 +511,18 @@ class MainWindow extends Window {
                         }
                     },
                     {
-                        label: '加载对话',
+                        label: 'Load Conversation',
                         click: () => {
                             const lastPath = store.get('lastSavePath') || path.join(process.resourcesPath, 'resource/', 'messages/');
                             dialog.showOpenDialog(this.window, {
                                 defaultPath: lastPath,
                                 filters: [
-                                    { name: 'JSON文件', extensions: ['json'] },
-                                    { name: '所有文件', extensions: ['*'] }
+                                    { name: 'JSON File', extensions: ['json'] },
+                                    { name: 'All Files', extensions: ['*'] }
                                 ]
                             }).then(result => {
                                 if (!result.canceled) {
-                                    let messages = loadMessages(result.filePaths[0])
-                                    if (messages.length > 0) {
-                                        const maxId = messages.reduce((max, current) => {
-                                            return parseInt(current.id) > parseInt(max.id) ? current : max;
-                                        }, messages[0]);
-                                        if (!!maxId.id) {
-                                            global.id = parseInt(maxId.id);
-                                            this.window.webContents.send('load', messages)
-                                            console.log(`加载成功：${result.filePaths[0]}`)
-                                        } else {
-                                            console.log(`加载失败：${result.filePaths[0]}`)
-                                        }
-                                    };
+                                    this.tool_call.load_message(this.window, result.filePaths[0])
                                 }
                             }).catch(err => {
                                 console.error(err);
@@ -551,9 +543,7 @@ class MainWindow extends Window {
     }
 
     loadPrompt() {
-        // 获取上次打开的目录
         const lastDirectory = store.get('lastPromptDirectory') || path.join(process.resourcesPath, 'resource/', 'system_prompts/');
-        // 打开文件选择对话框
         dialog
             .showOpenDialog(this.window, {
                 properties: ['openFile'],
@@ -561,9 +551,9 @@ class MainWindow extends Window {
             })
             .then(result => {
                 if (!result.canceled) {
-                    const filePath = result.filePaths[0]; // 获取用户选取的文件路径
-                    store.set('lastPromptDirectory', path.dirname(filePath)); // 记录当前选择的目录
-                    console.log(filePath); // 在控制台输出文件路径
+                    const filePath = result.filePaths[0];
+                    store.set('lastPromptDirectory', path.dirname(filePath));
+                    console.log(filePath);
                     const prompt = fs.readFileSync(filePath, 'utf-8');
                     this.setPrompt(prompt);
                 }
@@ -576,12 +566,34 @@ class MainWindow extends Window {
     setChain(chain) {
         let config = utils.getConfig();
         config.chain_call = JSON.parse(chain).chain_call;
-        config.extre = JSON.parse(chain).extre;
-        this.window.webContents.send("extre_load", config.extre);
+        config.extra = [];
+        for (const key in config.chain_call) {
+            if (Object.hasOwnProperty.call(config.chain_call, key)) {
+                const item = config.chain_call[key];
+                let extra;
+                if (item?.model == inner.model_name.plugins) {
+                    extra = inner.model_obj.plugins[item.version]?.extra || []
+                } else {
+                    extra = [{ "type": "system-prompt" }]
+                }
+                extra.forEach(extra_ => {
+                    config.extra.push(extra_)
+                });
+            }
+        }
+        const deduplicateByType = (arr) => {
+            const seen = new Set();
+            return arr.filter(item => {
+                const duplicate = seen.has(item.type);
+                seen.add(item.type);
+                return !duplicate;
+            });
+        }
+        config.extra = deduplicateByType(config.extra);
+        utils.setConfig(config);
         this.funcItems.react.statu = false;
         this.funcItems.react.event();
         this.updateVersionsSubmenu();
-        utils.setConfig(config);
     }
 
     loadChain() {

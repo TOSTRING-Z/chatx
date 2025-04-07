@@ -3,7 +3,7 @@ const cheerio = require('cheerio')
 const S = require('string');
 
 function main(params) {
-    return async ({ input }) => {
+    return async ({ context }) => {
         let num_results = 5;
         let text_max_len = 1000;
         let jina = "https://r.jina.ai/";
@@ -15,7 +15,7 @@ function main(params) {
 
         const searchResults = []
         let page = 1
-        let nextUrl = `https://www.baidu.com/s?ie=utf-8&tn=baidu&wd=${encodeURIComponent(input)}`
+        let nextUrl = `https://www.baidu.com/s?ie=utf-8&tn=baidu&wd=${encodeURIComponent(context)}`
 
         while (searchResults.length < num_results) {
             const { results, nextPageUrl } = await parseBaiduPage(nextUrl, searchResults.length, num_results, text_max_len, jina)
@@ -114,18 +114,18 @@ async function getText(url, jina) {
         if (!!jina) {
             text = $('body').text();
         } else {
-            // 在获取文本前先清理页面
-            $('script, style, noscript, iframe').remove(); // 移除无用标签
-            // 扩展选择器以包含常见内容容器
+            // Clean the page before getting text
+            $('script, style, noscript, iframe').remove(); // Remove useless tags
+            // Extend selector to include common content containers
             const contentElements = $('p, div.article-content, section.main-text');
             text = contentElements
                 .map((i, el) => {
-                    // 移除不需要的子元素（如按钮、广告等）
+                    // Remove unwanted child elements (such as buttons, ads, etc.)
                     $(el).find('button, .ad').remove();
                     return $(el).text().trim();
                 })
                 .get()
-                .filter(t => t.length > 0) // 过滤空段落
+                .filter(t => t.length > 0) // Filter empty paragraphs
                 .join('\n');
         }
         return text;
@@ -136,6 +136,22 @@ async function getText(url, jina) {
 
 }
 
+function getPrompt() {
+    const prompt = `## baidu_search
+Description: Perform online search
+Parameters:
+- context: (Required) Text to be searched, which should be keywords extracted from user input or summarized search content
+Usage:
+{
+  "thinking": "[Thinking process]",
+  "tool": "baidu_search",
+  "params": {
+    "context": "[value]"
+  }
+}`
+    return prompt
+}
+
 module.exports = {
-    main
+    main, getPrompt
 };

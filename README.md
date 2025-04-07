@@ -219,6 +219,11 @@ config.json
 
 > 配置链式调用示例
 
+参数周期:
+
+* input_*: 使用调用模型前`可配置字段值`进行格式化
+* ouput_*: 使用调用模型后`可配置字段值`进行格式化
+
 config.json
 
 - 基础对话
@@ -227,11 +232,6 @@ config.json
 "chain_call": [
   {
     "end": true
-  }
-],
-"extre": [
-  {
-    "type": "system-prompt"
   }
 ]
 ```
@@ -244,11 +244,6 @@ config.json
     "input_template": "{img_url?'请识别图像内容后回答。':''}{input}",
     "end": true
   }
-],
-"extre": [
-  {
-    "type": "system-prompt"
-  }
 ]
 ```
 
@@ -260,11 +255,6 @@ config.json
     "prompt_template": "{prompt}\nA conversation between User and Assistant.\nThe user asks a question, and the Assistant solves it.\nThe assistant first thinks about the reasoning process in the mind and then provides the user with the answer.\nThe assistant should engage in a lengthy period of contemplation before answering a question, while also reflecting on whether there are any errors in their thought process. \nDuring the thinking process, the assistant should propose multiple solutions and provide an extended chain of thought for each one.\nThe thought process for each solution should be very detailed, including the specific steps for implementation.\nThe reasoning process is enclosed within <think> </think> and <answer> </answer> tags, respectively, i.e:\n<think>\n reasoning process here \n</think>\n<answer>\n answer here \n</answer>",
     "input_template": "{input}",
     "end": true
-  }
-],
-"extre": [
-  {
-    "type": "system-prompt"
   }
 ]
 ```
@@ -281,15 +271,13 @@ config.json
   {
     "model": "plugins",
     "version": "提取思维链",
+    "input_data": {
+      "input": "{input}"
+    },
     "output_template": "<think>{output}</think>\n- query:{query}\n- answer:"
   },
   {
     "end": true
-  }
-],
-"extre": [
-  {
-    "type": "system-prompt"
   }
 ]
 ```
@@ -300,19 +288,14 @@ config.json
 "chain_call": [
   {
     "model": "plugins",
-    "version": "文件读取"
+    "version": "文件读取",
+    "input_data": {
+      "file_path": "{file_path}"
+    }
   },
   {
     "input_template": "如下是pdf中的文字内容:\n\n<pdf>{output_formats[0]}</pdf>\n\n如下是user输入内容:\n\n<user>{query}</user>\n\n请根据pdf中内容回答user输入。回复要求如下：\n- 过滤多余的文字，例如行号、页码和水印等。 \n- 尽可能多的思考细节、潜在相关和可能相关的内容。 \n- 对于原文中没有的内容，不需要猜测，提出观点和输出和原文可能产生不一致的内容。\n- 按照规范的格式输出。",
     "end": true
-  }
-],
-"extre": [
-  {
-    "type": "system-prompt"
-  },
-  {
-    "type": "file-reader"
   }
 ]
 ```

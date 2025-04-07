@@ -15,11 +15,11 @@ async function jours_if(input) {
         );
 
         return response.data
-            .map(item => `期刊:${item.pmjab}, IF:${item.jour_if}`)
+            .map(item => `Journal:${item.pmjab}, IF:${item.jour_if}`)
             .join('\n');
 
     } catch (error) {
-        throw new Error(`处理失败: ${error.message}`);
+        throw new Error(`Processing failed: ${error.message}`);
     }
 }
 

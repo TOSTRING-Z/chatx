@@ -1,4 +1,7 @@
+const path = require("path");
+const fs = require('fs');
 const { utils, inner } = require("./globals");
+
 
 class Plugins {
     constructor() {
@@ -9,17 +12,25 @@ class Plugins {
     }
     // 配置插件接口
     loadPlugin(params) {
-        const pluginPath = utils.getConfig("plugins")[params.version].path.format(process);
+        const pluginPath = utils.getConfig("plugins")[params.version]?.path.format(process);
         const pluginParams = utils.getConfig("plugins")[params.version]?.params;
         try {
             console.log(`loading plugin: ${params.version}`);
-            const plugin = require(pluginPath);
-            if (pluginParams) {
-                return { func: plugin.main(pluginParams), extre: params?.extre };
+            let plugin;
+            if(!!pluginPath && fs.existsSync(pluginPath)) {
+                plugin = require(pluginPath);
             }
             else {
-                return { func: plugin.main, extre: params?.extre };
+                plugin = require(path.join(__dirname, `../tools/${params.version}.js`));
             }
+            let item;
+            if (pluginParams) {
+                item = { func: plugin.main(pluginParams), extra: params?.extra, getPrompt: plugin?.getPrompt };
+            }
+            else {
+                item = { func: plugin.main, extra: params?.extra, getPrompt: plugin?.getPrompt };
+            }
+            return item;
         } catch (error) {
             return {
                 func: () => `插件: ${params.version}, 路径: ${pluginPath}, 加载插件发生错误: ${error.message}`
@@ -30,9 +41,15 @@ class Plugins {
         // 加载插件
         const plugins = utils.getConfig("plugins");
         Object.keys(plugins).forEach((version) => {
-            const params = {version, ...plugins[version]}
-            inner.model[inner.model_name.plugins].versions.push(params);
-            inner.model_obj[inner.model_name.plugins][version] = this.loadPlugin(params)
+            const params = { version, ...plugins[version] }
+            let enabled = true;
+            if (params.hasOwnProperty("enabled")) {
+                enabled = params.enabled;
+            }
+            if (enabled) {
+                inner.model[inner.model_name.plugins].versions.push(params);
+                inner.model_obj[inner.model_name.plugins][version] = this.loadPlugin(params)
+            }
         })
     }
 }

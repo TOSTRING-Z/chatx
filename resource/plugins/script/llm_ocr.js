@@ -3,23 +3,23 @@ const fs = require('fs')
 const path = require('path')
 
 function main(params) {
-    return async ({ input, prompt = null }) => {
+    return async ({ input: img_path, prompt = null }) => {
 
         return new Promise(async (resolve, reject) => {
             try {
-                // 读取文件内容
-                const imageBuffer = await fs.promises.readFile(input)
+                // Read file content
+                const imageBuffer = await fs.promises.readFile(img_path)
 
-                // 获取文件扩展名
-                const ext = path.extname(input).slice(1)
+                // Get file extension
+                const ext = path.extname(img_path).slice(1)
 
-                // 构建 Base64 字符串
+                // Construct Base64 string
                 let url = `data:image/${ext};base64,${imageBuffer.toString('base64')}`
 
                 let content = [
                     {
                         "type": "text",
-                        "text": !!prompt?prompt:"提取图片中的所有文字"
+                        "text": !!prompt?prompt:"Extract all text from the image"
                     },
                     {
                         "type": "image_url",
@@ -49,7 +49,7 @@ function main(params) {
                 });
 
                 if (!response.ok) {
-                    resolve(`视觉大模型API请求失败: ${response.statusText}`);
+                    resolve(`Vision model API request failed: ${response.statusText}`);
                 }
 
                 let data = await response.json();
@@ -61,6 +61,24 @@ function main(params) {
     }
 }
 
+function getPrompt() {
+    const prompt = `## llm_ocr
+Description: Call this tool when you need to read image content. This tool uses a visual large model to recognize image content, so you need to provide specific prompts to help the model understand your intent.
+Parameters:
+img_path: (Required) Image path (for local paths, online URLs or base64 inputs, you should first call python_execute to save the image locally)
+prompt: (Required) Prompt text
+Usage:
+{
+  "thinking": "[Thinking process]",
+  "tool": "llm_ocr",
+  "params": {
+    "img_path": "[value]",
+    "prompt": "[value]"
+  }
+}`
+    return prompt
+}
+
 module.exports = {
-    main,
+    main, getPrompt
 };

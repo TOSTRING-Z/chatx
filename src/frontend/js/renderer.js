@@ -1,11 +1,11 @@
 document.addEventListener("click", (event) => {
-  // 使用Clipboard API进行复制
+  // Use Clipboard API to copy
   if (event.target.classList.contains("copy-btn")) {
     const codeToCopy = decodeURIComponent(event.target.getAttribute('data-code'));
     navigator.clipboard.writeText(codeToCopy).then(() => {
-      showLog('复制成功');
+      showLog('Copy successful');
     }).catch(err => {
-      console.error('复制失败', err);
+      console.error('Copy failed', err);
     });
   }
 
@@ -93,7 +93,7 @@ file_reader.addEventListener("click", async function (e) {
   if (!!formData.file_path) {
     e.target.innerText = getFileName(formData.file_path);
   } else {
-    e.target.innerText = "选择文件";
+    e.target.innerText = "Select file";
   }
 })
 
@@ -116,7 +116,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   autoResizeTextarea(input);
 
-  // 监听输入事件，自动调整高度
+  // Listen for input events, auto-adjust height
   input.addEventListener("input", function () {
     autoResizeTextarea(input);
     if (this.value.trim() !== '') {
@@ -153,7 +153,7 @@ document.addEventListener("DOMContentLoaded", function () {
     init_size();
   })
 
-  // 添加事件监听器，监听窗口的resize事件
+  // Add event listener for window resize event
   window.addEventListener("resize", function () {
     init_size();
   });
@@ -195,14 +195,14 @@ system_message = `<div class="relative space-y-2 space-x-2" data-role="system" d
     </div>
   </div>
   <div class="info hidden">
-    <div class="info-header">调用信息</div>
+    <div class="info-header">Call information</div>
     <div class="info-content" data-content=""></div>
   </div>
   <div class="thinking">
     <div class="dot"></div>
     <div class="dot"></div>
     <div class="dot"></div>
-    <button class="btn">停止生成</button>
+    <button class="btn">Stop generation</button>
   </div>
   <div class="message" data-content=""></div>
 </div>`
@@ -220,13 +220,13 @@ function showLog(log) {
 
 function copy_message(raw) {
   navigator.clipboard.writeText(raw).then(() => {
-    showLog('复制成功');
+    showLog('Copy successful');
   }).catch(err => {
-    console.error('复制失败', err);
+    console.error('Copy failed', err);
   });
 }
 
-function InfoAdd(info) {
+function infoAdd(info) {
   const messageSystem = document.querySelectorAll(`[data-id='${info.id}']`)[1];
   const info_content = messageSystem.getElementsByClassName('info-content')[0];
   const info_div = messageSystem.getElementsByClassName('info')[0];
@@ -238,7 +238,33 @@ function InfoAdd(info) {
     info_content.innerHTML = marked.parse(info_content.dataset.content);
     if (global.scroll_top.info)
       info_content.scrollTop = info_content.scrollHeight;
+    if (global.scroll_top.data)
+      top_div.scrollTop = top_div.scrollHeight;
   }
+}
+
+function userAdd(data) {
+  if (typeof (data.content) == "string") {
+    messages.appendChild(user_message.formatMessage({
+      "id": data.id,
+      "message": data.content,
+      "image_url": data?.img_url,
+    }, "user"));
+  } else {
+    messages.appendChild(user_message.formatMessage({
+      "id": data.id,
+      "message": data.content[0].text.content,
+      "image_url": data.content[1].image_url.url,
+    }, "user"));
+  }
+  let system_message_cursor = system_message.formatMessage({
+    "icon": getIcon(false),
+    "id": data.id,
+    "message": ""
+  }, "system")
+  addEventStop(system_message_cursor, data.id);
+  messages.appendChild(system_message_cursor);
+
 }
 
 function streamMessageAdd(chunk) {
@@ -332,12 +358,12 @@ const marked_input = new Marked({
 
 const formatCode = (token) => {
   let encodeCode;
-  // 定义正则表达式来匹配 ```<language>\n<code>\n``` 块
+  // Define regex to match ```<language>\n<code>\n``` block
   const codeBlockRegex = /```\w*\n([\s\S]*?)```/;
-  // 执行匹配
+  // Execute matching
   const match = token.raw.match(codeBlockRegex);
   if (match) {
-    // 提取代码块内容（去除语言标识部分）
+    // Extract code block content (remove language identifier)
     const codeContent = match[1].trim();
     encodeCode = encodeURIComponent(codeContent);
   } else {
@@ -348,7 +374,7 @@ const formatCode = (token) => {
             <button
             class="copy-btn"
             data-code="${encodeCode}"
-            title="复制代码">复制</button>
+            title="Copy code">Copy</button>
           </div>
           <pre class="hljs"><code>${token.text}</code></pre>`;
 }
@@ -414,7 +440,7 @@ function createElement(html) {
   return newElement;
 }
 
-// 扩展 String 原型
+// Extend String prototype
 String.prototype.formatMessage = function (params, role) {
   const newElement = createElement(this);
   let message = newElement.getElementsByClassName("message")[0]
@@ -495,7 +521,11 @@ window.electronAPI.streamData((chunk) => {
 })
 
 window.electronAPI.infoData((info) => {
-  InfoAdd(info);
+  infoAdd(info);
+})
+
+window.electronAPI.userData((data) => {
+  userAdd(data);
 })
 
 function addEventStop(messageSystem, id) {
@@ -534,7 +564,7 @@ window.electronAPI.handleQuery(async (data) => {
   window.electronAPI.queryText(data);
 })
 
-window.electronAPI.handleExtreLoad((data) => {
+window.electronAPI.handleExtraLoad((data) => {
   system_prompt.style.display = "none";
   file_reader.style.display = "none";
   act_plan.style.display = "none";
@@ -579,40 +609,6 @@ window.electronAPI.handleClear(() => {
   messages.innerHTML = null;
   pause.style.display = "none";
   pause.innerHTML = "";
-})
-
-
-window.electronAPI.handleLoad((data) => {
-  messages.innerHTML = null;
-  for (i in data) {
-    let text;
-    let image_url;
-    if (data[i].role == "user") {
-      if (typeof data[i].content !== 'string') {
-        text = data[i].content.find(c => c.type == "text").text;
-        image_url = data[i].content.find(c => c.type == "image_url").image_url.url;
-      } else {
-        text = data[i].content;
-      }
-      messages.appendChild(user_message.formatMessage({
-        "id": data[i].id,
-        "message": text,
-        "image_url": image_url,
-      }, "user"));
-    } else {
-      text = data[i].content;
-      const messageSystem = system_message.formatMessage({
-        "icon": getIcon(false),
-        "id": data[i].id,
-        "message": text
-      }, "system")
-      messages.appendChild(messageSystem);
-      const thinking = messageSystem.getElementsByClassName("thinking")[0];
-      thinking.remove();
-      typesetMath();
-      menuEvent(data[i].id, text);
-    }
-  }
 })
 
 submit.addEventListener("click", () => {

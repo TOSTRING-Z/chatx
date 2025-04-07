@@ -13,7 +13,12 @@ npm install
 ```json
 "plugins": {
     "百度翻译[新]": {
-      "path": "/你的/插件/路径/trans_baidu_new.js"
+      "path": "/你的/插件/路径/trans_baidu_new.js",
+      "show": true
     }
 }
 ```
+
+_- 更多案例见： -_
+
+[script](script)

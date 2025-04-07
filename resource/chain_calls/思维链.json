@@ -5,10 +5,5 @@
             "input_template": "{input}",
             "end": true
         }
-    ],
-    "extre": [
-        {
-            "type": "system-prompt"
-        }
     ]
 }
