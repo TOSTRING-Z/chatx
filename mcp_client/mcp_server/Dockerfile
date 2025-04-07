@@ -45,6 +45,7 @@ FROM python:3.12-slim-bookworm
 COPY --from=conda /opt/conda /opt/conda
 COPY --from=uv /app/.venv /app/.venv
 ADD server.py /app/server.py
+ADD .bashrc /root/.bashrc
 
 ENV PATH="/app/.venv/bin:$PATH"
 

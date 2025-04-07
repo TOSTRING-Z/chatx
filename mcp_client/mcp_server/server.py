@@ -1,16 +1,10 @@
 # server.py
 import asyncio
-from mcp.server.fastmcp import FastMCP
 import pandas as pd
 import uuid
 from typing import Optional
-import platform
-import os
 
-from concurrent.futures import ThreadPoolExecutor
 from mcp import types
-from typing import Any
-import httpx
 from mcp.server.sse import SseServerTransport
 from mcp.server.lowlevel.server import Server
 from starlette.applications import Starlette
@@ -22,6 +16,18 @@ app = Server("biotools")  # 创建MCP服务器实例，名称为"biotools"
 
 tmp_docker = "/tmp"
 
+bed_data_db = {
+    "Super_Enhancer_SEdbv2": "/data/human/human_Super_Enhancer_SEdbv2.bed",
+    "Super_Enhancer_SEAv3": "/data/human/human_Super_Enhancer_SEAv3.bed",
+    "Super_Enhancer_dbSUPER": "/data/human/human_Super_Enhancer_dbSUPER.bed",
+    "Enhancer": "/data/human/human_Enhancer.bed",
+    "Common_SNP": "data/human/human_Common_SNP.bed",
+    "Risk_SNP": "/data/human/human_Risk_SNP.bed",
+    "eQTL": "/data/human/human_eQTL.bed",
+    "TFBS": "/data/human/human_TFBS.bed",
+    "RNA_Interaction": "/data/human/human_RNA_Interaction.bed",
+    "CRISPR": "/data/human/human_CRISPR.bed",
+}
 
 async def execute_bash(
     command: str = "echo hello!", timeout: Optional[float] = 600.0
@@ -60,11 +66,6 @@ async def execute_bash(
 
 
 async def get_bed_data(biological_type: str) -> str:
-    bed_data_db = {
-        "Enhancer": "/data/human/human_Super_Enhancer_SEdbv2.bed",
-        "TR": "/data/human/human_TFBS.bed",
-        "SNP": "/data/human/human_Risk_SNP.bed",
-    }
     if biological_type in bed_data_db:
         return bed_data_db[biological_type]
     return "Biological type {biological_type} not found in database"
@@ -153,7 +154,7 @@ async def fetch_tool(
 async def list_tools() -> list[types.Tool]:
     # 定义异步函数list_tools，用于列出可用的工具
     # 返回: Tool对象列表，描述可用工具
-
+    biological_list = ", ".join(list(bed_data_db.keys()))
     return [
         types.Tool(
             name="execute_bedtools",  # 工具名称
@@ -181,7 +182,7 @@ Returns:
         ),
         types.Tool(
             name="get_gene_position",
-            description="""Query the positions of genes and return a Gene-bed file path.
+            description="""Query the positions of genes and return a Gene-bed file path (hg38).
 Returns:
     The path to the Gene-bed file.""",
             inputSchema={
@@ -197,7 +198,7 @@ Returns:
         ),
         types.Tool(
             name="get_bed_data",
-            description="""Get bed data for a given biological type.
+            description="""Get bed data for a given biological type (hg38).
 Returns:
     The path to the [biological_type]-bed file.""",
             inputSchema={
@@ -206,7 +207,7 @@ Returns:
                 "properties": {
                     "biological_type": {
                         "type": "string",
-                        "description": "Type of biological element (Enhancer, TR, SNP)",
+                        "description": f"Type of biological element ({biological_list})",
                     }
                 },
             },
@@ -217,7 +218,7 @@ Returns:
 
 当前工具可以用于复杂的生物信息分析流程，包括复杂的数据分析，绘图和系统级别指令调用。已经安装的工具如下：
 - homer: 用于ChIP-seq和motif分析的工具
-    Example: `execute_bash("findMotifsGenome.pl peaks.txt hg19 output_dir -size 200 -mask")`
+    Example: `execute_bash("findMotifsGenome.pl peaks.txt hg38 output_dir -size 200 -mask")`
 - deeptools: 用于高通量测序数据的可视化
     Example: `execute_bash("computeMatrix reference-point --referencePoint TSS -b 1000 -a 1000 -R genes.bed -S coverage.bw -out matrix.gz")`
 - chipseeker: 用于ChIP-seq数据的注释
@@ -225,7 +226,7 @@ Returns:
 - ucsc-liftover: 用于基因组坐标转换
     Example: `execute_bash("liftOver input.bed hg19ToHg38.over.chain output.bed unmapped.bed")`
 - cistrome_beta: 用于ChIP-seq数据分析的beta版本工具
-    Example: `execute_bash("cistrome beta --input peaks.bed --genome hg19 --output output_dir")`
+    Example: `execute_bash("cistrome beta --input peaks.bed --genome hg38 --output output_dir")`
 - fastqc: 用于测序数据的质量控制
     Example: `execute_bash("fastqc seq.fastq -o output_dir")`
 - trim_galore: 用于测序数据的适配器修剪
