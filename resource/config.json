@@ -2,13 +2,9 @@
   "memory_length": 10,
   "retry_time": 10,
   "icon_time": 5,
-  "prompt": "",
-  "info_template": "阶段: {step}, 调用: {model}, 版本: {version}, 输出: \n\n```\n{output_format}\n```\n\n",
-  "default": {
-    "model": "deepseek",
-    "version": "deepseek-chat",
-    "plugin": "百度翻译[旧]"
-  },
+  "prompt": "Please explain the user's input in Chinese.",
+  "short_cut": "CommandOrControl+Shift+Space",
+  "info_template": "Step: {step}, Call: {model}, Version: {version}, Output:\n\n```json\n{output_format}\n```\n\n",
   "llm_parmas": {
     "max_tokens": 4000,
     "temperature": 0.7,
@@ -21,12 +17,17 @@
     "math": true,
     "text": false
   },
-  "short_cut": "CommandOrControl+Shift+Space",
+  "default": {
+    "model": "deepseek",
+    "version": "deepseek-chat",
+    "plugin": "baidu_translate"
+  },
   "models": {
     "ollama": {
       "api_url": "http://localhost:11434/api/chat",
       "versions": [
-        "llama3.2",
+        "deepseek-coder-v2-long",
+        "deepseek-r1:14b",
         {
           "version": "gemma3:12b",
           "vision": [
@@ -53,6 +54,14 @@
         "ernie-tiny-8k"
       ]
     },
+    "fireworks": {
+      "api_url": "https://api.fireworks.ai/inference/v1/chat/completions",
+      "api_key": "",
+      "versions": [
+        "accounts/fireworks/models/deepseek-r1-distill-llama-8b",
+        "accounts/fireworks/models/qwen2p5-coder-32b-instruct-128k"
+      ]
+    },
     "together": {
       "api_key": "",
       "api_url": "https://api.together.xyz/v1/chat/completions",
@@ -71,6 +80,9 @@
       "api_url": "https://gptgod.online/api/v1/chat/completions",
       "api_key": "",
       "versions": [
+        "deepseek-coder",
+        "o1-mini-2024-09-12",
+        "o1-preview-2024-09-12",
         {
           "version": "gpt-4o-mini",
           "vision": [
@@ -87,8 +99,8 @@
         "o1-mini-2024-09-12",
         "o1-preview-2024-09-12",
         "gpt-4o-2024-08-06",
-        "gpt-4",
-        "gpt-4-turbo-preview"
+        "deepseek-r1",
+        "deepseek-v3"
       ]
     },
     "chatglm": {
@@ -119,6 +131,7 @@
       "api_url": "https://api.deepseek.com/chat/completions",
       "api_key": "",
       "versions": [
+        "deepseek-coder",
         "deepseek-chat",
         "deepseek-reasoner"
       ]
@@ -143,21 +156,56 @@
     }
   },
   "plugins": {
-    "百度翻译[新]": {
+    "baidu_translate[new]": {
       "path": "{resourcesPath}/resource/plugins/script/trans_baidu_new.js",
       "show": true
     },
-    "百度翻译[旧]": {
-      "path": "{resourcesPath}/resource/plugins/script/trans_baidu_old.js",
+    "baidu_translate": {
+      "path": "{resourcesPath}/resource/plugins/script/trans_baidu.js",
       "show": true
     },
-    "谷歌翻译": {
+    "google_translate": {
       "path": "{resourcesPath}/resource/plugins/script/trans_google.js",
       "show": true
     },
-    "影响因子查询": {
+    "if_pmid": {
       "path": "{resourcesPath}/resource/plugins/script/if_pmid.js",
       "show": true
+    },
+    "python_execute": {
+      "params": {
+        "python_bin": "python",
+        "delay_time": 10,
+        "threshold": 10000
+      },
+      "enabled": false
+    },
+    "file_load": {
+      "extra": [
+        {
+          "type": "file-reader"
+        }
+      ],
+      "show": false,
+      "params": {
+        "threshold": 10000
+      },
+      "enabled": false
+    },
+    "search_files": {
+      "enabled": false
+    },
+    "list_files": {
+      "params": {
+        "threshold": 50
+      },
+      "enabled": false
+    },
+    "write_to_file": {
+      "enabled": false
+    },
+    "replace_in_file": {
+      "enabled": false
     },
     "baidu_search": {
       "path": "{resourcesPath}/resource/plugins/script/baidu_search.js",
@@ -182,77 +230,42 @@
     },
     "json_parse": {
       "path": "{resourcesPath}/resource/plugins/script/json_parse.js"
-    },
-    "file_load": {
-      "path": "{resourcesPath}/resource/plugins/script/file_load.js",
-      "extra": [
-        {
-          "type": "file-reader"
-        }
-      ],
-      "params": {
-        "threshold": 10000
-      },
-      "enabled": true
-    },
-    "search_files": {
-    },
-    "list_files": {
-      "params": {
-        "threshold": 50
-      },
-      "enabled": true
-    },
-    "write_to_file": {
-      "enabled": true
-    },
-    "replace_in_file": {
-      "enabled": true
-    },
-    "python_execute": {
-      "params": {
-        "python_bin": "python",
-        "threshold": 10000,
-        "delay_time": 5
-      },
-      "enabled": true
     }
   },
   "mcp_server": {
+    "tranagent": {
+      "url": "http://172.27.0.3:3001/sse",
+      "enabled": true
+    },
     "git": {
       "command": "uvx",
       "args": [
         "mcp-server-git"
       ],
-      "enabled": true
-    }
-  },
-  "tool_call": {
-    "response_format": {
-      "type": "json_object"
+      "enabled": false
     }
   },
   "chain_call": [
     {
+      "model": "plugins",
+      "version": "python_execute",
+      "input_data": {
+        "code": "{query}"
+      },
       "end": true
     }
   ],
   "tool_call": {
     "memory_length": 20,
-    "extra_prompt": "{resourcesPath}/extra_prompt.md",
     "mcp_timeout": 600,
+    "extra_prompt": "C:\\Users\\Administrator\\Desktop\\Document\\chatx\\mcp_client\\mcp_server\\prompt.md",
     "llm_parmas": {
-      "max_tokens": 4000,
+      "max_tokens": 8000,
       "temperature": 0.5,
       "stream": true,
       "response_format": {
         "type": "json_object"
       }
     }
-  },
-  "extra": [
-    {
-      "type": "system-prompt"
-    }
-  ]
+  }
 }
