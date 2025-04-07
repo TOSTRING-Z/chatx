@@ -1,13 +1,13 @@
 {
-  "memory_length": 10,
-  "retry_time": 10,
+  "memory_length": 40,
+  "retry_time": 5,
   "icon_time": 5,
   "prompt": "",
   "info_template": "阶段: {step}, 调用: {model}, 版本: {version}, 输出: \n\n```\n{output_format}\n```\n\n",
   "default": {
     "model": "deepseek",
     "version": "deepseek-chat",
-    "plugin": "百度翻译[旧]"
+    "plugin": "百度翻译"
   },
   "llm_parmas": {
     "max_tokens": 4000,
@@ -147,8 +147,8 @@
       "path": "{resourcesPath}/resource/plugins/script/trans_baidu_new.js",
       "show": true
     },
-    "百度翻译[旧]": {
-      "path": "{resourcesPath}/resource/plugins/script/trans_baidu_old.js",
+    "百度翻译": {
+      "path": "{resourcesPath}/resource/plugins/script/trans_baidu.js",
       "show": true
     },
     "谷歌翻译": {
@@ -184,7 +184,6 @@
       "path": "{resourcesPath}/resource/plugins/script/json_parse.js"
     },
     "file_load": {
-      "path": "{resourcesPath}/resource/plugins/script/file_load.js",
       "extra": [
         {
           "type": "file-reader"
@@ -196,6 +195,7 @@
       "enabled": true
     },
     "search_files": {
+      "enabled": true
     },
     "list_files": {
       "params": {
@@ -219,6 +219,10 @@
     }
   },
   "mcp_server": {
+    "fetch_bing": {
+      "url": "http://127.0.0.1:8900/sse",
+      "enabled": false
+    },
     "git": {
       "command": "uvx",
       "args": [
@@ -227,13 +231,9 @@
       "enabled": true
     }
   },
-  "tool_call": {
-    "response_format": {
-      "type": "json_object"
-    }
-  },
   "chain_call": [
     {
+      "input_template": "{img_url?'Please understand the content of the image and answer.':''}{input}",
       "end": true
     }
   ],

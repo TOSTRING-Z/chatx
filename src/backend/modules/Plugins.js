@@ -12,7 +12,7 @@ class Plugins {
     }
     // 配置插件接口
     loadPlugin(params) {
-        const pluginPath = utils.getConfig("plugins")[params.version]?.path.format(process);
+        const pluginPath = utils.getConfig("plugins")[params.version]?.path?.format(process);
         const pluginParams = utils.getConfig("plugins")[params.version]?.params;
         try {
             console.log(`loading plugin: ${params.version}`);
@@ -32,6 +32,7 @@ class Plugins {
             }
             return item;
         } catch (error) {
+            console.log(error.message);
             return {
                 func: () => `插件: ${params.version}, 路径: ${pluginPath}, 加载插件发生错误: ${error.message}`
             }

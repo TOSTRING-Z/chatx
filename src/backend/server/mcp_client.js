@@ -5,7 +5,7 @@ class MCPClient {
     constructor() {
         this.client = new Client(
             {
-                name: "chatx-client",
+                name: "mcp-client",
                 version: "1.0.0"
             },
             {
@@ -16,6 +16,7 @@ class MCPClient {
                 }
             }
         );
+        this.SSEClientTransport;
         this.transports = {};
         this.mcp_prompt = "";
     }
@@ -66,7 +67,7 @@ class MCPClient {
                 const mcp_args = arg_keys.map(key => {
                     const values = properties[key];
                     const req = required?.includes(key);
-                    return `- ${key}: ${req ? "(required) " : ""}${values?.description||values?.title} (type: ${values.type})`;
+                    return `- ${key}: ${req ? "(required) " : ""}${values?.description || values?.title} (type: ${values.type})`;
                 }).join("\n");
 
                 const mcp_prompt = `MCP name: ${mcp_name}\nMCP args:\n${mcp_args}\nMCP description:\n${mcp_description}`;
@@ -79,15 +80,23 @@ class MCPClient {
         }
     }
 
-    setTransport({ name, config }) {
+    async setTransport({ name, config }) {
+        if (!this.SSEClientTransport)
+            this.SSEClientTransport = (await import("@modelcontextprotocol/sdk/client/sse.js")).SSEClientTransport;
         let enabled = true;
         if (config.hasOwnProperty("enabled")) {
             enabled = config.enabled;
             delete config.enabled;
         }
         if (!this.transports.hasOwnProperty(name) && enabled) {
-            const transport = new StdioClientTransport(config);
-            this.transports[name] = transport;
+            if (config.hasOwnProperty("url")) {
+                const transport = new this.SSEClientTransport(new URL(config.url));
+                this.transports[name] = transport;
+            }
+            else {
+                const transport = new StdioClientTransport(config);
+                this.transports[name] = transport;
+            }
         }
     }
 }
