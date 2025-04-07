@@ -393,7 +393,7 @@ const renderer = {
     return formatCode(token);
   },
   link(token) {
-    return formatCode(token);
+    return formatText(token);
   },
   text(token) {
     if (token.hasOwnProperty("tokens")) {
