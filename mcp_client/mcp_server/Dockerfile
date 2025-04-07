@@ -50,4 +50,4 @@ ENV PATH="/app/.venv/bin:$PATH"
 
 LABEL org.opencontainers.image.title="transagent"
 
-ENTRYPOINT ["python","/app/server.py"]
+ENTRYPOINT . /opt/conda/etc/profile.d/conda.sh && conda activate && /app/.venv/bin/python /app/server.py

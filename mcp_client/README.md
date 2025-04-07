@@ -1,22 +1,5 @@
 # 全面超级增强子目录 用以 选择组织/细胞特异性位点 的智能体 构建
 
-# MCP环境 https://github.com/modelcontextprotocol/python-sdk
-```bash
-# 安装
-~/.local/bin/uv add "mcp[cli]"
-
-# 环境
-
-* linux
-source mcp_server/.venv/bin/activate
-
-* window
-.\mcp_server\.venv\Scripts\activate
-
-# 测试
-mcp dev mcp_server/server.py
-```
-
 # 数据
 ```bash
 rsync -rz -P root@172.20.13.132:/var/www/html/eRNAbase/public/data/annotation/human data/

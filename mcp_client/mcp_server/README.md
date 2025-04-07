@@ -32,10 +32,10 @@ docker save -o transagent.tar transagent:latest
 docker load -i transagent.tar
 
 # linux
-docker run -it --name transagent --rm -v /tmp:/tmp -v /mnt/ubuntu_zgr/install/chatx/mcp_client/data:/data -p 3001:3001 transagent
+docker run -i --name transagent --rm -v /tmp:/tmp -v /mnt/ubuntu_zgr/install/chatx/mcp_client/data:/data -p 3001:3001 transagent
 
 # window
-docker run -it --rm -v C:/Users/Administrator/Desktop/Document/chatx/mcp_client/tmp:/tmp -v C:/Users/Administrator/Desktop/Document/chatx/mcp_client/data:/data -p 3001:3001 transagent
+docker run -i --rm -v C:/Users/Administrator/Desktop/Document/chatx/mcp_client/tmp:/tmp -v C:/Users/Administrator/Desktop/Document/chatx/mcp_client/data:/data -p 3001:3001 transagent
 
 # dev
 npx @modelcontextprotocol/inspector

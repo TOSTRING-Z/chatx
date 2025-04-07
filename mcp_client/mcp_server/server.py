@@ -24,11 +24,9 @@ tmp_docker = "/tmp"
 
 
 async def execute_bash(
-    cmd: str = "echo hello!", timeout: Optional[float] = 600.0
+    command: str = "echo hello!", timeout: Optional[float] = 600.0
 ) -> str:
     try:
-        command = ["docker", "exec", "transagent", cmd]
-        command = " ".join(command)
         print(f"Executing: {command}")  # 打印完整命令用于调试
 
         # 关键修改：使用 create_subprocess_exec 并合并 stderr 到 stdout
@@ -94,9 +92,6 @@ async def execute_bedtools(
         docker_out_path = f"{tmp_docker}/result_bed_{uuid_}.bed"
 
         command = [
-            "docker",
-            "exec",
-            "transagent",
             "bedtools",
             subcommand,
             options,
@@ -146,9 +141,10 @@ async def fetch_tool(
         "execute_bedtools": execute_bedtools,
     }
     try:
-        return await tools[name](**arguments)
+        result = await tools[name](**arguments)
+        return [types.TextContent(type="text", text=result)]
     except Exception as e:
-        return str(e)
+        return [types.TextContent(type="text", text=str(e))]
 
 
 # https://json-schema.org/understanding-json-schema/about
@@ -253,9 +249,9 @@ Examples:
     'total 4\ndrwxr-xr-x 2 root root 4096 Apr  5 12:34 data'""",
             inputSchema={
                 "type": "object",
-                "required": ["cmd"],
+                "required": ["command"],
                 "properties": {
-                    "cmd": {
+                    "command": {
                         "type": "string",
                         "description": "The bash command to execute",
                     },

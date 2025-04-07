@@ -11,15 +11,16 @@ class ToolCall extends ReActAgent {
   async init_mcp() {
     try {
       const configs = utils.getConfig("mcp_server");
-      Object.keys(configs).forEach(name => {
-        const config = configs[name];
-        this.mcp_client.setTransport({ name, config });
-
-      });
+      for (const name in configs) {
+        if (Object.hasOwnProperty.call(configs, name)) {
+          const config = configs[name];
+          await this.mcp_client.setTransport({ name, config });
+        }
+      }
       await this.mcp_client.connectMCP();
       return this.mcp_client.mcp_prompt;
     } catch (error) {
-      return "MCP server is not available!"
+      return error.message
     }
   }
 
